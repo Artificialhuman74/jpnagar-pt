@@ -1,7 +1,8 @@
 // Clinic admin (demo): one person on a phone, four jobs in the dock: Today, Schedule, Doctors, Content.
-// In production every change goes to WordPress (behind his login). Here it all lives in this browser, and "Publish to
-// website" writes the snapshot the patient demo pages read (canon/published.js), the way the real site serves a
-// static file that is rebuilt only when he publishes.
+// On WordPress (bash start.sh --wp, and the real site) every change goes to the clinic plugin through admin/wp.js,
+// behind his WordPress login. As a plain demo it all lives in this browser, and "Publish to website" writes the
+// snapshot the patient demo pages read (canon/published.js), the way the real site serves a static file that is
+// rebuilt only when he publishes.
 const $ = s => document.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 Object.assign(ICON, {
   plus: '<path d="M12 5v14M5 12h14"/>',
@@ -87,7 +88,7 @@ if (!S || S.v !== 4) S = seed();
 if (!S.live) S.live = clone(S.content);
 // whatever the website shows now comes first: if something newer was published (from another device), start from it
 (() => {
-  const w = window.PUBLISHED_DATA; if (!w || (w.at || 0) <= (S.publishedAt || 0)) return;
+  const w = window.PUBLISHED_DATA; if (WP || !w || (w.at || 0) <= (S.publishedAt || 0)) return;
   const c = { doctors: w.doctors.map(d => ({ ...d })), branches: Object.fromEntries(Object.entries(w.branches).map(([k, v]) => [k, { name: v.name, phone: v.phone, addr: v.addr, landmark: v.landmark }])),
     home: w.home, services: w.services, photos: w.photos || [] };
   const unsaved = JSON.stringify(S.content) !== JSON.stringify(S.live);
@@ -96,7 +97,10 @@ if (!S.live) S.live = clone(S.content);
   Object.entries(w.branches).forEach(([k, v]) => { if (S.schedule[k] && v.sessions) { S.schedule[k].sessions = v.sessions; if (v.days) S.schedule[k].days = v.days; } });
 })();
 function clone(x) { return JSON.parse(JSON.stringify(x)); }
-function save() { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (_) { toast('This browser is out of space for photos. Try a smaller photo.'); } paintPub(); }
+function save() {
+  if (WP) { WP.saveDraft(); paintPub(); return; }
+  try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (_) { toast('This browser is out of space for photos. Try a smaller photo.'); } paintPub();
+}
 
 /* ---------- lookups ---------- */
 const BR = id => BRANCHES.find(b => b.id === id);
@@ -160,6 +164,7 @@ const notice = (text, ic = 'info') => el('p', { class: 'notice' }, icon(ic), el(
 /* ---------- Today: the day sheet ---------- */
 function renderToday() {
   const d = addDays(today(), V.day), date = iso(d);
+  if (WP && !WP.hasDay(date)) WP.loadDay(date).then(() => { if ((location.hash || '#today') === '#today' && iso(addDays(today(), V.day)) === date) renderToday(); });
   const list = S.bookings.filter(x => x.date === date && (V.branch === 'all' || x.branch === V.branch)).sort((a, b) => a.t - b.t || a.branch.localeCompare(b.branch));
   const n = list.filter(live).length;
   const nav = el('div', { class: 'daynav' }, ...[['prev', 'Previous day', -1], ['next', 'Next day', 1]].map(([c, label, step]) => {
@@ -187,7 +192,7 @@ function renderToday() {
     ...notes,
     list.length ? el('div', { class: 'card', role: 'list' }, ...rows) : el('div', { class: 'card' }, el('p', { class: 'empty' }, el('b', {}, 'No bookings'), 'Online and front-desk bookings for this day show up here.')),
     add,
-    el('p', { class: 'note' }, 'Sample bookings for the demo. On the real site these come from patients booking online and from the front desk.'));
+    WP ? '' : el('p', { class: 'note' }, 'Sample bookings for the demo. On the real site these come from patients booking online and from the front desk.'));
 }
 function bookingRow(x, past) {
   const b = BR(x.branch), doc = x.doc && docById(x.doc), tm = timeOf(x.t);
@@ -233,14 +238,17 @@ function openBooking(x) {
   const facts = el('dl', { class: 'facts' }, ...[['Branch', b.name], ['Doctor', doc ? shortName(doc) : 'Any doctor'], ['Problem', x.problem || 'Not said'], ['Mobile', `+91 ${x.phone.slice(0, 5)} ${x.phone.slice(5)}`], ['Booked', x.source === 'desk' ? 'At the front desk' : 'Online']]
     .map(([k, v]) => el('div', {}, el('dt', {}, k), el('dd', {}, v))));
   const actions = [];
-  if (x.status === 'booked') actions.push(btn('Mark as arrived', 'btn--act btn--block', () => { x.status = 'arrived'; save(); closeSheet(); renderToday(); toast(`${x.name} marked as arrived`); }, 'check'));
-  if (x.status === 'arrived') actions.push(btn('Undo arrived', 'btn--line btn--block', () => { x.status = 'booked'; save(); closeSheet(); renderToday(); }));
+  // on WordPress the change is saved there first; the sheet closes only once it has been
+  const setStatus = async (status, msg) => {
+    if (WP) { if (!await WP.setStatus(x, status)) return; } else { x.status = status; save(); }
+    closeSheet(); renderToday(); if (msg) toast(msg);
+  };
+  if (x.status === 'booked') actions.push(btn('Mark as arrived', 'btn--act btn--block', () => setStatus('arrived', `${x.name} marked as arrived`), 'check'));
+  if (x.status === 'arrived') actions.push(btn('Undo arrived', 'btn--line btn--block', () => setStatus('booked')));
   if (x.status !== 'cancelled') {
-    const c = btn('Cancel this booking', 'btn--danger btn--block', () => confirmInline(c, `Cancel ${x.name}'s ${timeText(x.t)} booking? Let them know by call or WhatsApp.`, 'Yes, cancel', () => {
-      x.status = 'cancelled'; save(); closeSheet(); renderToday(); toast('Booking cancelled');
-    }));
+    const c = btn('Cancel this booking', 'btn--danger btn--block', () => confirmInline(c, `Cancel ${x.name}'s ${timeText(x.t)} booking? Let them know by call or WhatsApp.`, 'Yes, cancel', () => setStatus('cancelled', 'Booking cancelled')));
     actions.push(c);
-  } else actions.push(btn('Restore this booking', 'btn--line btn--block', () => { x.status = 'booked'; save(); closeSheet(); renderToday(); toast('Booking restored'); }));
+  } else actions.push(btn('Restore this booking', 'btn--line btn--block', () => setStatus('booked', 'Booking restored')));
   openSheet(x.name, el('p', { class: 'lead2' }, `${dayLabel(d)}, ${timeText(x.t)}${x.status === 'cancelled' ? ' · cancelled' : ''}`), facts,
     el('div', { class: 'two' }, telLink(x.phone), waLink(x.phone, `Hello ${x.name}, this is J.P. Nagar Physio about your visit on ${dayLabel(d)} at ${timeText(x.t)}.`)), ...actions);
 }
@@ -253,11 +261,19 @@ function openAdd(startDay) {
   ph.addEventListener('input', () => { const v = ph.value.replace(/\D/g, '').slice(0, 10); ph.value = v.length > 5 ? v.slice(0, 5) + ' ' + v.slice(5) : v; check(); });
   nm.addEventListener('input', check);
   const brBox = el('div', { class: 'picks' }), docBox = el('div', { class: 'picks' }), dayBox = el('div', { class: 'days' }), slotBox = el('div', { class: 'slots' }), probBox = el('div', { class: 'picks' });
-  const saveBtn = btn('Save booking', 'btn--act btn--block', () => {
+  const saveBtn = btn('Save booking', 'btn--act btn--block', async () => {
     const phone = ph.value.replace(/\D/g, '');
-    let doc = A.doc; if (!doc) { const free = freeDocsAt(A.b, A.day, A.t); doc = null; if (!free.length) return; }
-    S.bookings.push({ id: `d${Date.now()}`, name: nm.value.trim(), phone, branch: A.b, doc, date: iso(A.day), t: A.t, problem: A.problem, status: 'booked', source: 'desk' });
-    save(); closeSheet(); V.day = Math.round((A.day - today()) / 864e5); V.branch = 'all'; location.hash === '#today' ? renderToday() : (location.hash = '#today');
+    if (WP) {
+      saveBtn.disabled = true;
+      const ok = await WP.addBooking({ name: nm.value.trim(), phone, branch: A.b, doc: A.doc, date: iso(A.day), t: A.t, problem: A.problem });
+      saveBtn.disabled = false;
+      if (!ok) { diary = null; paint(); return; }
+    } else {
+      let doc = A.doc; if (!doc) { const free = freeDocsAt(A.b, A.day, A.t); doc = null; if (!free.length) return; }
+      S.bookings.push({ id: `d${Date.now()}`, name: nm.value.trim(), phone, branch: A.b, doc, date: iso(A.day), t: A.t, problem: A.problem, status: 'booked', source: 'desk' });
+      save();
+    }
+    closeSheet(); V.day = Math.round((A.day - today()) / 864e5); V.branch = 'all'; location.hash === '#today' ? renderToday() : (location.hash = '#today');
     toast(`Booked: ${nm.value.trim()}, ${dayLabel(A.day)} ${timeText(A.t)} at ${BR(A.b).short}`);
   });
   const field = (label, ...kids) => el('div', { class: 'field' }, el('label', {}, label), ...kids);
@@ -278,18 +294,23 @@ function openAdd(startDay) {
       if (off) b.disabled = true;
       b.addEventListener('click', () => { A.day = d; A.t = null; paint(); }); return b;
     }));
-    const isTodayPick = iso(A.day) === iso(today()), times = [...new Set((A.doc ? [A.doc] : docsAt(A.b).map(x => x.id)).flatMap(id => docTimes(A.b, id, A.day)))].sort((a, b) => a - b)
-      .filter(t => !isTodayPick || t > nowHours());
+    // on WordPress the times come from the same diary patients book from (fetched once per branch and day)
+    const key = `${A.b}|${iso(A.day)}`;
+    if (WP && (!diary || diary.key !== key)) { diary = { key, times: null }; WP.freeTimes(A.b, iso(A.day)).then(m => { if (diary && diary.key === key) { diary.times = m; paint(); } }); }
+    const isTodayPick = iso(A.day) === iso(today());
+    const times = WP ? [...((diary && diary.times) || new Map()).entries()].filter(([, docs]) => !A.doc || docs.includes(A.doc)).map(([m]) => m / 60)
+      : [...new Set((A.doc ? [A.doc] : docsAt(A.b).map(x => x.id)).flatMap(id => docTimes(A.b, id, A.day)))].sort((a, b) => a - b).filter(t => !isTodayPick || t > nowHours());
     slotBox.replaceChildren(...(times.length ? times.map(t => {
-      const free = A.doc ? !S.bookings.some(x => live(x) && x.branch === A.b && x.date === iso(A.day) && Math.abs(x.t - t) < 1e-6 && x.doc === A.doc) && freeDocsAt(A.b, A.day, t).some(d => d.id === A.doc)
+      const free = WP ? true : A.doc ? !S.bookings.some(x => live(x) && x.branch === A.b && x.date === iso(A.day) && Math.abs(x.t - t) < 1e-6 && x.doc === A.doc) && freeDocsAt(A.b, A.day, t).some(d => d.id === A.doc)
         : freeDocsAt(A.b, A.day, t).length > 0;
       const s = el('button', { class: 'slot' + (A.t === t ? ' is-on' : ''), type: 'button', 'aria-pressed': String(A.t === t) }, timeText(t));
       if (!free) s.disabled = true;
       s.addEventListener('click', () => { A.t = t; paint(); }); return s;
-    }) : [el('p', { class: 'empty', style: 'grid-column:1/-1' }, 'No free times this day. Try another day or doctor.')]));
+    }) : [el('p', { class: 'empty', style: 'grid-column:1/-1' }, WP && !(diary && diary.times) ? 'Loading times…' : 'No free times this day. Try another day or doctor.')]));
     picks(probBox, ['Lower back', 'Neck', 'Knee', 'Shoulder', 'After surgery', 'Other'].map(p => [p, p]), A.problem, v => { A.problem = A.problem === v ? '' : v; paint(); });
     check();
   }
+  let diary = null;
   function check() { saveBtn.disabled = !(nm.value.trim().length > 1 && /^[6-9]\d{9}$/.test(ph.value.replace(/\D/g, '')) && A.t != null); }
   openSheet('Add a booking', el('p', { class: 'lead2' }, 'For someone who calls or walks in.'),
     field('Name', el('div', { class: 'input' }, nm)), field('Mobile number', el('div', { class: 'input' }, el('span', {}, '+91'), ph)),
@@ -334,21 +355,32 @@ const describe = tm => {
   return `${run} · ${tm.sessions.map(([s, e]) => `${timeText(s).replace(':00', '')}–${timeText(e).replace(':00', '')}`).join(', ') || 'no hours'} · ${tm.slot} min`;
 };
 // the doctor goes on leave: their bookings at this branch that day are cancelled, and the patients are listed to call
-function applyLeave(docId, b, date) {
+async function applyLeave(docId, b, date) {
   if (onLeave(docId, b, date)) return;
-  const hit = S.bookings.filter(x => x.doc === docId && x.branch === b && x.date === date && x.status === 'booked');
-  hit.forEach(x => { x.status = 'cancelled'; x.reason = 'leave'; });
-  S.leave.push({ doc: docId, branch: b, date, cancelled: hit.map(x => x.id) });
-  save(); renderSchedule();
+  let hit;
+  if (WP) {
+    const r = await WP.leave(true, docId, b, date); if (!r) return;
+    hit = r.cancelled; renderSchedule();
+    if (r.failed.length) toast(`${r.failed.length} booking${r.failed.length === 1 ? '' : 's'} couldn’t be cancelled. Check the Today list.`);
+  } else {
+    hit = S.bookings.filter(x => x.doc === docId && x.branch === b && x.date === date && x.status === 'booked');
+    hit.forEach(x => { x.status = 'cancelled'; x.reason = 'leave'; });
+    S.leave.push({ doc: docId, branch: b, date, cancelled: hit.map(x => x.id) });
+    save(); renderSchedule();
+  }
   const doc = docById(docId), d = fromIso(date);
   if (!hit.length) { toast(`${shortName(doc)} is on leave ${dayLabel(d).toLowerCase()}. No bookings to move.`); return; }
   showAffected(`${shortName(doc)} is on leave`, `${dayLabel(d)} at ${BR(b).short}. These ${hit.length} booking${hit.length === 1 ? ' was' : 's were'} cancelled. Let them know:`, hit,
-    btn('Undo leave', 'btn--line btn--block', () => { removeLeave(docId, b, date); closeSheet(); toast('Leave undone. Bookings restored.'); }));
+    btn('Undo leave', 'btn--line btn--block', async () => { const msg = await removeLeave(docId, b, date); closeSheet(); toast(msg); }));
 }
-function removeLeave(docId, b, date) {
-  const l = S.leave.find(x => x.doc === docId && x.branch === b && x.date === date); if (!l) return;
+// undoing leave or a closed day puts back the bookings it cancelled, unless the slot has gone or the day is still off
+const restoredText = (n, what) => n ? `${what}. ${n} booking${n === 1 ? '' : 's'} couldn’t be put back: the time is taken or still off.` : `${what}. Bookings restored.`;
+async function removeLeave(docId, b, date) {
+  if (WP) { const r = await WP.leave(false, docId, b, date); renderSchedule(); return r ? restoredText(r.notRestored.length, 'Leave undone') : ''; }
+  const l = S.leave.find(x => x.doc === docId && x.branch === b && x.date === date); if (!l) return '';
   S.bookings.forEach(x => { if (l.cancelled.includes(x.id) && x.status === 'cancelled') { x.status = 'booked'; delete x.reason; } });
   S.leave = S.leave.filter(x => x !== l); save(); renderSchedule();
+  return 'Leave undone. Bookings restored.';
 }
 function showAffected(title, lead, list, ...extra) {
   openSheet(title, el('p', { class: 'lead2' }, lead), el('div', { class: 'affected' }, ...list.map(x => el('div', {},
@@ -359,8 +391,9 @@ function showAffected(title, lead, list, ...extra) {
 function renderSchedule() {
   const b = V.sBranch, sc = S.schedule[b], docs = docsAt(b), date = iso(today()), owners = docs.filter(d => sc.own[d.id]);
   let draft = null;
-  const pub = btn(docs.length === 1 ? 'Publish to the doctor' : docs.length === 2 ? 'Publish to both doctors' : `Publish to all ${docs.length} doctors`, 'btn--act btn--block', () => {
-    Object.assign(sc, pack(draft)); sc.own = {}; save(); writeSnapshot(); renderSchedule();
+  const pub = btn(docs.length === 1 ? 'Publish to the doctor' : docs.length === 2 ? 'Publish to both doctors' : `Publish to all ${docs.length} doctors`, 'btn--act btn--block', async () => {
+    if (WP) { pub.disabled = true; const ok = await WP.branchTimings(b, pack(draft)); pub.disabled = false; if (!ok) return; renderSchedule(); }
+    else { Object.assign(sc, pack(draft)); sc.own = {}; save(); writeSnapshot(); renderSchedule(); }
     toast(`New timings published for every doctor at ${BR(b).short}`);
   });
   const everyone = el('section', { class: 'card', 'aria-labelledby': 'h-every' },
@@ -371,7 +404,7 @@ function renderSchedule() {
     const leave = onLeave(doc.id, b, date), own = sc.own[doc.id];
     const lv = el('button', { class: 'chipbtn2 ' + (leave ? 'on-leave' : 'leave'), type: 'button' }, ...(leave ? ['On leave', icon('close')] : ['Leave today']));
     lv.setAttribute('aria-label', leave ? `${shortName(doc)} is on leave today. Tap to undo` : `Put ${shortName(doc)} on leave today`);
-    lv.addEventListener('click', () => leave ? (removeLeave(doc.id, b, date), toast('Leave undone. Bookings restored.')) : applyLeave(doc.id, b, date));
+    lv.addEventListener('click', async () => { if (leave) { const msg = await removeLeave(doc.id, b, date); if (msg) toast(msg); } else applyLeave(doc.id, b, date); });
     const ed = el('button', { class: 'chipbtn2', type: 'button', 'aria-label': `Own hours and leave for ${shortName(doc)}` }, icon('clock'), 'Own hours');
     ed.addEventListener('click', () => openDocTimings(doc, b));
     return el('div', { class: 'drow' }, avatar(doc), el('span', {}, el('b', {}, shortName(doc)), el('span', { class: 'sub' }, leave ? 'On leave today' : own ? `Own timings · ${describe(own)}` : 'Same as everyone')), el('span', { class: 'acts' }, lv, ed));
@@ -400,9 +433,10 @@ function openDocTimings(doc, b) {
     formHost.replaceChildren(mode === 'own' ? timingsForm(sc.own[doc.id] || sc, T => { draft = T; }) : el('p', { class: 'lead2', style: 'margin-top:12px' }, describe(sc)));
   };
   paintSeg();
-  const saveT = btn('Save timings', 'btn--act btn--block', () => {
-    if (mode === 'own' && draft) sc.own[doc.id] = pack(draft); else delete sc.own[doc.id];
-    save(); renderSchedule(); closeSheet(); toast(`Timings saved for ${shortName(doc)}`);
+  const saveT = btn('Save timings', 'btn--act btn--block', async () => {
+    if (WP) { if (!await WP.ownTimings(b, doc.id, mode === 'own' && draft ? pack(draft) : null)) return; }
+    else { if (mode === 'own' && draft) sc.own[doc.id] = pack(draft); else delete sc.own[doc.id]; save(); }
+    renderSchedule(); closeSheet(); toast(`Timings saved for ${shortName(doc)}`);
   });
   // leave on another day
   let pick = null;
@@ -420,11 +454,18 @@ function openDocTimings(doc, b) {
 }
 function openCloseDay(b) {
   let pick = null; const rs = el('input', { placeholder: 'e.g. Diwali', maxlength: '40' });
-  const dayBox = el('div', { class: 'days' }), go = btn('Close the branch', 'btn--danger btn--block', () => {
+  const dayBox = el('div', { class: 'days' }), go = btn('Close the branch', 'btn--danger btn--block', async () => {
     if (!pick) return;
-    const date = iso(pick), hit = S.bookings.filter(x => x.branch === b && x.date === date && x.status === 'booked');
-    hit.forEach(x => { x.status = 'cancelled'; x.reason = 'closed'; });
-    S.closed.push({ branch: b, date, reason: rs.value.trim(), cancelled: hit.map(x => x.id) }); save(); renderSchedule(); closeSheet();
+    const date = iso(pick); let hit;
+    if (WP) {
+      go.disabled = true; const r = await WP.closed(true, b, date, rs.value.trim()); go.disabled = false; if (!r) return;
+      hit = r.cancelled; renderSchedule(); closeSheet();
+      if (r.failed.length) toast(`${r.failed.length} booking${r.failed.length === 1 ? '' : 's'} couldn’t be cancelled. Check the Today list.`);
+    } else {
+      hit = S.bookings.filter(x => x.branch === b && x.date === date && x.status === 'booked');
+      hit.forEach(x => { x.status = 'cancelled'; x.reason = 'closed'; });
+      S.closed.push({ branch: b, date, reason: rs.value.trim(), cancelled: hit.map(x => x.id) }); save(); renderSchedule(); closeSheet();
+    }
     if (hit.length) showAffected(`${BR(b).short} closed ${dayLabel(pick).toLowerCase()}`, `These ${hit.length} booking${hit.length === 1 ? ' was' : 's were'} cancelled. Let them know:`, hit);
     else toast(`${BR(b).short} closed on ${longDate(pick)}`);
   });
@@ -439,7 +480,8 @@ function openCloseDay(b) {
   openSheet('Close for a day', el('p', { class: 'lead2' }, `${BR(b).name}. Bookings that day are cancelled and listed for you to call.`),
     el('div', { class: 'field' }, el('label', {}, 'Day'), dayBox), el('div', { class: 'field' }, el('label', {}, 'Reason (optional)'), el('div', { class: 'input' }, rs)), go);
 }
-function reopenDay(c) {
+async function reopenDay(c) {
+  if (WP) { const r = await WP.closed(false, c.branch, c.date); renderSchedule(); if (r) toast(restoredText(r.notRestored.length, `${BR(c.branch).short} reopened on ${longDate(fromIso(c.date))}`)); return; }
   S.bookings.forEach(x => { if ((c.cancelled || []).includes(x.id) && x.status === 'cancelled') { x.status = 'booked'; delete x.reason; } });
   S.closed = S.closed.filter(x => x !== c); save(); renderSchedule(); toast(`${BR(c.branch).short} reopened on ${longDate(fromIso(c.date))}`);
 }
@@ -572,7 +614,12 @@ function openDoctor(doc) {
   const file = el('input', { type: 'file', accept: 'image/*', id: 'd-photo' });
   file.addEventListener('change', async () => {
     const fl = file.files[0]; if (!fl) return;
-    try { const r = await cropPhoto(fl, 'portrait'); file.value = ''; if (!r) return; D.photo = r.data; info.textContent = `${r.webp ? 'Saved as WebP' : 'Saved'} · ${r.kb} KB (from ${Math.round(fl.size / 1024)} KB)`; paintAv(); }
+    try {
+      const r = await cropPhoto(fl, 'portrait'); file.value = ''; if (!r) return;
+      if (WP) { info.textContent = 'Uploading…'; const up = await WP.photo(r.data, 'portrait'); if (!up) { info.textContent = 'That photo didn’t upload. Please try again.'; return; } D.photo = up.url; D.photoId = up.id; }
+      else D.photo = r.data;
+      info.textContent = `${r.webp ? 'Saved as WebP' : 'Saved'} · ${r.kb} KB (from ${Math.round(fl.size / 1024)} KB)`; paintAv();
+    }
     catch (_) { info.textContent = 'That file isn’t a photo this browser can read.'; }
   });
   const err = el('p', { class: 'confirm', role: 'alert', hidden: '' });
@@ -592,7 +639,8 @@ function openDoctor(doc) {
     f('d-bg', 'Background', el('div', { class: 'input area' }, bg), 'One point per line'),
     el('div', { class: 'field' }, el('label', {}, 'Works at'), brBox), err, saveB];
   if (!isNew) {
-    const upcoming = S.bookings.filter(x => x.doc === doc.id && x.status === 'booked' && x.date >= iso(today()));
+    // on WordPress their bookings stay in the diary under their name (see Today) for the front desk to move
+    const upcoming = WP ? [] : S.bookings.filter(x => x.doc === doc.id && x.status === 'booked' && x.date >= iso(today()));
     const rm = btn(`Remove ${shortName(doc)}`, 'btn--danger btn--block', () => confirmInline(rm, `Remove ${shortName(doc)} from the clinic and the website?${upcoming.length ? ` Their ${upcoming.length} upcoming booking${upcoming.length === 1 ? '' : 's'} will move to "Any doctor".` : ''}`, 'Yes, remove', () => {
       upcoming.forEach(x => { x.doc = null; });
       S.content.doctors = S.content.doctors.filter(d => d !== doc);
@@ -629,7 +677,13 @@ function writeSnapshot() {
   // the server writes it to the one static file every device's website loads
   return fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(snap) }).then(r => r.ok);
 }
-$('[data-publish]').addEventListener('click', async () => {
+$('[data-publish]').addEventListener('click', async e => {
+  if (WP) {
+    const b = e.currentTarget; b.disabled = true; const ok = await WP.publish(); b.disabled = false;
+    if (!ok) return;
+    if ((location.hash || '#today') === '#content') renderContent();
+    paintPub(); toast('Published. The website now shows your changes.'); return;
+  }
   S.live = clone(S.content); S.publishedAt = nowIST().getTime(); save();
   const ok = await writeSnapshot().catch(() => false);
   if ((location.hash || '#today') === '#content') renderContent();
@@ -686,7 +740,10 @@ function openPhotos() {
     const p = S.content.photos[i], inp = el('input', { type: 'file', accept: 'image/*', id: `ph${i}` });
     inp.addEventListener('change', async () => {
       const f = inp.files[0]; if (!f) return;
-      try { const r = await cropPhoto(f, 'clinic'); inp.value = ''; if (!r) return; S.content.photos[i] = { src: r.data, label: '' }; S.content.photos = S.content.photos.filter(Boolean); save(); paint(); renderContent(); toast(`Photo saved as WebP · ${r.kb} KB`); } catch (_) { toast('That file isn’t a photo this browser can read.'); }
+      try {
+        const r = await cropPhoto(f, 'clinic'); inp.value = ''; if (!r) return;
+        if (WP) { const up = await WP.photo(r.data, 'clinic'); if (!up) return; S.content.photos[i] = { id: up.id, src: up.url, label: '' }; }
+        else S.content.photos[i] = { src: r.data, label: '' }; S.content.photos = S.content.photos.filter(Boolean); save(); paint(); renderContent(); toast(`Photo saved as WebP · ${r.kb} KB`); } catch (_) { toast('That file isn’t a photo this browser can read.'); }
     });
     return el('label', { for: `ph${i}` }, p ? el('img', { src: p.src, alt: `Clinic photo ${i + 1}` }) : el('span', {}, icon('plus'), el('br'), 'Add photo'), inp);
   }));
@@ -694,5 +751,6 @@ function openPhotos() {
   openSheet('Clinic photos', el('p', { class: 'lead2' }, 'Shown in “Inside our clinics” on the home page. Photos are shrunk and saved as WebP so the site stays fast.'), grid);
 }
 
-route(true);
-paintPub();
+// on WordPress nothing is drawn until his data has arrived (or he has been sent to sign in)
+if (WP) WP.boot().then(ok => { if (ok) { route(true); paintPub(); } });
+else { route(true); paintPub(); }

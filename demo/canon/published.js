@@ -63,7 +63,7 @@ if (PUBLISHED) document.addEventListener('DOMContentLoaded', () => {
    Only when the demo runs on WordPress (bash start.sh --wp sets window.JPN_API). Free times then come from the
    plugin instead of the sample ones: each day is fetched once, slotsFor() answers from what has arrived, and a
    'jpn:slots' event tells the page to redraw when a day comes in. Confirming a booking saves it in WordPress. */
-const LIVE = window.JPN_API ? (() => {
+const DIARY = window.JPN_API ? (() => {
   const days = new Map(), isoOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const url = (route, q = {}) => window.JPN_API + route + Object.entries(q).map(([k, v]) => `&${k}=${encodeURIComponent(v)}`).join('');
   function load(branch, date) {
@@ -87,12 +87,12 @@ const LIVE = window.JPN_API ? (() => {
     }
   };
 })() : null;
-if (LIVE && typeof slotsFor === 'function') {
+if (DIARY && typeof slotsFor === 'function') {
   const sampleSlots = slotsFor;
   // the same slot list the page always drew, with "taken" from the real diary (a time nobody is free for is taken);
   // until the day has arrived nothing is marked taken, and the page redraws on 'jpn:slots'
   slotsFor = function (b, day, si) {
-    const free = LIVE.free(b.id, day);
+    const free = DIARY.free(b.id, day);
     return sampleSlots(b, day, si).map(x => { const docs = free && free.get(Math.round(x.t * 60)); return { ...x, taken: free ? !docs : false, doctors: docs || [] }; });
   };
 }

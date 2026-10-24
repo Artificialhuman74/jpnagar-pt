@@ -265,14 +265,25 @@ function jpn_notify_branch( array $row ) {
 /* ---------- owner ---------- */
 
 function jpn_rest_state() {
+	$draft = jpn_content( 'draft' );
+	$live  = jpn_content( 'live' );
+	// content stores photos by attachment id; the admin also needs to show them
+	$photos = array();
+	foreach ( array( $draft, $live ) as $c ) {
+		$ids = array_merge( wp_list_pluck( (array) ( $c['doctors'] ?? array() ), 'photo' ), wp_list_pluck( (array) ( $c['photos'] ?? array() ), 'id' ) );
+		foreach ( array_filter( array_map( 'absint', $ids ) ) as $id ) {
+			$photos[ $id ] = jpn_photo_url( $id );
+		}
+	}
 	return array(
-		'branches'  => jpn_branches(),
-		'schedule'  => jpn_schedule(),
-		'leave'     => jpn_leave(),
-		'closed'    => jpn_closed(),
-		'draft'     => jpn_content( 'draft' ),
-		'live'      => jpn_content( 'live' ),
-		'published' => (int) get_option( 'jpn_snapshot_version', 0 ),
+		'branches'   => jpn_branches(),
+		'schedule'   => jpn_schedule(),
+		'leave'      => jpn_leave(),
+		'closed'     => jpn_closed(),
+		'draft'      => $draft,
+		'live'       => $live,
+		'photo_urls' => (object) $photos,
+		'published'  => (string) get_option( 'jpn_snapshot_version', '' ),
 	);
 }
 

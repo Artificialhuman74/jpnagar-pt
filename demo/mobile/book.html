@@ -597,20 +597,20 @@ addEventListener('scroll', () => $('.bhead').classList.toggle('scrolled', scroll
 
 // on WordPress the slot is reserved for real before the ticket prints; offline (the plain demo) it prints at once
 function confirmBooking() {
-  if (!LIVE) return go(4);
+  if (!DIARY) return go(4);
   const next = $('[data-next]'); if (next.classList.contains('is-busy')) return;
   next.classList.add('is-busy'); next.disabled = true; next.textContent = 'Booking…';
   const b = BRANCHES[S.b], doc = DOCS.find(d => d.name === S.ther && !d.any);
-  LIVE.book({ branch: b.id, date: LIVE.isoOf(S.day), time: Math.round(S.slot.t * 60), doctor: doc ? doc.id : null,
+  DIARY.book({ branch: b.id, date: DIARY.isoOf(S.day), time: Math.round(S.slot.t * 60), doctor: doc ? doc.id : null,
     name: S.name, phone: S.phone, email: S.email, problem: whatText(), note: S.story }).then(r => {
     next.classList.remove('is-busy'); next.disabled = false;
     if (r.ok) { S.bookingNo = `JP-${CODES[b.id]}-${String(r.data.id).padStart(5, '0')}`; const got = DOCS.find(d => d.id === r.data.doctor); if (got) S.ther = got.name; return go(4); }
     toast((r.data && r.data.message) || 'That didn’t go through. Please try again, or call the clinic.');
-    if (r.status === 409) { LIVE.refresh(b.id, S.day); S.slot = null; go(2, true); }
+    if (r.status === 409) { DIARY.refresh(b.id, S.day); S.slot = null; go(2, true); }
     setBar();
   });
 }
-if (LIVE) document.addEventListener('jpn:slots', () => { timesKey = ''; if (S.step === 2) renderTime(); });
+if (DIARY) document.addEventListener('jpn:slots', () => { timesKey = ''; if (S.step === 2) renderTime(); });
 
 /* ---------- details ---------- */
 function validate() {

@@ -94,18 +94,33 @@ function jpn_write_snapshot() {
 	$json = wp_json_encode( jpn_build_snapshot(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
 	$body = 'window.PUBLISHED_DATA = ' . $json . ";\n";
 	$file = $dir['path'] . '/site-data.js';
-	$tmp  = $file . '.tmp';
-	// written beside the old file, then swapped in, so a visitor never loads half a file
-	if ( false === file_put_contents( $tmp, $body, LOCK_EX ) || ! rename( $tmp, $file ) ) {
+	if ( ! jpn_swap_in( $file, $body ) ) {
 		return new WP_Error( 'jpn_write', __( 'Could not save the website file.', 'jpnagar-clinic' ), array( 'status' => 500 ) );
 	}
 	if ( function_exists( 'gzencode' ) ) {
-		file_put_contents( $file . '.gz', gzencode( $body, 9 ), LOCK_EX );
+		jpn_swap_in( $file . '.gz', gzencode( $body, 9 ) );
 	}
-	update_option( 'jpn_snapshot_version', (string) time(), false );
+	// a fresh version for every write, even two in the same second; autoloaded, so no extra query on page views
+	update_option( 'jpn_snapshot_version', sprintf( '%d-%s', time(), wp_generate_password( 6, false ) ), true );
 	jpn_clear_page_cache();
 	do_action( 'jpn_snapshot_written', $file );
 	return jpn_snapshot_url();
+}
+
+/**
+ * Writes a whole file to its own temporary name beside the target, then renames it over the target, so a reader
+ * never sees half a file and two writes at once can't trip over each other.
+ */
+function jpn_swap_in( $file, $data ) {
+	$tmp = $file . '.' . wp_generate_password( 8, false ) . '.tmp';
+	if ( false === file_put_contents( $tmp, $data ) ) {
+		return false;
+	}
+	if ( ! rename( $tmp, $file ) ) {
+		wp_delete_file( $tmp );
+		return false;
+	}
+	return true;
 }
 
 /** Clears the page cache of whichever free cache plugin is installed, so pages pick up the new file. */

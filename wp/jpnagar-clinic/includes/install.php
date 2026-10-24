@@ -1,8 +1,9 @@
 <?php
 /**
  * Activation: the bookings table, the admin capability and the starting content (the clinic's real branches and
- * team from PRODUCT.md). Which doctors work at which branch is not confirmed yet (only Dr. Jeya Chitra Devi at Arekere
- * is), so the others start at every branch and the owner narrows it down in the admin.
+ * team from PRODUCT.md). Which doctors work at which branch is not confirmed yet: only Dr. Jeya Chitra Devi at Arekere
+ * is, so the others start with no branch and can't be booked until the owner assigns them in the admin.
+ * Every branch starts with the clinic's shared email for booking notices (PRODUCT.md); the owner can change each.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -61,7 +62,13 @@ function jpn_install_table() {
 		KEY by_day (slot_date,branch)
 		) {$charset};"
 	);
-	update_option( 'jpn_db_version', JPN_DB_VERSION, false );
+	// record the version only once the table and its double-booking key really exist, so a failed run is retried
+	$key = $wpdb->get_var( $wpdb->prepare( 'SHOW INDEX FROM ' . $table . ' WHERE Key_name = %s', 'one_per_doctor' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- table name is ours
+	if ( $key ) {
+		update_option( 'jpn_db_version', JPN_DB_VERSION, false );
+	} else {
+		error_log( 'J.P. Nagar Clinic: bookings table or its one_per_doctor key is missing; bookings are not safe until it is.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+	}
 }
 
 function jpn_seed_defaults() {
@@ -101,6 +108,7 @@ function jpn_default_branches() {
 			'phone'    => '+918026656988',
 			'addr'     => 'No. 2/8, 1st Floor, Puttenahalli Rd, opp. Govt. Primary School, JP Nagar 7th Phase, Bengaluru 560078',
 			'landmark' => 'Opposite Govt. Primary School',
+			'email'    => 'jpnagarmedicalandphysio@gmail.com',
 			'sessions' => array( array( 540, 780 ), array( 1020, 1260 ) ),
 		),
 		'arekere'      => array(
@@ -109,6 +117,7 @@ function jpn_default_branches() {
 			'phone'    => '+918026489922',
 			'addr'     => 'No. 129, 1st Floor, Lakshmi Nivas, 3rd Cross, near L&T South City, Bannerghatta Main Rd, Arekere MICO Layout 2nd Stage, Bengaluru 560076',
 			'landmark' => 'Near L&T South City',
+			'email'    => 'jpnagarmedicalandphysio@gmail.com',
 			'sessions' => array( array( 540, 780 ), array( 960, 1260 ) ),
 		),
 		'bannerghatta' => array(
@@ -117,14 +126,14 @@ function jpn_default_branches() {
 			'phone'    => '+919916116625',
 			'addr'     => 'No. 22, 1st Floor, above Greens Vegetable Shop, behind Meenakshi Temple, Classic Orchards Layout, Kalena Agrahara, Bengaluru 560076',
 			'landmark' => 'Behind Meenakshi Temple',
+			'email'    => 'jpnagarmedicalandphysio@gmail.com',
 			'sessions' => array( array( 480, 720 ), array( 960, 1200 ) ),
 		),
 	);
 }
 
 function jpn_default_content() {
-	$all       = array_keys( jpn_default_branches() );
-	$branches  = array();
+	$branches = array();
 	foreach ( jpn_default_branches() as $id => $b ) {
 		$branches[ $id ] = array(
 			'name'     => $b['name'],
@@ -150,7 +159,7 @@ function jpn_default_content() {
 				'deg'      => array( 'MPT', 'MD(A.M)', 'D.ACU', 'COMT', 'MIAP' ),
 				'treats'   => array( 'Orthopaedic and sports injuries', 'Neurological conditions', 'Long-term and complex pain' ),
 				'bg'       => array( 'BPT and MPT (Sports & Musculoskeletal), Rajah Muthiah Medical College', 'Certified Orthopaedic Manual Therapist', 'Founded the clinic in 2012' ),
-				'branches' => $all,
+				'branches' => array(),
 				'photo'    => 0,
 			),
 			array(
@@ -161,7 +170,7 @@ function jpn_default_content() {
 				'deg'      => array( 'MPT', 'COMT', 'MIAP' ),
 				'treats'   => array( 'Restoring mobility', 'Structured rehabilitation programmes', 'Guided therapeutic exercise' ),
 				'bg'       => array( 'Master of Physiotherapy', 'Certified Orthopaedic Manual Therapist' ),
-				'branches' => $all,
+				'branches' => array(),
 				'photo'    => 0,
 			),
 			array(

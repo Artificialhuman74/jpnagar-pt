@@ -1,7 +1,7 @@
 <?php
 /**
  * Photos from the admin. The admin crops them on the phone to the card's shape; here they are checked, resized
- * and saved as WebP (JPEG only if the server can't write WebP). The upload itself is never kept or served.
+ * and saved as WebP; a server that can't write WebP refuses the upload. The upload itself is never kept or served.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -37,15 +37,22 @@ function jpn_save_photo( $kind ) {
 	}
 	$size = JPN_PHOTO_KINDS[ $kind ];
 	// never upscale: resize only shrinks; the admin already cropped to the card's shape
-	$editor->resize( $size['w'], $size['h'], false );
+	$resized = $editor->resize( $size['w'], $size['h'], false );
+	if ( is_wp_error( $resized ) ) {
+		return $resized;
+	}
 	$editor->set_quality( 82 );
 
 	$uploads = wp_upload_dir();
 	if ( ! empty( $uploads['error'] ) ) {
 		return new WP_Error( 'jpn_upload', $uploads['error'], array( 'status' => 500 ) );
 	}
-	$mime  = $editor->supports_mime_type( 'image/webp' ) ? 'image/webp' : 'image/jpeg';
-	$ext   = 'image/webp' === $mime ? 'webp' : 'jpg';
+	// WebP only: photos are never stored or served in another format
+	if ( ! $editor->supports_mime_type( 'image/webp' ) ) {
+		return new WP_Error( 'jpn_webp', __( 'This server can’t make WebP images yet. Ask the host to enable WebP in PHP’s GD or Imagick.', 'jpnagar-clinic' ), array( 'status' => 500 ) );
+	}
+	$mime  = 'image/webp';
+	$ext   = 'webp';
 	$name  = wp_unique_filename( $uploads['path'], sprintf( 'jpn-%s-%s.%s', $kind, wp_generate_password( 8, false ), $ext ) );
 	$saved = $editor->save( trailingslashit( $uploads['path'] ) . $name, $mime );
 	if ( is_wp_error( $saved ) ) {

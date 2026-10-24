@@ -139,6 +139,11 @@ function jpn_create_booking( array $b ) {
 			$wpdb->suppress_errors( $quiet );
 			return jpn_get_booking( (int) $wpdb->insert_id );
 		}
+		if ( false === stripos( (string) $wpdb->last_error, 'Duplicate entry' ) ) {
+			$wpdb->suppress_errors( $quiet );
+			error_log( 'J.P. Nagar Clinic: booking insert failed: ' . $wpdb->last_error ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+			return new WP_Error( 'jpn_fault', __( 'Your booking couldn’t be saved. Please call the clinic.', 'jpnagar-clinic' ), array( 'status' => 500 ) );
+		}
 	}
 	$wpdb->suppress_errors( $quiet );
 	return new WP_Error( 'jpn_taken', __( 'That time has just been taken. Please pick another.', 'jpnagar-clinic' ), array( 'status' => 409 ) );

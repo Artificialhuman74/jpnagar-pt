@@ -6,6 +6,14 @@
 
 defined( 'ABSPATH' ) || exit;
 
+/* mbstring isn't guaranteed on shared hosting; without it, cut by bytes rather than fail */
+function jpn_substr( $s, $start, $len ) {
+	return function_exists( 'mb_substr' ) ? mb_substr( $s, $start, $len ) : substr( $s, $start, $len );
+}
+function jpn_strlen( $s ) {
+	return function_exists( 'mb_strlen' ) ? mb_strlen( $s ) : strlen( $s );
+}
+
 function jpn_branches() {
 	return (array) get_option( 'jpn_branches', array() );
 }
@@ -36,6 +44,10 @@ function jpn_doctor( $id ) {
 		}
 	}
 	return null;
+}
+function jpn_doctor_at( $id, $branch ) {
+	$d = jpn_doctor( $id );
+	return $d && in_array( $branch, (array) $d['branches'], true );
 }
 function jpn_doctors_at( $branch ) {
 	return array_values(
@@ -113,7 +125,7 @@ function jpn_clean_lines( $list, $max = 12, $len = 160 ) {
 	foreach ( array_slice( (array) $list, 0, $max ) as $line ) {
 		$line = trim( sanitize_text_field( (string) $line ) );
 		if ( '' !== $line ) {
-			$out[] = mb_substr( $line, 0, $len );
+			$out[] = jpn_substr( $line, 0, $len );
 		}
 	}
 	return $out;
@@ -124,7 +136,7 @@ function jpn_clean_doctor( $d ) {
 	if ( ! is_array( $d ) ) {
 		return null;
 	}
-	$name = mb_substr( trim( sanitize_text_field( (string) ( $d['name'] ?? '' ) ) ), 0, 80 );
+	$name = jpn_substr( trim( sanitize_text_field( (string) ( $d['name'] ?? '' ) ) ), 0, 80 );
 	$id   = sanitize_key( (string) ( $d['id'] ?? '' ) );
 	if ( strlen( $name ) < 3 || '' === $id ) {
 		return null;
@@ -135,10 +147,10 @@ function jpn_clean_doctor( $d ) {
 		$photo = 0;
 	}
 	return array(
-		'id'       => mb_substr( $id, 0, 40 ),
+		'id'       => jpn_substr( $id, 0, 40 ),
 		'name'     => $name,
-		'role'     => mb_substr( sanitize_text_field( (string) ( $d['role'] ?? '' ) ), 0, 80 ),
-		'years'    => mb_substr( sanitize_text_field( (string) ( $d['years'] ?? '' ) ), 0, 30 ),
+		'role'     => jpn_substr( sanitize_text_field( (string) ( $d['role'] ?? '' ) ), 0, 80 ),
+		'years'    => jpn_substr( sanitize_text_field( (string) ( $d['years'] ?? '' ) ), 0, 30 ),
 		'deg'      => jpn_clean_lines( $d['deg'] ?? array(), 10, 20 ),
 		'treats'   => jpn_clean_lines( $d['treats'] ?? array(), 12, 80 ),
 		'bg'       => jpn_clean_lines( $d['bg'] ?? array(), 8, 160 ),
@@ -154,8 +166,8 @@ function jpn_clean_content( $c ) {
 	}
 	$out = array(
 		'home'     => array(
-			'headline' => mb_substr( sanitize_text_field( (string) ( $c['home']['headline'] ?? '' ) ), 0, 60 ),
-			'intro'    => mb_substr( sanitize_text_field( (string) ( $c['home']['intro'] ?? '' ) ), 0, 160 ),
+			'headline' => jpn_substr( sanitize_text_field( (string) ( $c['home']['headline'] ?? '' ) ), 0, 60 ),
+			'intro'    => jpn_substr( sanitize_text_field( (string) ( $c['home']['intro'] ?? '' ) ), 0, 160 ),
 		),
 		'services' => array(),
 		'photos'   => array(),
@@ -163,14 +175,14 @@ function jpn_clean_content( $c ) {
 		'doctors'  => array(),
 	);
 	foreach ( (array) ( $c['services'] ?? array() ) as $id => $text ) {
-		$out['services'][ sanitize_key( $id ) ] = mb_substr( sanitize_textarea_field( (string) $text ), 0, 220 );
+		$out['services'][ sanitize_key( $id ) ] = jpn_substr( sanitize_textarea_field( (string) $text ), 0, 220 );
 	}
 	foreach ( array_slice( (array) ( $c['photos'] ?? array() ), 0, 6 ) as $p ) {
 		$id = absint( is_array( $p ) ? ( $p['id'] ?? 0 ) : $p );
 		if ( $id && get_post_meta( $id, '_jpn_photo', true ) ) {
 			$out['photos'][] = array(
 				'id'    => $id,
-				'label' => mb_substr( sanitize_text_field( (string) ( $p['label'] ?? '' ) ), 0, 60 ),
+				'label' => jpn_substr( sanitize_text_field( (string) ( $p['label'] ?? '' ) ), 0, 60 ),
 			);
 		}
 	}
@@ -178,9 +190,9 @@ function jpn_clean_content( $c ) {
 		$in                     = (array) ( $c['branches'][ $id ] ?? array() );
 		$out['branches'][ $id ] = array(
 			'name'     => $b['name'],
-			'phone'    => mb_substr( preg_replace( '/[^0-9+ ]/', '', (string) ( $in['phone'] ?? $b['phone'] ) ), 0, 20 ),
-			'addr'     => mb_substr( sanitize_textarea_field( (string) ( $in['addr'] ?? $b['addr'] ) ), 0, 240 ),
-			'landmark' => mb_substr( sanitize_text_field( (string) ( $in['landmark'] ?? $b['landmark'] ) ), 0, 60 ),
+			'phone'    => jpn_substr( preg_replace( '/[^0-9+ ]/', '', (string) ( $in['phone'] ?? $b['phone'] ) ), 0, 20 ),
+			'addr'     => jpn_substr( sanitize_textarea_field( (string) ( $in['addr'] ?? $b['addr'] ) ), 0, 240 ),
+			'landmark' => jpn_substr( sanitize_text_field( (string) ( $in['landmark'] ?? $b['landmark'] ) ), 0, 60 ),
 		);
 	}
 	$seen = array();

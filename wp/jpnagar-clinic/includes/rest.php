@@ -78,7 +78,7 @@ function jpn_rest_slots( WP_REST_Request $req ) {
 	$branch = jpn_clean_branch( $req['branch'] );
 	$day    = jpn_clean_date( (string) $req['date'] );
 	$doctor = $req['doctor'] ? sanitize_key( $req['doctor'] ) : null;
-	if ( ! $branch || ! $day || ( $doctor && ! jpn_doctor( $doctor ) ) ) {
+	if ( ! $branch || ! $day || ( $doctor && ! jpn_doctor_at( $doctor, $branch ) ) ) {
 		return new WP_Error( 'jpn_bad', __( 'Unknown branch, day or doctor.', 'jpnagar-clinic' ), array( 'status' => 400 ) );
 	}
 	$res = rest_ensure_response( array( 'times' => jpn_free_times( $branch, $day, $doctor ) ) );
@@ -86,19 +86,52 @@ function jpn_rest_slots( WP_REST_Request $req ) {
 	return $res;
 }
 
-/** At most 5 bookings per address every 10 minutes, so the form can't be used to fill the diary. */
-function jpn_rate_limited() {
-	// behind Cloudflare every request comes from Cloudflare's addresses, so use the visitor's address it passes on;
-	// this only keys the limit, so a forged header can't unlock anything
-	$header = ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ? 'HTTP_CF_CONNECTING_IP' : 'REMOTE_ADDR';
-	$ip     = isset( $_SERVER[ $header ] ) ? sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) ) : '';
-	$key = 'jpn_rl_' . md5( $ip );
-	$n   = (int) get_transient( $key );
-	if ( $n >= 5 ) {
-		return true;
+// Cloudflare's published IPv4 ranges (https://www.cloudflare.com/ips-v4); only requests from these may name the visitor
+const JPN_CLOUDFLARE_V4 = array( '173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22', '141.101.64.0/18', '108.162.192.0/18',
+	'190.93.240.0/20', '188.114.96.0/20', '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13', '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22' );
+
+function jpn_in_cidr( $ip, $cidr ) {
+	list( $net, $bits ) = explode( '/', $cidr );
+	$mask               = -1 << ( 32 - (int) $bits );
+	return ( ip2long( $ip ) & $mask ) === ( ip2long( $net ) & $mask );
+}
+
+/** The visitor's address. Cloudflare's header is believed only when the request really arrives from Cloudflare. */
+function jpn_client_ip() {
+	$remote = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+	if ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) && filter_var( $remote, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+		foreach ( JPN_CLOUDFLARE_V4 as $cidr ) {
+			if ( jpn_in_cidr( $remote, $cidr ) ) {
+				$ip = sanitize_text_field( wp_unslash( $_SERVER['HTTP_CF_CONNECTING_IP'] ) );
+				return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : $remote;
+			}
+		}
 	}
-	set_transient( $key, $n + 1, 10 * MINUTE_IN_SECONDS );
+	return $remote;
+}
+
+/**
+ * At most 5 bookings per address every 10 minutes and 3 per mobile number a day, so the form can't fill the diary.
+ * Only bookings that succeed are counted: a patient who meets a taken slot or a typo isn't locked out.
+ */
+function jpn_limit_keys( $phone ) {
+	return array(
+		array( 'jpn_rl_ip_' . md5( jpn_client_ip() ), 5, 10 * MINUTE_IN_SECONDS ),
+		array( 'jpn_rl_ph_' . md5( (string) $phone ), 3, DAY_IN_SECONDS ),
+	);
+}
+function jpn_rate_limited( $phone ) {
+	foreach ( jpn_limit_keys( $phone ) as $k ) {
+		if ( (int) get_transient( $k[0] ) >= $k[1] ) {
+			return true;
+		}
+	}
 	return false;
+}
+function jpn_count_booking( $phone ) {
+	foreach ( jpn_limit_keys( $phone ) as $k ) {
+		set_transient( $k[0], (int) get_transient( $k[0] ) + 1, $k[2] );
+	}
 }
 
 function jpn_rest_book( WP_REST_Request $req ) {
@@ -106,18 +139,19 @@ function jpn_rest_book( WP_REST_Request $req ) {
 	if ( '' !== (string) $req->get_param( 'website' ) ) {
 		return new WP_Error( 'jpn_bad', __( 'Please try again.', 'jpnagar-clinic' ), array( 'status' => 400 ) );
 	}
-	if ( jpn_rate_limited() ) {
-		return new WP_Error( 'jpn_slow', __( 'Too many bookings from here just now. Please call the clinic.', 'jpnagar-clinic' ), array( 'status' => 429 ) );
-	}
 	$b = jpn_booking_from_request( $req );
 	if ( is_wp_error( $b ) ) {
 		return $b;
+	}
+	if ( jpn_rate_limited( $b['phone'] ) ) {
+		return new WP_Error( 'jpn_slow', __( 'Too many bookings from here just now. Please call the clinic.', 'jpnagar-clinic' ), array( 'status' => 429 ) );
 	}
 	$b['source'] = 'online';
 	$row         = jpn_create_booking( $b );
 	if ( is_wp_error( $row ) ) {
 		return $row;
 	}
+	jpn_count_booking( $b['phone'] );
 	jpn_notify_branch( $row );
 	// the patient only gets back what they need for their ticket
 	return rest_ensure_response(
@@ -135,20 +169,20 @@ function jpn_rest_book( WP_REST_Request $req ) {
 function jpn_booking_from_request( WP_REST_Request $req ) {
 	$branch = jpn_clean_branch( $req->get_param( 'branch' ) );
 	$phone  = jpn_clean_phone( $req->get_param( 'phone' ) );
-	$name   = mb_substr( trim( sanitize_text_field( (string) $req->get_param( 'name' ) ) ), 0, 120 );
+	$name   = jpn_substr( trim( sanitize_text_field( (string) $req->get_param( 'name' ) ) ), 0, 120 );
 	$email  = sanitize_email( (string) $req->get_param( 'email' ) );
 	$doctor = $req->get_param( 'doctor' ) ? sanitize_key( $req->get_param( 'doctor' ) ) : null;
 	$time   = (int) $req->get_param( 'time' );
 	if ( ! $branch ) {
 		return new WP_Error( 'jpn_branch', __( 'Pick a branch.', 'jpnagar-clinic' ), array( 'status' => 400 ) );
 	}
-	if ( mb_strlen( $name ) < 2 ) {
+	if ( jpn_strlen( $name ) < 2 ) {
 		return new WP_Error( 'jpn_name', __( 'Please enter your name.', 'jpnagar-clinic' ), array( 'status' => 400 ) );
 	}
 	if ( ! $phone ) {
 		return new WP_Error( 'jpn_phone', __( 'Enter a 10-digit mobile number starting with 6, 7, 8 or 9.', 'jpnagar-clinic' ), array( 'status' => 400 ) );
 	}
-	if ( $doctor && ( ! jpn_doctor( $doctor ) || ! in_array( $branch, jpn_doctor( $doctor )['branches'], true ) ) ) {
+	if ( $doctor && ! jpn_doctor_at( $doctor, $branch ) ) {
 		return new WP_Error( 'jpn_doctor', __( 'That doctor isn’t at this branch.', 'jpnagar-clinic' ), array( 'status' => 400 ) );
 	}
 	if ( $time < 0 || $time >= 1440 ) {
@@ -162,18 +196,25 @@ function jpn_booking_from_request( WP_REST_Request $req ) {
 		'name'    => $name,
 		'phone'   => $phone,
 		'email'   => is_email( $email ) ? $email : '',
-		'problem' => mb_substr( sanitize_text_field( (string) $req->get_param( 'problem' ) ), 0, 255 ),
-		'note'    => mb_substr( sanitize_textarea_field( (string) $req->get_param( 'note' ) ), 0, 600 ),
+		'problem' => jpn_substr( sanitize_text_field( (string) $req->get_param( 'problem' ) ), 0, 255 ),
+		'note'    => jpn_substr( sanitize_textarea_field( (string) $req->get_param( 'note' ) ), 0, 600 ),
 	);
 }
 
 /** The branch hears about each online booking by email (free; WhatsApp or SMS would be a paid add-on). */
 function jpn_notify_branch( array $row ) {
-	$to = get_option( 'jpn_notify_email', get_option( 'admin_email' ) );
-	$b  = jpn_branches()[ $row['branch'] ] ?? array( 'name' => $row['branch'] );
+	$b = jpn_branches()[ $row['branch'] ] ?? array( 'name' => $row['branch'] );
+	// the branch's own address, then a clinic-wide one, then the site admin
+	$to = '';
+	foreach ( array( $b['email'] ?? '', (string) get_option( 'jpn_notify_email', '' ), (string) get_option( 'admin_email' ) ) as $candidate ) {
+		if ( is_email( $candidate ) ) {
+			$to = $candidate;
+			break;
+		}
+	}
 	$d  = jpn_doctor( $row['doctor'] );
 	$t  = sprintf( '%d:%02d', intdiv( (int) $row['slot_time'], 60 ), (int) $row['slot_time'] % 60 );
-	wp_mail(
+	$sent = $to && wp_mail(
 		$to,
 		sprintf( 'New booking: %s, %s %s at %s', $row['name'], $row['slot_date'], $t, $b['name'] ),
 		implode(
@@ -189,6 +230,10 @@ function jpn_notify_branch( array $row ) {
 			)
 		)
 	);
+	if ( ! $sent ) {
+		// the booking still stands (it shows in the admin); the clinic just wasn't emailed
+		error_log( 'J.P. Nagar Clinic: booking email for #' . $row['id'] . ' was not sent.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+	}
 }
 
 /* ---------- owner ---------- */
@@ -356,7 +401,7 @@ function jpn_rest_closed_add( WP_REST_Request $req ) {
 	$closed[] = array(
 		'branch'    => $branch,
 		'date'      => $date,
-		'reason'    => mb_substr( sanitize_text_field( (string) $req->get_param( 'reason' ) ), 0, 40 ),
+		'reason'    => jpn_substr( sanitize_text_field( (string) $req->get_param( 'reason' ) ), 0, 40 ),
 		'cancelled' => array_map( 'intval', wp_list_pluck( $hit, 'id' ) ),
 	);
 	update_option( 'jpn_closed', $closed, false );

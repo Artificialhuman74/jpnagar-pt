@@ -27,9 +27,9 @@ function jpn_photo_url( $id ) {
 	return $url ? $url : null;
 }
 
-/** Live content plus the current timings, in the shape the pages read. */
-function jpn_build_snapshot() {
-	$c        = jpn_content( 'live' );
+/** Content (the live copy unless given) plus the current timings, in the shape the pages read. */
+function jpn_build_snapshot( $content = null ) {
+	$c        = null === $content ? jpn_content( 'live' ) : $content;
 	$schedule = jpn_schedule();
 	$branches = array();
 	foreach ( jpn_branches() as $id => $b ) {
@@ -86,12 +86,12 @@ function jpn_build_snapshot() {
 }
 
 /** Writes site-data.js (and .gz), bumps the version and clears the page cache. Returns the URL or WP_Error. */
-function jpn_write_snapshot() {
+function jpn_write_snapshot( $content = null ) {
 	$dir = jpn_snapshot_dir();
 	if ( ! wp_mkdir_p( $dir['path'] ) ) {
 		return new WP_Error( 'jpn_write', __( 'Could not create the uploads folder for the website file.', 'jpnagar-clinic' ), array( 'status' => 500 ) );
 	}
-	$json = wp_json_encode( jpn_build_snapshot(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+	$json = wp_json_encode( jpn_build_snapshot( $content ), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
 	$body = 'window.PUBLISHED_DATA = ' . $json . ";\n";
 	$file = $dir['path'] . '/site-data.js';
 	if ( ! jpn_swap_in( $file, $body ) ) {

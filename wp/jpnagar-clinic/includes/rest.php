@@ -134,6 +134,22 @@ function jpn_count_booking( $phone ) {
 	}
 }
 
+/**
+ * Runs $fn while holding the clinic's one booking lock (a MySQL named lock), so bookings, leave and closed days
+ * take turns: a booking can't land between a leave's cancellations and its being saved.
+ */
+function jpn_locked( callable $fn ) {
+	global $wpdb;
+	if ( '1' !== (string) $wpdb->get_var( "SELECT GET_LOCK('jpn_book', 5)" ) ) {
+		return new WP_Error( 'jpn_busy', __( 'The booking desk is busy. Please try again in a moment.', 'jpnagar-clinic' ), array( 'status' => 503 ) );
+	}
+	try {
+		return $fn();
+	} finally {
+		$wpdb->query( "SELECT RELEASE_LOCK('jpn_book')" );
+	}
+}
+
 function jpn_rest_book( WP_REST_Request $req ) {
 	// a field people can't see: anything that fills it in is a bot
 	if ( '' !== (string) $req->get_param( 'website' ) ) {
@@ -143,21 +159,20 @@ function jpn_rest_book( WP_REST_Request $req ) {
 	if ( is_wp_error( $b ) ) {
 		return $b;
 	}
-	// online bookings take turns (a MySQL named lock), so two at once can't both slip under the limit
-	global $wpdb;
-	if ( '1' !== (string) $wpdb->get_var( "SELECT GET_LOCK('jpn_book', 5)" ) ) {
-		return new WP_Error( 'jpn_busy', __( 'The booking desk is busy. Please try again in a moment.', 'jpnagar-clinic' ), array( 'status' => 503 ) );
-	}
-	if ( jpn_rate_limited( $b['phone'] ) ) {
-		$row = new WP_Error( 'jpn_slow', __( 'Too many bookings from here just now. Please call the clinic.', 'jpnagar-clinic' ), array( 'status' => 429 ) );
-	} else {
-		$b['source'] = 'online';
-		$row         = jpn_create_booking( $b );
-		if ( ! is_wp_error( $row ) ) {
-			jpn_count_booking( $b['phone'] );
+	// under the lock, two bookings at once can't both slip under the limit
+	$row = jpn_locked(
+		function () use ( $b ) {
+			if ( jpn_rate_limited( $b['phone'] ) ) {
+				return new WP_Error( 'jpn_slow', __( 'Too many bookings from here just now. Please call the clinic.', 'jpnagar-clinic' ), array( 'status' => 429 ) );
+			}
+			$b['source'] = 'online';
+			$row         = jpn_create_booking( $b );
+			if ( ! is_wp_error( $row ) ) {
+				jpn_count_booking( $b['phone'] );
+			}
+			return $row;
 		}
-	}
-	$wpdb->query( "SELECT RELEASE_LOCK('jpn_book')" );
+	);
 	if ( is_wp_error( $row ) ) {
 		return $row;
 	}
@@ -281,7 +296,11 @@ function jpn_rest_desk_booking( WP_REST_Request $req ) {
 		return $b;
 	}
 	$b['source'] = 'desk';
-	return jpn_create_booking( $b );
+	return jpn_locked(
+		function () use ( $b ) {
+			return jpn_create_booking( $b );
+		}
+	);
 }
 
 function jpn_rest_status( WP_REST_Request $req ) {
@@ -302,7 +321,11 @@ function jpn_rest_branch_timings( WP_REST_Request $req ) {
 	$s            = jpn_schedule();
 	$s[ $branch ] = array_merge( $t, array( 'own' => array() ) );
 	update_option( 'jpn_schedule', $s, false );
-	jpn_write_snapshot(); // opening hours on the website follow the timings
+	// opening hours on the website follow the timings; the timings are saved either way, so bookings use them
+	$snap = jpn_write_snapshot();
+	if ( is_wp_error( $snap ) ) {
+		return $snap;
+	}
 	return $s[ $branch ];
 }
 
@@ -337,15 +360,29 @@ function jpn_cancel_matching( $branch, $date, $doctor, $reason ) {
 		$args[] = $doctor;
 	}
 	$rows = (array) $wpdb->get_results( $wpdb->prepare( $sql, $args ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- fixed fragments
+	$done = array(
+		'cancelled' => array(),
+		'failed'    => array(),
+	);
 	foreach ( $rows as $r ) {
-		jpn_set_status( (int) $r['id'], 'cancelled', $reason );
+		if ( is_wp_error( jpn_set_status( (int) $r['id'], 'cancelled', $reason ) ) ) {
+			$done['failed'][] = (int) $r['id'];
+		} else {
+			$done['cancelled'][] = $r;
+		}
 	}
-	return $rows;
+	return $done;
 }
 
+/** Puts cancelled bookings back, except where the slot is taken or the day is still off for another reason. */
 function jpn_restore( array $ids ) {
 	$clashes = array();
 	foreach ( $ids as $id ) {
+		$row = jpn_get_booking( (int) $id );
+		if ( ! $row || jpn_is_closed( $row['branch'], $row['slot_date'] ) || jpn_on_leave( $row['doctor'], $row['branch'], $row['slot_date'] ) ) {
+			$clashes[] = (int) $id;
+			continue;
+		}
 		$res = jpn_set_status( (int) $id, 'booked' );
 		if ( is_wp_error( $res ) ) {
 			$clashes[] = (int) $id;
@@ -362,37 +399,45 @@ function jpn_rest_leave_add( WP_REST_Request $req ) {
 		return new WP_Error( 'jpn_bad', 'Bad branch, doctor or day.', array( 'status' => 400 ) );
 	}
 	$date = $day->format( 'Y-m-d' );
-	if ( jpn_on_leave( $doctor, $branch, $date ) ) {
-		return new WP_Error( 'jpn_dupe', 'Already on leave that day.', array( 'status' => 409 ) );
-	}
-	$hit   = jpn_cancel_matching( $branch, $date, $doctor, 'leave' );
-	$leave = jpn_leave();
-	$leave[] = array(
-		'doctor'    => $doctor,
-		'branch'    => $branch,
-		'date'      => $date,
-		'cancelled' => array_map( 'intval', wp_list_pluck( $hit, 'id' ) ),
+	return jpn_locked(
+		function () use ( $branch, $doctor, $date ) {
+			if ( jpn_on_leave( $doctor, $branch, $date ) ) {
+				return new WP_Error( 'jpn_dupe', 'Already on leave that day.', array( 'status' => 409 ) );
+			}
+			$hit     = jpn_cancel_matching( $branch, $date, $doctor, 'leave' );
+			$leave   = jpn_leave();
+			$leave[] = array(
+				'doctor'    => $doctor,
+				'branch'    => $branch,
+				'date'      => $date,
+				'cancelled' => array_map( 'intval', wp_list_pluck( $hit['cancelled'], 'id' ) ),
+			);
+			update_option( 'jpn_leave', $leave, false );
+			// the owner gets the patients to call, and any booking that couldn't be cancelled
+			return $hit;
+		}
 	);
-	update_option( 'jpn_leave', $leave, false );
-	// the owner gets the patients to call
-	return array( 'cancelled' => $hit );
 }
 
 function jpn_rest_leave_remove( WP_REST_Request $req ) {
 	$branch = jpn_clean_branch( $req->get_param( 'branch' ) );
 	$doctor = sanitize_key( (string) $req->get_param( 'doctor' ) );
 	$date   = (string) $req->get_param( 'date' );
-	$keep   = array();
-	$undo   = array();
-	foreach ( jpn_leave() as $l ) {
-		if ( $l['doctor'] === $doctor && $l['branch'] === $branch && $l['date'] === $date ) {
-			$undo = $l['cancelled'];
-		} else {
-			$keep[] = $l;
+	return jpn_locked(
+		function () use ( $branch, $doctor, $date ) {
+			$keep = array();
+			$undo = array();
+			foreach ( jpn_leave() as $l ) {
+				if ( $l['doctor'] === $doctor && $l['branch'] === $branch && $l['date'] === $date ) {
+					$undo = $l['cancelled'];
+				} else {
+					$keep[] = $l;
+				}
+			}
+			update_option( 'jpn_leave', $keep, false );
+			return array( 'not_restored' => jpn_restore( $undo ) );
 		}
-	}
-	update_option( 'jpn_leave', $keep, false );
-	return array( 'not_restored' => jpn_restore( $undo ) );
+	);
 }
 
 function jpn_rest_closed_add( WP_REST_Request $req ) {
@@ -401,36 +446,45 @@ function jpn_rest_closed_add( WP_REST_Request $req ) {
 	if ( ! $branch || ! $day ) {
 		return new WP_Error( 'jpn_bad', 'Bad branch or day.', array( 'status' => 400 ) );
 	}
-	$date = $day->format( 'Y-m-d' );
-	if ( jpn_is_closed( $branch, $date ) ) {
-		return new WP_Error( 'jpn_dupe', 'Already closed that day.', array( 'status' => 409 ) );
-	}
-	$hit      = jpn_cancel_matching( $branch, $date, null, 'closed' );
-	$closed   = jpn_closed();
-	$closed[] = array(
-		'branch'    => $branch,
-		'date'      => $date,
-		'reason'    => jpn_substr( sanitize_text_field( (string) $req->get_param( 'reason' ) ), 0, 40 ),
-		'cancelled' => array_map( 'intval', wp_list_pluck( $hit, 'id' ) ),
+	$date   = $day->format( 'Y-m-d' );
+	$reason = jpn_substr( sanitize_text_field( (string) $req->get_param( 'reason' ) ), 0, 40 );
+	return jpn_locked(
+		function () use ( $branch, $date, $reason ) {
+			if ( jpn_is_closed( $branch, $date ) ) {
+				return new WP_Error( 'jpn_dupe', 'Already closed that day.', array( 'status' => 409 ) );
+			}
+			$hit      = jpn_cancel_matching( $branch, $date, null, 'closed' );
+			$closed   = jpn_closed();
+			$closed[] = array(
+				'branch'    => $branch,
+				'date'      => $date,
+				'reason'    => $reason,
+				'cancelled' => array_map( 'intval', wp_list_pluck( $hit['cancelled'], 'id' ) ),
+			);
+			update_option( 'jpn_closed', $closed, false );
+			return $hit;
+		}
 	);
-	update_option( 'jpn_closed', $closed, false );
-	return array( 'cancelled' => $hit );
 }
 
 function jpn_rest_closed_remove( WP_REST_Request $req ) {
 	$branch = jpn_clean_branch( $req->get_param( 'branch' ) );
 	$date   = (string) $req->get_param( 'date' );
-	$keep   = array();
-	$undo   = array();
-	foreach ( jpn_closed() as $c ) {
-		if ( $c['branch'] === $branch && $c['date'] === $date ) {
-			$undo = $c['cancelled'];
-		} else {
-			$keep[] = $c;
+	return jpn_locked(
+		function () use ( $branch, $date ) {
+			$keep = array();
+			$undo = array();
+			foreach ( jpn_closed() as $c ) {
+				if ( $c['branch'] === $branch && $c['date'] === $date ) {
+					$undo = $c['cancelled'];
+				} else {
+					$keep[] = $c;
+				}
+			}
+			update_option( 'jpn_closed', $keep, false );
+			return array( 'not_restored' => jpn_restore( $undo ) );
 		}
-	}
-	update_option( 'jpn_closed', $keep, false );
-	return array( 'not_restored' => jpn_restore( $undo ) );
+	);
 }
 
 /** Saves the draft. Nothing changes on the website until Publish. */
@@ -445,11 +499,13 @@ function jpn_rest_content( WP_REST_Request $req ) {
 
 /** The draft becomes live, and the website's file is rebuilt. */
 function jpn_rest_publish() {
-	update_option( 'jpn_content_live', jpn_content( 'draft' ), false );
-	$url = jpn_write_snapshot();
+	// the file is written from the draft first; only if that works does the draft become the live copy
+	$draft = jpn_content( 'draft' );
+	$url   = jpn_write_snapshot( $draft );
 	if ( is_wp_error( $url ) ) {
 		return $url;
 	}
+	update_option( 'jpn_content_live', $draft, false );
 	return array(
 		'url'       => $url,
 		'published' => (int) get_option( 'jpn_snapshot_version', 0 ),

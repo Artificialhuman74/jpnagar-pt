@@ -4,7 +4,7 @@
 // (hours as decimals, a doctor's photo as a URL), and back.
 const WP = window.JPN_API ? (() => {
   const H = m => m / 60, M = h => Math.round(h * 60);
-  let nonce = '', pushed = '', pushTimer = 0, pushing = Promise.resolve(true);
+  let nonce = '', pushed = '', pushTimer = 0, pushing = Promise.resolve(true), uploadMax = 2 * 1024 * 1024;
   const days = new Set();
 
   function login() { location.href = `/wp-login.php?redirect_to=${encodeURIComponent(location.href)}`; return new Promise(() => {}); }
@@ -26,6 +26,26 @@ const WP = window.JPN_API ? (() => {
     if (r.status === 401 || (r.status === 403 && route.startsWith('/admin'))) return login();
     const data = await r.json().catch(() => ({}));
     return { ok: r.ok, status: r.status, data };
+  }
+  // A photo as WebP (or JPEG where the browser can't write WebP, as older Safari can't) under `limit` bytes: the
+  // quality steps down first, then the size, so an ordinary photo goes up untouched and only a heavy one is squeezed.
+  async function fitUpload(dataUrl, limit) {
+    const first = await (await fetch(dataUrl)).blob();
+    if (first.size <= limit && /^image\/(webp|jpeg)$/.test(first.type)) return first;
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = dataUrl; }).catch(() => null);
+    if (!img) return null;
+    const c = document.createElement('canvas'), toBlob = (type, q) => new Promise(res => c.toBlob(res, type, q));
+    let w = img.naturalWidth, h = img.naturalHeight;
+    for (let round = 0; round < 8; round++) {
+      c.width = Math.round(w); c.height = Math.round(h); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      for (const q of [.82, .72, .62, .52]) {
+        let b = await toBlob('image/webp', q);
+        if (!b || b.type !== 'image/webp') b = await toBlob('image/jpeg', q);
+        if (b && b.size <= limit) return b;
+      }
+      w *= .8; h *= .8;
+    }
+    return null;
   }
   const fail = r => toast((r.data && r.data.message) || 'That didn’t save. Please try again.');
 
@@ -55,6 +75,7 @@ const WP = window.JPN_API ? (() => {
     S.closed = (s.closed || []).map(c => ({ ...c }));
     S.content = contentIn(s.draft, urls); S.live = contentIn(s.live, urls);
     S.publishedAt = s.published ? parseInt(s.published, 10) * 1000 : null;
+    if (s.upload_max > 0) uploadMax = s.upload_max;
     pushed = JSON.stringify(contentOut(S.content));
     return true;
   }
@@ -126,12 +147,15 @@ const WP = window.JPN_API ? (() => {
       await load(); await this.reloadDays();
       return { cancelled: (r.data.cancelled || []).map(bookingIn), failed: r.data.failed || [], notRestored: r.data.not_restored || [] };
     },
-    // the cropped photo goes up as WebP; the plugin checks it, resizes it and keeps only its own WebP copy
+    // the cropped photo goes up small enough for the server (shrunk here first if it has to be); the plugin checks it,
+    // resizes it and keeps only its own WebP copy. Resolves to { id, url } or { error } with the reason to show.
     async photo(dataUrl, kind) {
-      const blob = await (await fetch(dataUrl)).blob(), form = new FormData();
-      form.append('kind', kind); form.append('photo', blob, `${kind}.webp`);
+      const blob = await fitUpload(dataUrl, Math.floor(uploadMax * .9));
+      if (!blob) return { error: `This photo couldn’t be made smaller than ${Math.round(uploadMax / 1048576)} MB. Try another photo.` };
+      const form = new FormData();
+      form.append('kind', kind); form.append('photo', blob, `${kind}.${blob.type === 'image/webp' ? 'webp' : 'jpg'}`);
       const r = await call('POST', '/admin/photos', form);
-      if (!r.ok) { fail(r); return null; }
+      if (!r.ok) return { error: (r.data && r.data.message) || `The upload failed (error ${r.status}). Please try again.` };
       return r.data;
     }
   };

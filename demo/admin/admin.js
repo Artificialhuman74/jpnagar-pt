@@ -568,6 +568,12 @@ function cropPhoto(file, kind) {
     img.src = url;
   });
 }
+// says why a picked file can't be used: iPhone HEIC photos open only in Safari, other files aren't photos at all
+function unreadable(file) {
+  const heic = /hei[cf]$/i.test(file.name) || /hei[cf]/i.test(file.type);
+  return heic ? 'This browser can’t open iPhone HEIC photos. Use Safari, or set the iPhone camera to “Most Compatible” (JPEG).'
+    : `That file (${file.type || file.name.split('.').pop() || 'unknown type'}) isn’t a photo this browser can open. Pick a JPEG, PNG or WebP.`;
+}
 // photos are shrunk and saved as WebP in the browser before they are stored: small, sharp and quick to load
 function toWebP(file, max = 900, q = .82) {
   return new Promise((res, rej) => {
@@ -616,11 +622,11 @@ function openDoctor(doc) {
     const fl = file.files[0]; if (!fl) return;
     try {
       const r = await cropPhoto(fl, 'portrait'); file.value = ''; if (!r) return;
-      if (WP) { info.textContent = 'Uploading…'; const up = await WP.photo(r.data, 'portrait'); if (!up) { info.textContent = 'That photo didn’t upload. Please try again.'; return; } D.photo = up.url; D.photoId = up.id; }
+      if (WP) { info.textContent = 'Uploading…'; const up = await WP.photo(r.data, 'portrait'); if (up.error) { info.textContent = up.error; toast(up.error); return; } D.photo = up.url; D.photoId = up.id; }
       else D.photo = r.data;
       info.textContent = `${r.webp ? 'Saved as WebP' : 'Saved'} · ${r.kb} KB (from ${Math.round(fl.size / 1024)} KB)`; paintAv();
     }
-    catch (_) { info.textContent = 'That file isn’t a photo this browser can read.'; }
+    catch (_) { info.textContent = unreadable(fl); }
   });
   const err = el('p', { class: 'confirm', role: 'alert', hidden: '' });
   const saveB = btn(isNew ? 'Add doctor' : 'Save changes', 'btn--act btn--block', () => {
@@ -742,8 +748,8 @@ function openPhotos() {
       const f = inp.files[0]; if (!f) return;
       try {
         const r = await cropPhoto(f, 'clinic'); inp.value = ''; if (!r) return;
-        if (WP) { const up = await WP.photo(r.data, 'clinic'); if (!up) return; S.content.photos[i] = { id: up.id, src: up.url, label: '' }; }
-        else S.content.photos[i] = { src: r.data, label: '' }; S.content.photos = S.content.photos.filter(Boolean); save(); paint(); renderContent(); toast(`Photo saved as WebP · ${r.kb} KB`); } catch (_) { toast('That file isn’t a photo this browser can read.'); }
+        if (WP) { toast('Uploading…'); const up = await WP.photo(r.data, 'clinic'); if (up.error) { toast(up.error); return; } S.content.photos[i] = { id: up.id, src: up.url, label: '' }; }
+        else S.content.photos[i] = { src: r.data, label: '' }; S.content.photos = S.content.photos.filter(Boolean); save(); paint(); renderContent(); toast(`Photo saved as WebP · ${r.kb} KB`); } catch (_) { toast(unreadable(f)); }
     });
     return el('label', { for: `ph${i}` }, p ? el('img', { src: p.src, alt: `Clinic photo ${i + 1}` }) : el('span', {}, icon('plus'), el('br'), 'Add photo'), inp);
   }));

@@ -283,6 +283,8 @@ function jpn_rest_state() {
 		'draft'      => $draft,
 		'live'       => $live,
 		'photo_urls' => (object) $photos,
+		// the admin shrinks photos below this before sending them
+		'upload_max' => jpn_upload_limit(),
 		'published'  => (string) get_option( 'jpn_snapshot_version', '' ),
 	);
 }
@@ -561,6 +563,9 @@ function jpn_rest_photo( WP_REST_Request $req ) {
 	$kind = sanitize_key( (string) $req->get_param( 'kind' ) );
 	$id   = jpn_save_photo( $kind );
 	if ( is_wp_error( $id ) ) {
+		// every failed upload is logged with its cause, so "it didn't upload" can always be traced
+		$f = $_FILES['photo'] ?? array(); // phpcs:ignore WordPress.Security.NonceVerification -- REST route, nonce checked by WordPress
+		error_log( sprintf( 'J.P. Nagar Clinic: photo upload failed: %s: %s (sent %s, %s bytes)', $id->get_error_code(), $id->get_error_message(), sanitize_mime_type( (string) ( $f['type'] ?? '?' ) ), (int) ( $f['size'] ?? 0 ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
 		return $id;
 	}
 	return array(

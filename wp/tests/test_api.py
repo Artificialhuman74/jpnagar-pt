@@ -213,6 +213,18 @@ check('photo: uploaded', isinstance(r, dict) and r.get('id'), r)
 if isinstance(r, dict) and r.get('url'):
     info = subprocess.run(['docker','compose','exec','-T','wp','php','-r','$p="/var/www/html/wp-content/uploads/".substr(parse_url($argv[1],PHP_URL_PATH),strlen("/wp-content/uploads/"));$s=getimagesize($p);echo $s[0],"x",$s[1]," ",$s["mime"];', r['url']], cwd=D, capture_output=True, text=True).stdout
     check('photo: WebP, shrunk to 800x1000', info.startswith('800x1000 image/webp'), info)
+# a photo already smaller than the card (a close crop) used to fail: WordPress won't "resize" it
+subprocess.run(['docker','compose','exec','-T','wp','php','-r','$i=imagecreatetruecolor(500,625);imagefill($i,0,0,imagecolorallocate($i,90,140,200));imagewebp($i,"/tmp/small.webp",82);'], cwd=D)
+subprocess.run(['docker','compose','cp','wp:/tmp/small.webp', tmp + '/small.webp'], cwd=D, capture_output=True)
+r = upload(tmp + '/small.webp', 'image/webp')
+check('photo: smaller than the card uploads as is', isinstance(r, dict) and r.get('id'), r)
+# over PHP's upload limit: refused with the reason and the limit, not "no photo arrived"
+subprocess.run(['docker','compose','exec','-T','wp','php','-r','$w=1600;$h=2000;$i=imagecreatetruecolor($w,$h);for($y=0;$y<$h;$y+=2)for($x=0;$x<$w;$x+=2)imagefilledrectangle($i,$x,$y,$x+1,$y+1,imagecolorallocate($i,mt_rand(0,255),mt_rand(0,255),mt_rand(0,255)));imagepng($i,"/tmp/huge.png");'], cwd=D)
+subprocess.run(['docker','compose','cp','wp:/tmp/huge.png', tmp + '/huge.png'], cwd=D, capture_output=True)
+r = upload(tmp + '/huge.png', 'image/png')
+check('photo: over the server limit says so, with the limit', 'too big for the server' in str(r) and 'MB' in str(r), r)
+log = subprocess.run(['docker','compose','exec','-T','wp','sh','-c','grep -c "photo upload failed" /var/www/html/wp-content/debug.log || true'], cwd=D, capture_output=True, text=True).stdout.strip()
+check('photo: every refused upload is logged with its cause', log.isdigit() and int(log) >= 1, log)
 open(tmp + '/bad.jpg', 'w').write('<?php echo 1; ?>')
 r = upload(tmp + '/bad.jpg', 'image/jpeg')
 check('photo: a PHP file pretending to be a jpeg is refused', 'jpn_file' in str(r), r)
@@ -220,7 +232,7 @@ s, r = call('POST', '/admin/photos', {'kind':'portrait'})
 check('photo: no login refused', s in (401, 403), (s, r))
 
 # ---- no PHP warnings or notices anywhere in the run
-log = subprocess.run(['docker','compose','exec','-T','wp','sh','-c','grep -v "booking email for" /var/www/html/wp-content/debug.log 2>/dev/null || true'], cwd=D, capture_output=True, text=True).stdout.strip()
+log = subprocess.run(['docker','compose','exec','-T','wp','sh','-c','grep -v -E "J.P. Nagar Clinic: (booking email for|photo upload failed)" /var/www/html/wp-content/debug.log 2>/dev/null || true'], cwd=D, capture_output=True, text=True).stdout.strip()
 check('no PHP warnings, notices or errors logged', log == '', log[:600])
 
 print('\n%d failed' % len(fails)); sys.exit(1 if fails else 0)

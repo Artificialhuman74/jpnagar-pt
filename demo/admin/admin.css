@@ -50,6 +50,13 @@ body.admin{background:var(--surface);padding-bottom:calc(120px + env(safe-area-i
 .row + .now,.now + .row{border-top:0}
 .notice{margin:0 12px 12px;padding:12px 14px;border-radius:16px;background:var(--act-soft);color:var(--act);font-size:14px;font-weight:650;display:flex;gap:10px;align-items:center}
 .notice svg{width:20px;height:20px;flex:none}
+.notice > span{flex:1}
+.notice .chipbtn2{min-height:40px;padding:0 14px;flex:none}
+/* a day someone is on leave: marked, and tappable to take the leave off */
+.days .day.is-leave{background:#FDECEC;border-color:#F3C4C4;color:#9B1C1C}
+.days .day.is-leave small{color:#9B1C1C}
+.days .day.is-leave.is-on{box-shadow:0 0 0 2px #9B1C1C}
+.drow .sub.has-leave{color:#9B1C1C}
 .empty{padding:28px 20px;text-align:center;color:var(--ink-2);font-size:15px}
 .empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}
 .bigact{display:flex;align-items:center;justify-content:center;gap:8px;margin:16px 12px 0;width:calc(100% - 24px);height:58px;font-size:17px}

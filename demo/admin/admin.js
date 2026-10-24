@@ -153,6 +153,8 @@ function route(first) {
   if (!first) { scrollTo(0, 0); view.focus({ preventScroll: true }); }
 }
 addEventListener('hashchange', () => { closeSheet(); route(false); });
+// draws the tab on screen again after a change made from a sheet or a notice
+const redraw = () => { const k = (location.hash || '#today').slice(1); ({ today: renderToday, schedule: renderSchedule, doctors: renderDoctors, content: renderContent }[k] || renderToday)(); };
 
 const head = (small, title, extra) => el('header', { class: 'ahead' }, small ? el('div', { class: 'ahead-top' }, el('small', {}, small), extra || '') : '', el('h1', {}, title));
 function branchTabs(cur, withAll, onPick) {
@@ -177,7 +179,12 @@ function renderToday() {
   const notes = [];
   BRANCHES.filter(b => V.branch === 'all' || b.id === V.branch).forEach(b => {
     if (isClosed(b.id, date)) notes.push(notice(`${b.short} is closed ${dayLabel(d).toLowerCase() === 'today' ? 'today' : 'this day'}.`, 'leave'));
-    S.leave.filter(l => l.branch === b.id && l.date === date).forEach(l => { const doc = docById(l.doc); if (doc) notes.push(notice(`${shortName(doc)} is on leave at ${b.short}.`, 'leave')); });
+    S.leave.filter(l => l.branch === b.id && l.date === date).forEach(l => {
+      const doc = docById(l.doc); if (!doc) return;
+      const undo = el('button', { class: 'chipbtn2', type: 'button', 'aria-label': `Take ${shortName(doc)} off leave ${dayLabel(d).toLowerCase()}` }, 'Undo');
+      undo.addEventListener('click', async () => { undo.disabled = true; const msg = await removeLeave(l.doc, b.id, date); if (msg) toast(msg); });
+      const n = notice(`${shortName(doc)} is on leave at ${b.short}.`, 'leave'); n.append(undo); notes.push(n);
+    });
   });
   BRANCHES.filter(b => (V.branch === 'all' || b.id === V.branch) && !branchWorks(b.id, d)).forEach(b => notes.push(notice(`${b.short} doesn’t open on ${DOWL[d.getDay()]}s.`, 'leave')));
   const isToday = V.day === 0, nowT = nowHours();
@@ -472,13 +479,13 @@ async function applyLeave(docId, b, date) {
   let hit;
   if (WP) {
     const r = await WP.leave(true, docId, b, date); if (!r) return;
-    hit = r.cancelled; renderSchedule();
+    hit = r.cancelled; redraw();
     if (r.failed.length) toast(`${r.failed.length} booking${r.failed.length === 1 ? '' : 's'} couldn’t be cancelled. Check the Today list.`);
   } else {
     hit = S.bookings.filter(x => x.doc === docId && x.branch === b && x.date === date && x.status === 'booked');
     hit.forEach(x => { x.status = 'cancelled'; x.reason = 'leave'; });
     S.leave.push({ doc: docId, branch: b, date, cancelled: hit.map(x => x.id) });
-    save(); renderSchedule();
+    save(); redraw();
   }
   const doc = docById(docId), d = fromIso(date);
   if (!hit.length) { toast(`${shortName(doc)} is on leave ${dayLabel(d).toLowerCase()}. No bookings to move.`); return; }
@@ -488,10 +495,10 @@ async function applyLeave(docId, b, date) {
 // undoing leave or a closed day puts back the bookings it cancelled, unless the slot has gone or the day is still off
 const restoredText = (n, what) => n ? `${what}. ${n} booking${n === 1 ? '' : 's'} couldn’t be put back: the time is taken or still off.` : `${what}. Bookings restored.`;
 async function removeLeave(docId, b, date) {
-  if (WP) { const r = await WP.leave(false, docId, b, date); renderSchedule(); return r ? restoredText(r.notRestored.length, 'Leave undone') : ''; }
+  if (WP) { const r = await WP.leave(false, docId, b, date); redraw(); return r ? restoredText(r.notRestored.length, 'Leave undone') : ''; }
   const l = S.leave.find(x => x.doc === docId && x.branch === b && x.date === date); if (!l) return '';
   S.bookings.forEach(x => { if (l.cancelled.includes(x.id) && x.status === 'cancelled') { x.status = 'booked'; delete x.reason; } });
-  S.leave = S.leave.filter(x => x !== l); save(); renderSchedule();
+  S.leave = S.leave.filter(x => x !== l); save(); redraw();
   return 'Leave undone. Bookings restored.';
 }
 function showAffected(title, lead, list, ...extra) {
@@ -517,9 +524,12 @@ function renderSchedule() {
     const lv = el('button', { class: 'chipbtn2 ' + (leave ? 'on-leave' : 'leave'), type: 'button' }, ...(leave ? ['On leave', icon('close')] : ['Leave today']));
     lv.setAttribute('aria-label', leave ? `${shortName(doc)} is on leave today. Tap to undo` : `Put ${shortName(doc)} on leave today`);
     lv.addEventListener('click', async () => { if (leave) { const msg = await removeLeave(doc.id, b, date); if (msg) toast(msg); } else applyLeave(doc.id, b, date); });
-    const ed = el('button', { class: 'chipbtn2', type: 'button', 'aria-label': `Own hours and leave for ${shortName(doc)}` }, icon('clock'), 'Own hours');
+    const ed = el('button', { class: 'chipbtn2', type: 'button', 'aria-label': `Hours and leave for ${shortName(doc)}` }, icon('clock'), 'Hours & leave');
     ed.addEventListener('click', () => openDocTimings(doc, b));
-    return el('div', { class: 'drow' }, avatar(doc), el('span', {}, el('b', {}, shortName(doc)), el('span', { class: 'sub' }, leave ? 'On leave today' : own ? `Own timings · ${describe(own)}` : 'Same as everyone')), el('span', { class: 'acts' }, lv, ed));
+    // leave coming up shows on the row; it is taken off in "Hours & leave"
+    const ahead = S.leave.filter(l => l.doc === doc.id && l.branch === b && l.date > date).map(l => l.date).sort().slice(0, 2).map(x => dayLabel(fromIso(x)).replace(/^Tomorrow$/, 'tomorrow'));
+    const subText = [leave ? 'On leave today' : own ? `Own timings · ${describe(own)}` : 'Same as everyone', ahead.length ? `Leave ${ahead.join(', ')}` : ''].filter(Boolean).join(' · ');
+    return el('div', { class: 'drow' }, avatar(doc), el('span', {}, el('b', {}, shortName(doc)), el('span', { class: 'sub' + (ahead.length ? ' has-leave' : '') }, subText)), el('span', { class: 'acts' }, lv, ed));
   }) : [el('p', { class: 'empty' }, el('b', {}, 'No doctors here yet'), 'Add doctors to this branch in the Doctors tab.')];
   const upcomingClosed = S.closed.filter(c => c.branch === b && c.date >= date).sort((x, y) => x.date.localeCompare(y.date));
   const closeBtn = btn('Close the branch for a day', 'btn--line btn--block', () => openCloseDay(b));
@@ -550,19 +560,30 @@ function openDocTimings(doc, b) {
     else { if (mode === 'own' && draft) sc.own[doc.id] = pack(draft); else delete sc.own[doc.id]; save(); }
     renderSchedule(); closeSheet(); toast(`Timings saved for ${shortName(doc)}`);
   });
-  // leave on another day
+  // leave on a day: tap a day to put them on leave, or tap a day already on leave (marked) to take it off
   let pick = null;
-  const dayBox = el('div', { class: 'days' }), leaveBtn = btn('Apply leave', 'btn--danger btn--block', () => { if (pick) { closeSheet(); applyLeave(doc.id, b, iso(pick)); } });
+  const dayBox = el('div', { class: 'days' }), leaveBtn = btn('Apply leave', 'btn--danger btn--block', async () => {
+    if (!pick) return;
+    const date = iso(pick);
+    if (onLeave(doc.id, b, date)) { leaveBtn.disabled = true; const msg = await removeLeave(doc.id, b, date); closeSheet(); if (msg) toast(msg); }
+    else { closeSheet(); applyLeave(doc.id, b, date); }
+  });
   const paintDays = () => dayBox.replaceChildren(...[...Array(14)].map((_, i) => {
-    const d = addDays(today(), i), off = !sessionsOnDay(timingsFor(b, doc.id), d.getDay()).length, on = onLeave(doc.id, b, iso(d));
-    const x = el('button', { class: 'day' + (pick && iso(pick) === iso(d) ? ' is-on' : '') + (off ? ' is-off' : ''), type: 'button', 'aria-pressed': String(!!pick && iso(pick) === iso(d)) },
+    const d = addDays(today(), i), off = !sessionsOnDay(timingsFor(b, doc.id), d.getDay()).length, on = onLeave(doc.id, b, iso(d)), picked = !!pick && iso(pick) === iso(d);
+    const x = el('button', { class: 'day' + (picked ? ' is-on' : '') + (off && !on ? ' is-off' : '') + (on ? ' is-leave' : ''), type: 'button', 'aria-pressed': String(picked),
+      'aria-label': `${longDate(d)}${on ? ', on leave. Tap to take the leave off' : off ? ', not working' : ''}` },
       el('small', {}, i === 0 ? 'Today' : DOW[d.getDay()]), el('b', {}, String(d.getDate())), on ? el('small', {}, 'Leave') : '');
-    if (off || on) x.disabled = true;
-    x.addEventListener('click', () => { pick = d; leaveBtn.disabled = false; leaveBtn.textContent = `Apply leave · ${dayLabel(d)}`; paintDays(); }); return x;
+    if (off && !on) x.disabled = true;
+    x.addEventListener('click', () => {
+      pick = d; leaveBtn.disabled = false;
+      leaveBtn.className = `btn ${on ? 'btn--line' : 'btn--danger'} btn--block`;
+      leaveBtn.textContent = on ? `Take off leave · ${dayLabel(d)}` : `Apply leave · ${dayLabel(d)}`;
+      paintDays();
+    }); return x;
   }));
   leaveBtn.disabled = true; paintDays();
   openSheet(shortName(doc), el('p', { class: 'lead2' }, `At ${BR(b).name}`), el('div', { class: 'field' }, el('label', {}, 'Timings'), seg), formHost, saveT,
-    el('div', { class: 'field', style: 'margin-top:26px' }, el('label', {}, 'Leave on another day'), dayBox), leaveBtn);
+    el('div', { class: 'field', style: 'margin-top:26px' }, el('label', {}, 'Leave'), el('p', { class: 'note', style: 'margin:0 0 10px' }, 'Tap a day for leave. Days marked Leave can be tapped to take it off.'), dayBox), leaveBtn);
 }
 function openCloseDay(b) {
   let pick = null; const rs = el('input', { placeholder: 'e.g. Diwali', maxlength: '40' });

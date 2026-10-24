@@ -437,7 +437,7 @@ button.link{border:0;background:none;padding:0;font-size:var(--fs-body)}
 .bstep-h{display:flex;align-items:center;gap:16px;margin-bottom:30px}
 .bstep-h .n{flex:none;width:40px;height:40px;border-radius:50%;border:2px solid var(--sky);display:grid;place-items:center;color:var(--sky-ink);font-weight:800;transition:background .3s,color .3s}
 .bstep.is-done .n{background:var(--sky-ink);border-color:var(--sky-ink);color:#fff}
-.bstep-h h2 .opt{display:inline-block;vertical-align:middle;margin-left:8px;padding:3px 9px;border-radius:8px;background:var(--surface);color:var(--ink-2);font-size:.8125rem;font-weight:700;letter-spacing:0}
+.bstep-h h2 .opt-tag{display:inline-block;vertical-align:middle;margin-left:8px;padding:3px 9px;border-radius:8px;background:var(--surface);color:var(--ink-2);font-size:.8125rem;font-weight:700;letter-spacing:0}
 .bstep-h h2{font-size:1.75rem;letter-spacing:-.025em;line-height:1.15}
 .bstep-h p{color:var(--ink-2);font-size:var(--fs-small);margin-top:3px}
 .bstep-h .end{margin-left:auto}

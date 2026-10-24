@@ -93,7 +93,7 @@ function jpn_build_snapshot( $content = null ) {
 	return array(
 		'v'        => 1,
 		'at'       => (int) round( microtime( true ) * 1000 ),
-		'home'     => $c['home'] ?? new stdClass(),
+		'home'     => isset( $c['home'] ) ? array_merge( $c['home'], array( 'photo' => jpn_photo_url( $c['home']['photo'] ?? 0 ) ) ) : new stdClass(),
 		'services' => (object) ( $c['services'] ?? array() ),
 		'photos'   => $photos,
 		'service_photos' => (object) $service_photos,

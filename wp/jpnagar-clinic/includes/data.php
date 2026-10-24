@@ -17,6 +17,12 @@ function jpn_strlen( $s ) {
 	return function_exists( 'mb_strlen' ) ? mb_strlen( $s, 'UTF-8' ) : count( jpn_chars( $s ) );
 }
 
+/** An attachment id only if it is a photo this plugin made (images.php), else 0. */
+function jpn_own_photo( $id ) {
+	$id = absint( $id );
+	return $id && get_post_meta( $id, '_jpn_photo', true ) ? $id : 0;
+}
+
 function jpn_branches() {
 	return (array) get_option( 'jpn_branches', array() );
 }
@@ -228,6 +234,8 @@ function jpn_clean_content( $c ) {
 		'home'     => array(
 			'headline' => jpn_substr( sanitize_text_field( (string) ( $c['home']['headline'] ?? '' ) ), 0, 60 ),
 			'intro'    => jpn_substr( sanitize_text_field( (string) ( $c['home']['intro'] ?? '' ) ), 0, 160 ),
+			// the big photo on the home page (an attachment this plugin made); 0 for none, then the branch's photo shows
+			'photo'    => jpn_own_photo( $c['home']['photo'] ?? 0 ),
 		),
 		'services' => array(),
 		'photos'   => array(),

@@ -637,7 +637,7 @@ function renderDoctors() {
     el('p', { class: 'note' }, 'Changes here show on the website after you publish.'));
 }
 // the shape of the cards each kind of photo sits in, so a crop here is exactly what the site shows
-const CROP = { portrait: { aspect: 4 / 5, out: 800, label: 'Doctor photo' }, clinic: { aspect: 15 / 19, out: 1050, label: 'Clinic photo' }, service: { aspect: 4 / 5, out: 800, label: 'Service photo' } };
+const CROP = { portrait: { aspect: 4 / 5, out: 800, label: 'Doctor photo' }, clinic: { aspect: 15 / 19, out: 1050, label: 'Clinic photo' }, service: { aspect: 4 / 5, out: 800, label: 'Service photo' }, home: { aspect: 4 / 5, out: 1200, label: 'Home page photo' } };
 // A phone-first cropper. The frame is the card's shape and starts filled and centred; drag to move, pinch (or the
 // slider, or a mouse wheel) to zoom. The chosen part is saved as a compressed WebP at the card's size.
 function cropPhoto(file, kind) {
@@ -854,9 +854,25 @@ const fieldIn = (label, value, opts = {}) => {
   inp.value = value || ''; if (opts.placeholder) inp.placeholder = opts.placeholder;
   return { inp, node: el('div', { class: 'field' }, el('label', {}, label), el('div', { class: 'input' + (opts.area ? ' area' : '') }, inp)) };
 };
+// the home page: its headline, the line under it, and the big photo beside them (without one, the nearest branch's
+// main photo shows)
 function openHome() {
-  const h = fieldIn('Main headline', S.content.home.headline, { max: 60 }), i = fieldIn('Line under it', S.content.home.intro, { area: true, max: 160 });
-  openSheet('Home page', h.node, i.node, btn('Save', 'btn--act btn--block', () => { S.content.home = { headline: h.inp.value.trim(), intro: i.inp.value.trim() }; save(); renderContent(); closeSheet(); toast('Saved. Publish when you’re ready.'); }));
+  const H = S.content.home, h = fieldIn('Main headline', H.headline, { max: 60 }), i = fieldIn('Line under it', H.intro, { area: true, max: 160 });
+  const box = el('div', { class: 'svc-photo' }), inp = el('input', { type: 'file', accept: 'image/*', id: 'home-ph' });
+  const paint = () => {
+    const kids = [el('label', { for: 'home-ph', class: 'ph-add' }, H.photo ? el('img', { src: H.photo, alt: 'Home page photo' }) : el('span', {}, icon('plus'), el('br'), 'Add a photo'), inp)];
+    kids.push(el('div', {}, el('small', {}, H.photo ? 'Tap the photo to change it' : 'Until you add one, the branch’s main photo shows'),
+      ...(H.photo ? [btn('Remove photo', 'btn--line', () => { H.photo = null; H.photoId = 0; save(); paint(); renderContent(); })] : [])));
+    box.replaceChildren(...kids);
+  };
+  inp.addEventListener('change', async () => {
+    const f = inp.files; if (!f.length) return;
+    await addPhotos([f[0]], 'home', p => { H.photo = p.src; H.photoId = p.id || 0; save(); paint(); renderContent(); });
+    inp.value = '';
+  });
+  paint();
+  openSheet('Home page', el('div', { class: 'field' }, el('label', {}, 'Big photo on the home page'), box), h.node, i.node,
+    btn('Save', 'btn--act btn--block', () => { H.headline = h.inp.value.trim(); H.intro = i.inp.value.trim(); save(); renderContent(); closeSheet(); toast('Saved. Publish when you’re ready.'); }));
 }
 function openBranches() {
   openSheet('Branches', el('div', { class: 'card', role: 'list', style: 'margin:16px 0 0' }, ...BRANCHES.map(b => {

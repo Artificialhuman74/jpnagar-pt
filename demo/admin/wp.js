@@ -57,7 +57,7 @@ const WP = window.JPN_API ? (() => {
   const timingsOut = t => ({ week: Object.fromEntries(Object.entries(t.week || {}).map(([k, v]) => [k, mins(v)])), slot: t.slot });
   function contentIn(c, urls) {
     return {
-      home: c.home || { headline: '', intro: '' }, services: Array.isArray(c.services) ? {} : { ...(c.services || {}) },
+      home: { headline: '', intro: '', ...(c.home || {}), photoId: (c.home && c.home.photo) || 0, photo: c.home && c.home.photo ? urls[c.home.photo] || null : null }, services: Array.isArray(c.services) ? {} : { ...(c.services || {}) },
       branches: Object.fromEntries(Object.entries(c.branches || {}).map(([k, v]) => [k, { ...v }])),
       doctors: (c.doctors || []).map(d => ({ ...d, photoId: d.photo || 0, photo: d.photo ? urls[d.photo] || null : null })),
       photos: (c.photos || []).map(p => ({ id: p.id, src: urls[p.id], label: p.label || '', branch: p.branch || null })).filter(p => p.src),
@@ -65,7 +65,7 @@ const WP = window.JPN_API ? (() => {
       servicePhotos: Object.fromEntries(Object.entries(c.service_photos || {}).map(([k, id]) => [k, { id, src: urls[id] }]).filter(([, v]) => v.src))
     };
   }
-  const contentOut = c => ({ home: c.home, services: c.services, branches: c.branches,
+  const contentOut = c => ({ home: { headline: c.home.headline, intro: c.home.intro, photo: c.home.photoId || 0 }, services: c.services, branches: c.branches,
     doctors: c.doctors.map(({ photoId, photo, ...d }) => ({ ...d, photo: photoId || 0 })), photos: c.photos.map(p => ({ id: p.id, label: p.label || '', branch: p.branch })),
     service_photos: Object.fromEntries(Object.entries(c.servicePhotos || {}).map(([k, v]) => [k, v.id])) });
   const bookingIn = r => ({ id: +r.id, name: r.name, phone: r.phone, branch: r.branch, doc: r.doctor, date: r.slot_date, t: H(+r.slot_time),

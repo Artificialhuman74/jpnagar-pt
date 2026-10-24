@@ -105,6 +105,8 @@ if (PUBLISHED) document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.gcar-card .photo').forEach((p, i) => { if (clinicPhoto(i)) paintPhoto(p, clinicPhoto(i)); });
   // a branch's main photo wherever a branch photo goes; "start" is the branch the site starts at (nearest, else JP Nagar)
   document.querySelectorAll('[data-branch-photo]').forEach(n => {
+    // the home page's own photo, when the clinic has set one, goes where the starting branch's would
+    if (n.dataset.branchPhoto === 'start' && PUBLISHED.home && PUBLISHED.home.photo) { paintPhoto(n, PUBLISHED.home.photo); n.setAttribute('role', 'img'); n.setAttribute('aria-label', 'Inside J.P. Nagar Physio'); n.dataset.label = ''; return; }
     const id = n.dataset.branchPhoto === 'start' && typeof nearestIndex === 'function' ? BRANCHES[nearestIndex()].id : n.dataset.branchPhoto;
     const p = branchPhotos(id)[0], b = typeof BRANCHES !== 'undefined' && BRANCHES.find(x => x.id === id);
     if (p) { paintPhoto(n, p.src); if (b) { n.setAttribute('aria-label', `${b.name} clinic`); n.setAttribute('role', 'img'); n.dataset.label = ''; } }

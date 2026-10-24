@@ -263,6 +263,19 @@ check('photos: website file has branch photos and the service photo', s == 200 a
 s, st8 = call('GET', '/admin/state', owner=True)
 check('photos: the admin gets every photo\'s address back', str(svc['id']) in st8['photo_urls'] and all(str(i) in st8['photo_urls'] for i in ids), list(st8['photo_urls'])[:12])
 
+# ---- the home page's own photo
+hp = upload(tmp + '/small.webp', 'image/webp', 'home')
+s, st8 = call('GET', '/admin/state', owner=True); draft = st8['draft']
+draft['home']['photo'] = hp.get('id')
+s, r = call('PUT', '/admin/content', draft, owner=True)
+check('home photo: kept in the draft', s == 200 and r['home']['photo'] == hp.get('id'), (s, r.get('home')))
+s, r = call('POST', '/admin/publish', {}, owner=True)
+js = subprocess.run(['curl','-s', SITE + '/wp-content/uploads/jpnagar/site-data.js'], capture_output=True, text=True).stdout
+check('home photo: on the website after Publish', s == 200 and ('"home":{' in js and hp['url'].split('/')[-1] in js), js[js.find('"home"'):js.find('"home"') + 220])
+draft['home']['photo'] = 424242
+s, r = call('PUT', '/admin/content', draft, owner=True)
+check('home photo: an id that isn\'t one of our photos is dropped', s == 200 and r['home']['photo'] == 0, r.get('home'))
+
 # ---- no PHP warnings or notices anywhere in the run
 log = subprocess.run(['docker','compose','exec','-T','wp','sh','-c','grep -v -E "J.P. Nagar Clinic: (booking email for|photo upload failed)" /var/www/html/wp-content/debug.log 2>/dev/null || true'], cwd=D, capture_output=True, text=True).stdout.strip()
 check('no PHP warnings, notices or errors logged', log == '', log[:600])

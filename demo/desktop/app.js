@@ -109,7 +109,8 @@ const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'Ju
 const pad = n => String(n).padStart(2, '0');
 function nowIST() {
   const d = new Date(), ist = new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000);
-  if (DEMO_T) { const [h, m] = DEMO_T.split(':').map(Number); ist.setHours(h, m || 0, 0, 0); }
+  // the pinned demo clock (?t=16:40) is ignored on WordPress, where the diary keeps the real time
+  if (DEMO_T && !window.JPN_API) { const [h, m] = DEMO_T.split(':').map(Number); ist.setHours(h, m || 0, 0, 0); }
   return ist;
 }
 function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }

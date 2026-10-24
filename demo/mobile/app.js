@@ -138,7 +138,8 @@ const DEGREES = {
 const DEMO_T = new URLSearchParams(location.search).get('t');
 function nowIST() {
   const d = new Date(), ist = new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000);
-  if (DEMO_T) { const [h, m] = DEMO_T.split(':').map(Number); ist.setHours(h, m || 0, 0, 0); }
+  // the pinned demo clock (?t=16:40) is ignored on WordPress, where the diary keeps the real time
+  if (DEMO_T && !window.JPN_API) { const [h, m] = DEMO_T.split(':').map(Number); ist.setHours(h, m || 0, 0, 0); }
   return ist;
 }
 function fmtHour(h) { const hh = Math.floor(h), m = Math.round((h - hh) * 60); const p = hh >= 12 ? 'pm' : 'am'; const x = hh % 12 || 12; return m ? `${x}:${String(m).padStart(2, '0')} ${p}` : `${x} ${p}`; }

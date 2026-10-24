@@ -326,12 +326,17 @@ function jpn_rest_branch_timings( WP_REST_Request $req ) {
 	// the website file is rebuilt under the same lock, so it can't race a Publish and bring back old content
 	return jpn_locked(
 		function () use ( $branch, $t ) {
-			$s            = jpn_schedule();
+			$before       = jpn_schedule();
+			$s            = $before;
 			$s[ $branch ] = array_merge( $t, array( 'own' => array() ) );
 			update_option( 'jpn_schedule', $s, false );
-			// opening hours on the website follow the timings; the timings are saved either way, so bookings use them
+			// the website shows the same hours bookings use: if its file can't be rewritten, the old hours stay
 			$snap = jpn_write_snapshot();
-			return is_wp_error( $snap ) ? $snap : $s[ $branch ];
+			if ( is_wp_error( $snap ) ) {
+				update_option( 'jpn_schedule', $before, false );
+				return $snap;
+			}
+			return $s[ $branch ];
 		}
 	);
 }

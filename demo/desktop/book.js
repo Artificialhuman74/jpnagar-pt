@@ -178,7 +178,6 @@ function renderWhen() {
     n.addEventListener('click', () => { S.slot = x; renderWhen(); update(); });
     return n;
   }) : [el('p', { class: 'empty' }, 'No times left in this session. Try the other session or another day.')]));
-  grid.classList.remove('swap'); void grid.offsetWidth; grid.classList.add('swap');
 }
 
 /* ---------- step 3: who ---------- */

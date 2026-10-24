@@ -1053,3 +1053,7 @@ a.tchip,a.pill{display:inline-flex;align-items:center}
   .tk,.tk *{-webkit-print-color-adjust:exact;print-color-adjust:exact;animation:none!important}
   .tk{box-shadow:0 0 0 1px #D3D7E2}
 }
+/* booking: "Use my location" under the branch picker */
+.near-btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;margin-top:6px;padding:0 4px;border:0;background:none;font:inherit;font-size:15px;font-weight:700;color:var(--act);cursor:pointer}
+.near-btn svg{width:18px;height:18px;flex:none}
+.near-btn:disabled{color:var(--ink-3);cursor:progress}

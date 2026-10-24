@@ -441,6 +441,18 @@ BRANCHES.forEach((b, i) => {
   t.addEventListener('click', () => { S.b = i; S.slot = null; pickFirstDay(); renderTime(); });
   tabs.append(t);
 });
+// "Use my location": picks the nearest branch and shows how far each one is (only after the visitor asks)
+const nearBtn = el('button', { class: 'near-btn', type: 'button' }, icon('pin'), el('span', {}, savedKm() ? 'Update my location' : 'Use my location to find the nearest branch'));
+nearBtn.addEventListener('click', () => {
+  nearBtn.disabled = true; nearBtn.lastChild.textContent = 'Finding you…';
+  locateNearest().then(i => {
+    [...tabs.querySelectorAll('.tab small')].forEach((s, j) => { s.textContent = kmText(BRANCHES[j]); });
+    nearBtn.lastChild.textContent = 'Update my location';
+    if (S.b !== i) { S.b = i; S.slot = null; pickFirstDay(); renderTime(); }
+    toast(`Nearest branch: ${BRANCHES[i].short}, ${savedKm()[BRANCHES[i].id] < .2 ? 'right next to you' : `${kmText(BRANCHES[i])} away`}`);
+  }, msg => { nearBtn.lastChild.textContent = 'Use my location to find the nearest branch'; toast(msg); }).finally(() => { nearBtn.disabled = false; });
+});
+tabs.after(nearBtn);
 function days() { const d0 = nowIST(); return [...Array(6)].map((_, i) => { const d = new Date(d0); d.setDate(d0.getDate() + i); d.setHours(0, 0, 0, 0); return d; }); }
 const sessName = ([s]) => s < 12 ? 'Morning' : s < 16 ? 'Afternoon' : 'Evening';
 function hasSlots(day) { const b = BRANCHES[S.b]; return sessionsOn(b, day).some((_, si) => slotsFor(b, day, si).some(s => !s.taken)); }

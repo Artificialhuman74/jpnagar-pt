@@ -742,3 +742,7 @@
 .step h1 .opt{display:inline-block;vertical-align:middle;margin-left:6px;padding:3px 8px;border-radius:8px;background:var(--surface);color:var(--ink-2);font-size:13px;font-weight:700;letter-spacing:0}
 .step h1:focus{outline:none}
 .done .sent{margin-top:18px;font-size:14px;color:var(--ink-2);text-align:center}
+/* booking: "Use my location" under the branch picker */
+.near-btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;margin-top:6px;padding:0 4px;border:0;background:none;font:inherit;font-size:15px;font-weight:700;color:var(--act);cursor:pointer}
+.near-btn svg{width:18px;height:18px;flex:none}
+.near-btn:disabled{color:var(--ink-3);cursor:progress}

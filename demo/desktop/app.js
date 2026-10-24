@@ -196,7 +196,26 @@ function firstOpenDay(b) { const d0 = startOfDay(nowIST()); for (let i = 0; i < 
 function savedKm() { try { return JSON.parse(sessionStorage.getItem('jp-km') || 'null'); } catch (_) { return null; } }
 function saveKm(km) { try { sessionStorage.setItem('jp-km', JSON.stringify(km)); } catch (_) {} }
 function kmText(b) { const k = savedKm(); return k && k[b.id] != null ? `${k[b.id].toFixed(1)} km` : ''; }
-function nearestIndex() { const k = savedKm(); if (!k) return 0; return BRANCHES.reduce((best, b, i) => (k[b.id] < k[BRANCHES[best].id] ? i : best), 0); }
+// The branch booking starts at: the nearest once the visitor has shared where they are (never guessed), else JP Nagar,
+// then Bannerghatta, then Arekere.
+const PREFERRED = ['jpnagar', 'bannerghatta', 'arekere'];
+function nearestIndex() {
+  const k = savedKm();
+  if (!k) { const i = PREFERRED.map(id => BRANCHES.findIndex(b => b.id === id)).find(x => x >= 0); return i === undefined ? 0 : i; }
+  return BRANCHES.reduce((best, b, i) => (k[b.id] < k[BRANCHES[best].id] ? i : best), 0);
+}
+// Asks the browser where the visitor is (only when they tap to), keeps each branch's distance for the visit, and
+// resolves to the nearest branch's index; rejects with a message to show if it can't.
+function locateNearest() {
+  return new Promise((res, rej) => {
+    if (!navigator.geolocation) { rej('Location isn’t available on this device. Pick your branch instead.'); return; }
+    navigator.geolocation.getCurrentPosition(p => {
+      saveKm(Object.fromEntries(BRANCHES.map(b => [b.id, kmBetween(p.coords.latitude, p.coords.longitude, b.lat, b.lng)])));
+      res(nearestIndex());
+    }, e => rej(e.code === 1 ? 'Location is off for this site. Pick your branch instead.' : 'Couldn’t find where you are. Pick your branch instead.'),
+    { timeout: 10000, maximumAge: 600000 });
+  });
+}
 function kmBetween(a, b, c, d) {
   const r = x => x * Math.PI / 180, h = Math.sin(r(c - a) / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(r(d - b) / 2) ** 2;
   return 12742 * Math.asin(Math.sqrt(h));

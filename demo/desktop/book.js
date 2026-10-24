@@ -122,6 +122,19 @@ const brBtns = BRANCHES.map((x, i) => {
   return n;
 });
 $('[data-branches]').replaceChildren(...brBtns);
+// "Use my location": picks the nearest branch and shows how far each one is (only after the visitor asks)
+const nearBtn = el('button', { class: 'near-btn', type: 'button' }, icon('pin'), el('span', {}, savedKm() ? 'Update my location' : 'Use my location to find the nearest branch'));
+nearBtn.addEventListener('click', () => {
+  nearBtn.disabled = true; nearBtn.lastChild.textContent = 'Finding you…';
+  locateNearest().then(i => {
+    brBtns.forEach((n, j) => { n.querySelector('.km').textContent = kmText(BRANCHES[j]); });
+    nearBtn.lastChild.textContent = 'Update my location';
+    const b = BRANCHES[i];
+    if (S.b !== i) { S.b = i; S.slot = null; if (!freeSlots(b, S.day).length) S.day = firstOpenDay(b); pickSession(); renderWhen(); update(); }
+    toast(`Nearest branch: ${b.short}, ${savedKm()[b.id] < .2 ? 'right next to you' : `${kmText(b)} away`}`);
+  }, msg => { nearBtn.lastChild.textContent = 'Use my location to find the nearest branch'; toast(msg); }).finally(() => { nearBtn.disabled = false; });
+});
+$('[data-branches]').after(nearBtn);
 let sessBtns = [], timesKey = '';
 function renderWhen() {
   const b = BRANCHES[S.b];

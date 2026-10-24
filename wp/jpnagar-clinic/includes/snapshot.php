@@ -85,7 +85,10 @@ function jpn_build_snapshot( $content = null ) {
 	);
 }
 
-/** Writes site-data.js (and .gz), bumps the version and clears the page cache. Returns the URL or WP_Error. */
+/**
+ * Writes site-data.js (and .gz), bumps the version and clears the page cache. Returns the URL or WP_Error.
+ * Callers hold the booking lock (jpn_locked), so two writes never overlap and an older one can't land last.
+ */
 function jpn_write_snapshot( $content = null ) {
 	$dir = jpn_snapshot_dir();
 	if ( ! wp_mkdir_p( $dir['path'] ) ) {
@@ -94,11 +97,32 @@ function jpn_write_snapshot( $content = null ) {
 	$json = wp_json_encode( jpn_build_snapshot( $content ), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
 	$body = 'window.PUBLISHED_DATA = ' . $json . ";\n";
 	$file = $dir['path'] . '/site-data.js';
-	if ( ! jpn_swap_in( $file, $body ) ) {
-		return new WP_Error( 'jpn_write', __( 'Could not save the website file.', 'jpnagar-clinic' ), array( 'status' => 500 ) );
+	$fail = new WP_Error( 'jpn_write', __( 'Could not save the website file.', 'jpnagar-clinic' ), array( 'status' => 500 ) );
+	$gz   = function_exists( 'gzencode' ) ? gzencode( $body, 9 ) : false;
+	// both copies are written in full before either replaces the old ones, so the .js and .gz never disagree
+	$tmp_js = jpn_write_temp( $file, $body );
+	$tmp_gz = false === $gz ? null : jpn_write_temp( $file . '.gz', $gz );
+	if ( ! $tmp_js || false === $tmp_gz ) {
+		foreach ( array( $tmp_js, $tmp_gz ) as $t ) {
+			if ( $t ) {
+				wp_delete_file( $t );
+			}
+		}
+		return $fail;
 	}
-	if ( function_exists( 'gzencode' ) ) {
-		jpn_swap_in( $file . '.gz', gzencode( $body, 9 ) );
+	if ( ! rename( $tmp_js, $file ) ) {
+		wp_delete_file( $tmp_js );
+		if ( $tmp_gz ) {
+			wp_delete_file( $tmp_gz );
+		}
+		return $fail;
+	}
+	if ( null === $tmp_gz || ! rename( $tmp_gz, $file . '.gz' ) ) {
+		// no gzip this time (no zlib, or the swap failed): remove the old .gz so the server can't serve stale content
+		if ( $tmp_gz ) {
+			wp_delete_file( $tmp_gz );
+		}
+		wp_delete_file( $file . '.gz' );
 	}
 	// a fresh version for every write, even two in the same second; autoloaded, so no extra query on page views
 	update_option( 'jpn_snapshot_version', sprintf( '%d-%s', time(), wp_generate_password( 6, false ) ), true );
@@ -108,19 +132,17 @@ function jpn_write_snapshot( $content = null ) {
 }
 
 /**
- * Writes a whole file to its own temporary name beside the target, then renames it over the target, so a reader
- * never sees half a file and two writes at once can't trip over each other.
+ * Writes the whole of $data to its own temporary name beside $file and returns that name, or false. The caller
+ * renames it over $file, so a reader never sees half a file. A short write counts as a failure.
  */
-function jpn_swap_in( $file, $data ) {
-	$tmp = $file . '.' . wp_generate_password( 8, false ) . '.tmp';
-	if ( false === file_put_contents( $tmp, $data ) ) {
-		return false;
-	}
-	if ( ! rename( $tmp, $file ) ) {
+function jpn_write_temp( $file, $data ) {
+	$tmp     = $file . '.' . wp_generate_password( 8, false ) . '.tmp';
+	$written = file_put_contents( $tmp, $data );
+	if ( strlen( $data ) !== $written ) {
 		wp_delete_file( $tmp );
 		return false;
 	}
-	return true;
+	return $tmp;
 }
 
 /** Clears the page cache of whichever free cache plugin is installed, so pages pick up the new file. */

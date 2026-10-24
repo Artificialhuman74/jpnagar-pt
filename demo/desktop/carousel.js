@@ -22,11 +22,18 @@ function gradientCarousel(root, o) {
   });
   // where a card sits for its offset from the front: further round the arc it steps back, turns outward and fades;
   // at most two show on each side, the next one waits just out of sight
+  // Each card brings its own perspective() rather than leaning on the box's: Safari draws a parent's perspective flat.
+  // The card's corner sits on the focal point (transform-origin 0 0); the perspective is centred where the box's was,
+  // dy below it (the middle of the box), so the picture is the same as before in every browser.
+  const PERSP = parseFloat(getComputedStyle(root).getPropertyValue('--gcar-persp')) || 1200;
+  let dy = null;
   function pose(d) {
     const a = Math.abs(d), s = Math.sign(d);
     const x = s * (Math.min(a, 1) * S1 + Math.max(0, a - 1) * S2), z = -(a * 120 + a * a * 34), ry = -s * Math.min(a, 2.6) * 17;
     const op = a <= 2 ? 1 - a * .3 : Math.max(0, .4 - (a - 2) * .4);
-    return { t: `translate(-50%, -50%) translate3d(${x.toFixed(1)}px, ${shown ? 0 : 46}px, ${z.toFixed(1)}px) rotateY(${ry.toFixed(2)}deg)`, op: shown ? op : 0, };
+    if (dy === null) dy = root.clientHeight / 2 - (cards[0] ? cards[0].offsetTop : root.clientHeight / 2);
+    const y = (shown ? 0 : 46) - dy;
+    return { t: `translate(0px, ${dy.toFixed(1)}px) perspective(${PERSP}px) translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, ${z.toFixed(1)}px) rotateY(${ry.toFixed(2)}deg) translate(-50%, -50%)`, op: shown ? op : 0, };
   }
   const offset = i => { let d = ((i - at) % N + N) % N; if (d > N / 2) d -= N; return d; };
   function place(stagger) {

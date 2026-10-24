@@ -126,30 +126,69 @@ function dayShort(d) {
 function dayLong(d) { return `${isToday(d) ? 'Today · ' : ''}${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`; }
 function fmtHour(h) { const hh = Math.floor(h), m = Math.round((h - hh) * 60), p = hh >= 12 ? 'pm' : 'am', x = hh % 12 || 12; return m ? `${x}:${pad(m)} ${p}` : `${x} ${p}`; }
 function timeText(t) { const h = Math.floor(t), m = Math.round((t - h) * 60); return `${h % 12 || 12}:${pad(m)} ${h >= 12 ? 'pm' : 'am'}`; }
-function hoursText(b) { return b.sessions.map(([s, e]) => `${fmtHour(s)}–${fmtHour(e)}`).join(', '); }
+// a day's hours (today unless given)
+function hoursText(b, d = nowIST()) { return sessText(sessionsOn(b, d)) || 'Closed'; }
 // the same hours, but each session stays on one line when it wraps
-function hoursNodes(b) { return b.sessions.flatMap(([s, e], i) => [i ? ' ' : null, el('span', { class: 'nw' }, `${fmtHour(s)}–${fmtHour(e)}${i < b.sessions.length - 1 ? ',' : ''}`)]); }
+// the week, each group of days kept on one line when it wraps
+function hoursNodes(b) { return weekText(b).split('; ').flatMap((g, i, all) => [i ? ' ' : null, el('span', { class: 'nw' }, g + (i < all.length - 1 ? ';' : ''))]); }
+// A branch's hours on a day (Sunday is 0), as [[from, to], ...] in hours: that weekday's own hours when the clinic has
+// set them (b.week, copied in by published.js), else its usual sessions on the days it works (Mon–Sat until told).
+// Takes a date or a day number.
+function sessionsOn(b, d) {
+  const n = typeof d === 'number' ? d : d.getDay();
+  if (b.week) return b.week[n] || [];
+  return (b.days || [1, 2, 3, 4, 5, 6]).includes(n) ? b.sessions : [];
+}
+function worksOn(b, d) { return sessionsOn(b, d).length > 0; }
+const DOW_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+// the next day the branch works, as words ("tomorrow", or the weekday) and that day's first opening hour
+function nextOpen(b, d) {
+  for (let i = 1; i <= 7; i++) { const x = new Date(d); x.setDate(d.getDate() + i); const s = sessionsOn(b, x); if (s.length) return { when: i === 1 ? 'tomorrow' : DOW_SHORT[x.getDay()], at: s[0][0] }; }
+  return null;
+}
+const sessText = list => list.map(([s, e]) => `${fmtHour(s)}–${fmtHour(e)}`).join(', ');
+// the week in one line, days with the same hours grouped: "Mon–Sat · 9 am–1 pm, 4 pm–8 pm" or
+// "Mon–Fri · 9 am–1 pm, 4 pm–9 pm; Sat · 9 am–1 pm"
+function weekText(b) {
+  const groups = [];
+  [1, 2, 3, 4, 5, 6, 0].forEach(n => {
+    const s = sessionsOn(b, n), key = JSON.stringify(s), last = groups[groups.length - 1];
+    if (!s.length) return;
+    if (last && last.key === key && last.to === (n + 6) % 7) last.to = n; else groups.push({ key, from: n, to: n, s });
+  });
+  return groups.map(g => `${g.from === g.to ? DOW_SHORT[g.from] : `${DOW_SHORT[g.from]}–${DOW_SHORT[g.to]}`} · ${sessText(g.s)}`).join('; ') || 'Closed';
+}
+function worksDays(b) {
+  const d = [1, 2, 3, 4, 5, 6, 0].filter(n => worksOn(b, n));
+  if (d.length === 7) return 'Every day';
+  if (d.length === 6 && !d.includes(0)) return 'Mon–Sat';
+  return d.map(x => DOW_SHORT[x]).join(', ');
+}
 function branchStatus(b, d = nowIST()) {
   const h = d.getHours() + d.getMinutes() / 60;
-  if (d.getDay() !== 0) {
-    for (const [s, e] of b.sessions) if (h >= s && h < e) return { open: true, text: `Open now · till ${fmtHour(e)}` };
-    for (const [s] of b.sessions) if (h < s) return { open: false, text: `Opens ${fmtHour(s)} today` };
+  if (worksOn(b, d)) {
+    for (const [s, e] of sessionsOn(b, d)) if (h >= s && h < e) return { open: true, text: `Open now · till ${fmtHour(e)}` };
+    for (const [s] of sessionsOn(b, d)) if (h < s) return { open: false, text: `Opens ${fmtHour(s)} today` };
   }
-  return { open: false, text: `Closed · opens ${d.getDay() === 6 ? 'Mon' : 'tomorrow'} ${fmtHour(b.sessions[0][0])}` };
+  const nx = nextOpen(b, d);
+  return { open: false, text: nx ? `Closed · opens ${nx.when} ${fmtHour(nx.at)}` : 'Closed' };
 }
 function liveLine(b) { const st = branchStatus(b); return st.open ? `${b.short} open now · till ${st.text.split('till ')[1]}` : `${b.short} ${st.text[0].toLowerCase()}${st.text.slice(1)}`; }
 function hash(s) { let x = 0; for (const c of s) x = (x * 31 + c.charCodeAt(0)) >>> 0; return x; }
 // Slots every 30 minutes; some marked taken (sample data); past times today are left out.
 function slotsFor(b, day, si) {
-  const [s, e] = b.sessions[si], now = nowIST(), today = sameDay(day, now), out = [];
-  for (let t = s; t < e; t += .5) {
+  const ss = sessionsOn(b, day); if (!ss[si]) return [];
+  const [s, e] = ss[si], now = nowIST(), today = sameDay(day, now), out = [];
+  // one time per appointment length (the clinic sets it; half an hour until it says otherwise)
+  const step = (b.slot || 30) / 60;
+  for (let t = s; t + step <= e + 1e-6; t = +(t + step).toFixed(4)) {
     if (today && t <= now.getHours() + now.getMinutes() / 60 + .25) continue;
-    const hh = Math.floor(t) % 12 || 12;
-    out.push({ t, label: `${hh}:${t % 1 ? '30' : '00'}`, suffix: t >= 12 ? 'pm' : 'am', taken: hash(b.id + day.toDateString() + t) % 4 === 0 });
+    const hh = Math.floor(t) % 12 || 12, mm = String(Math.round((t % 1) * 60)).padStart(2, '0');
+    out.push({ t, label: `${hh}:${mm}`, suffix: t >= 12 ? 'pm' : 'am', taken: hash(b.id + day.toDateString() + t) % 4 === 0 });
   }
   return out;
 }
-function freeSlots(b, day) { return day.getDay() === 0 ? [] : b.sessions.flatMap((_, si) => slotsFor(b, day, si)).filter(s => !s.taken); }
+function freeSlots(b, day) { return sessionsOn(b, day).flatMap((_, si) => slotsFor(b, day, si)).filter(s => !s.taken); }
 function firstOpenDay(b) { const d0 = startOfDay(nowIST()); for (let i = 0; i < 14; i++) { const d = addDays(d0, i); if (freeSlots(b, d).length) return d; } return addDays(d0, 1); }
 /* ---------- distances: never guessed. They appear only once the visitor has said where they are (on Branches),
    and are kept for the rest of the visit ---------- */
@@ -239,7 +278,7 @@ $$('[data-footer]').forEach(ft => {
     el('p', {}, 'Physiotherapy only, since 2012. Founder-led by Dr. P. Senthil (PT), with three branches in South Bangalore.'),
     el('div', { class: 'ft-contact' }, el('a', { href: PHONE_TEL }, PHONE), el('a', { href: 'mailto:jpnagarmedicalandphysio@gmail.com' }, 'jpnagarmedicalandphysio@gmail.com')));
   const cols = BRANCHES.map(b => el('div', { class: 'ft-br' },
-    el('h3', {}, b.name), el('address', {}, b.addr), el('p', {}, `Mon–Sat · ${hoursText(b)}`),
+    el('h3', {}, b.name), el('address', {}, b.addr), el('p', {}, weekText(b)),
     el('div', { class: 'row' }, el('a', { href: `tel:${b.phone}` }, b.phoneText), el('a', { href: mapsLink(b), target: '_blank', rel: 'noopener' }, 'Directions'))));
   const svcs = el('nav', { class: 'ft-svcs', 'aria-label': 'Services' }, ...SERVICES.map(s => el('a', { href: s.page || `services.html#${s.id}` }, s.name)));
   ft.replaceChildren(el('div', { class: 'wrap' }, el('div', { class: 'ft-grid' }, brand, ...cols), svcs, base));
@@ -296,26 +335,28 @@ function profile(t, action) {
     el('h3', {}, 'Treats'), tickList(t.treat), el('h3', {}, 'Background'), tickList(t.bg), action);
 }
 
-/* ---------- day picker: three weeks from this Monday; Sundays and past days are off ---------- */
+/* ---------- day picker: three weeks from this Monday; days the branch doesn't work and past days are off ---------- */
 // Built once, then updated in place on every pick: the grid never rebuilds, so nothing flickers or loses focus
-function calendar(root, { selected, isOpen, onPick }) {
+function calendar(root, { selected, isOpen, onPick, works = d => d.getDay() !== 0, worksText = 'Mon–Sat' }) {
   const today = startOfDay(nowIST()), start = addDays(today, -((today.getDay() + 6) % 7));
   root._pick = onPick;
   if (root._start !== +start) {
     const days = [...Array(21)].map((_, i) => addDays(start, i)), last = days[20];
     const title = today.getMonth() === last.getMonth() ? `${MONTHS_LONG[today.getMonth()]} ${today.getFullYear()}` : `${MONTHS[today.getMonth()]} – ${MONTHS[last.getMonth()]} ${last.getFullYear()}`;
     root._cells = days.map(d => {
-      const b = el('button', { type: 'button', class: [sameDay(d, today) && 'today', d.getDay() === 0 && 'sun'].filter(Boolean).join(' ') || null }, String(d.getDate()));
+      const b = el('button', { type: 'button', class: [sameDay(d, today) && 'today', !works(d) && 'sun'].filter(Boolean).join(' ') || null }, String(d.getDate()));
       b.addEventListener('click', () => root._pick(d));
       return [b, d];
     });
-    root.replaceChildren(el('div', { class: 'cal-head' }, el('b', {}, title), el('small', {}, 'Mon–Sat')),
+    root.replaceChildren(el('div', { class: 'cal-head' }, el('b', {}, title), el('small', { 'data-works': '' }, worksText)),
       el('div', { class: 'cal', role: 'group', 'aria-label': 'Choose a day' }, ...['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => el('span', { class: 'dow', 'aria-hidden': 'true' }, d)), ...root._cells.map(c => c[0])));
     root._start = +start;
   }
+  root.querySelector('[data-works]').textContent = worksText;
   root._cells.forEach(([b, d]) => {
-    const past = d < today, sun = d.getDay() === 0, ok = !past && !sun && isOpen(d);
-    const why = sun ? 'Closed on Sundays' : past ? null : ok ? null : 'No times left';
+    const past = d < today, off = !works(d), ok = !past && !off && isOpen(d);
+    b.classList.toggle('sun', off);
+    const why = off ? `Closed on ${DAYS[d.getDay()]}s` : past ? null : ok ? null : 'No times left';
     b.setAttribute('aria-pressed', String(sameDay(d, selected)));
     b.setAttribute('aria-label', `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}${why ? `, ${why.toLowerCase()}` : ''}`);
     if (why && !past) b.dataset.tip = why; else delete b.dataset.tip;
@@ -408,7 +449,7 @@ const CARE = {
 const REASON = { surgery: 'After surgery', neuro: 'Stroke or nerve problem', child: 'For my child', elder: 'For an elderly parent', women: 'Pregnancy or after delivery' };
 
 /* ---------- ticket bits shared by the booking preview and the printed ticket ---------- */
-function bookingId(b, day, t) { const h = Math.floor(t), m = t % 1 ? 30 : 0; return `JP-${b.code}-${pad(day.getDate())}${pad(day.getMonth() + 1)}-${pad(h)}${pad(m)}`; }
+function bookingId(b, day, t) { const h = Math.floor(t), m = Math.round((t % 1) * 60); return `JP-${b.code}-${pad(day.getDate())}${pad(day.getMonth() + 1)}-${pad(h)}${pad(m)}`; }
 function arriveBy(t) { return timeText(t - 1 / 6); }
 // fits the ticket's side notches onto its perforations
 function fitNotches(tk) { $$('.tk-perf', tk).forEach((p, i) => tk.style.setProperty(`--n${i + 1}`, (p.offsetTop + 1) + 'px')); }

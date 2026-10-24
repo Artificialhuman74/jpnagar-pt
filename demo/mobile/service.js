@@ -129,7 +129,7 @@ setStep(0);
 const near = BRANCHES[0], nf = nextFree(near), area = document.body.dataset.area || '';
 if (nf) {
   const day = nf.day, iso = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
-  const times = near.sessions.flatMap((_, si) => slotsFor(near, day, si)).filter(s => !s.taken).slice(0, 4);
+  const times = sessionsOn(near, day).flatMap((_, si) => slotsFor(near, day, si)).filter(s => !s.taken).slice(0, 4);
   const href = s => `book.html?branch=${near.id}&day=${iso}&slot=${s.t}&service=${svcId}${area ? `&area=${area}` : ''}`;
   $('[data-nf-title]').textContent = `Next free at ${near.short}, ${nf.today ? 'today' : day.toLocaleDateString('en-IN', { weekday: 'long' })}`;
   $('[data-nf-times]').replaceChildren(...times.map(s => el('a', { class: 'pill', href: href(s) }, `${s.label} ${s.suffix}`)));

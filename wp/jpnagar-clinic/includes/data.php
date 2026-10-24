@@ -95,30 +95,87 @@ function jpn_clean_phone( $phone ) {
 	return preg_match( '/^[6-9]\d{9}$/', $digits ) ? $digits : null;
 }
 
-/** Timings: days 0-6 (Sunday is 0), up to three sessions in minutes from midnight, a slot length the admin offers. */
+/**
+ * Timings: each weekday's own sessions (Sunday is 0; up to three, in minutes from midnight) and a slot length the
+ * admin offers. Timings saved before hours could differ by day (one set of sessions on chosen days) read as those
+ * sessions on each of those days. Stored as the week plus two summaries: the days worked and the most common day's
+ * sessions (for places that show one line of hours).
+ */
 function jpn_clean_timings( $t ) {
 	if ( ! is_array( $t ) ) {
 		return null;
-	}
-	$days = array_values( array_unique( array_filter( array_map( 'intval', (array) ( $t['days'] ?? array() ) ), function ( $d ) {
-		return $d >= 0 && $d <= 6;
-	} ) ) );
-	sort( $days );
-	$sessions = array();
-	foreach ( array_slice( (array) ( $t['sessions'] ?? array() ), 0, 3 ) as $s ) {
-		$a = (int) ( $s[0] ?? -1 );
-		$b = (int) ( $s[1] ?? -1 );
-		if ( $a >= 0 && $b <= 1440 && $b > $a ) {
-			$sessions[] = array( $a, $b );
-		}
 	}
 	$slot = (int) ( $t['slot'] ?? 30 );
 	if ( ! in_array( $slot, array( 15, 20, 30, 45, 60 ), true ) ) {
 		return null;
 	}
+	return jpn_timings_shape( jpn_week_of( $t, true ), $slot );
+}
+
+/** Up to three sessions inside the day, in order, none overlapping the one before; anything else is dropped. */
+function jpn_clean_sessions( $list ) {
+	$out = array();
+	foreach ( (array) $list as $s ) {
+		$a = (int) ( $s[0] ?? -1 );
+		$b = (int) ( $s[1] ?? -1 );
+		if ( $a >= 0 && $b <= 1440 && $b > $a ) {
+			$out[] = array( $a, $b );
+		}
+	}
+	usort(
+		$out,
+		function ( $x, $y ) {
+			return $x[0] - $y[0];
+		}
+	);
+	$kept = array();
+	foreach ( $out as $s ) {
+		if ( count( $kept ) < 3 && ( ! $kept || $s[0] >= $kept[ count( $kept ) - 1 ][1] ) ) {
+			$kept[] = $s;
+		}
+	}
+	return $kept;
+}
+
+/**
+ * Weekday => sessions for timings in either shape; days off are left out.
+ * @param bool $clean Check every session (input from the admin) rather than trust stored timings.
+ */
+function jpn_week_of( $t, $clean = false ) {
+	$week = array();
+	if ( isset( $t['week'] ) && ( is_array( $t['week'] ) || is_object( $t['week'] ) ) ) {
+		$given = (array) $t['week'];
+		foreach ( range( 0, 6 ) as $d ) {
+			$list = $given[ $d ] ?? array();
+			$list = $clean ? jpn_clean_sessions( $list ) : (array) $list;
+			if ( $list ) {
+				$week[ $d ] = $list;
+			}
+		}
+		return $week;
+	}
+	$sessions = $clean ? jpn_clean_sessions( $t['sessions'] ?? array() ) : (array) ( $t['sessions'] ?? array() );
+	foreach ( (array) ( $t['days'] ?? array() ) as $d ) {
+		$d = (int) $d;
+		if ( $d >= 0 && $d <= 6 && $sessions ) {
+			$week[ $d ] = $sessions;
+		}
+	}
+	ksort( $week );
+	return $week;
+}
+
+function jpn_timings_shape( array $week, $slot ) {
+	$count = array();
+	foreach ( $week as $list ) {
+		$k           = wp_json_encode( $list );
+		$count[ $k ] = ( $count[ $k ] ?? 0 ) + 1;
+	}
+	arsort( $count );
 	return array(
-		'days'     => $days,
-		'sessions' => $sessions,
+		'days'     => array_keys( $week ),
+		'sessions' => $count ? json_decode( (string) key( $count ), true ) : array(),
+		'week'     => $week,
 		'slot'     => $slot,
 	);
 }

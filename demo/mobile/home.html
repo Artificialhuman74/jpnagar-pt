@@ -95,7 +95,7 @@ live.querySelector('span').textContent = st.open && nf && nf.today
 // branch hours in the closing section
 const ul = document.querySelector('[data-hours]');
 BRANCHES.forEach(b => ul.append(el('li', {}, el('span', {}, b.short),
-  el('span', {}, b.sessions.map(([s, e]) => `${fmtHour(s)}–${fmtHour(e)}`).join(', ')))));
+  el('span', {}, weekText(b)))));
 
 // reviews: dots follow the swipe
 const rv = document.querySelector('[data-reviews]'), dots = [...document.querySelectorAll('.dots span')];

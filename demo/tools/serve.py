@@ -23,9 +23,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().__init__(*a, directory=ROOT, **kw)
 
     def end_headers(self):
-        # the published file must be re-checked on every load so a publish shows up straight away
-        if self.path.split('?')[0].endswith('published-data.js'):
-            self.send_header('Cache-Control', 'no-cache')
+        # every file is re-checked on each load (a quick "not modified" when unchanged), so an edit or a publish shows
+        # up straight away instead of the browser running yesterday's copy; production versions its file names instead
+        self.send_header('Cache-Control', 'no-cache')
         super().end_headers()
 
     def to_wordpress(self):

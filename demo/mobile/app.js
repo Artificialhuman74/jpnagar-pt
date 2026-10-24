@@ -142,25 +142,55 @@ function nowIST() {
   return ist;
 }
 function fmtHour(h) { const hh = Math.floor(h), m = Math.round((h - hh) * 60); const p = hh >= 12 ? 'pm' : 'am'; const x = hh % 12 || 12; return m ? `${x}:${String(m).padStart(2, '0')} ${p}` : `${x} ${p}`; }
+// A branch's hours on a day (Sunday is 0), as [[from, to], ...] in hours: that weekday's own hours when the clinic has
+// set them (b.week, copied in by published.js), else its usual sessions on the days it works (Mon–Sat until told).
+// Takes a date or a day number.
+function sessionsOn(b, d) {
+  const n = typeof d === 'number' ? d : d.getDay();
+  if (b.week) return b.week[n] || [];
+  return (b.days || [1, 2, 3, 4, 5, 6]).includes(n) ? b.sessions : [];
+}
+function worksOn(b, d) { return sessionsOn(b, d).length > 0; }
+const DOW_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+// the next day the branch works, as words ("tomorrow", or the weekday) and that day's first opening hour
+function nextOpen(b, d) {
+  for (let i = 1; i <= 7; i++) { const x = new Date(d); x.setDate(d.getDate() + i); const s = sessionsOn(b, x); if (s.length) return { when: i === 1 ? 'tomorrow' : DOW_SHORT[x.getDay()], at: s[0][0] }; }
+  return null;
+}
+const sessText = list => list.map(([s, e]) => `${fmtHour(s)}–${fmtHour(e)}`).join(', ');
+// the week in one line, days with the same hours grouped: "Mon–Sat · 9 am–1 pm, 4 pm–8 pm" or
+// "Mon–Fri · 9 am–1 pm, 4 pm–9 pm; Sat · 9 am–1 pm"
+function weekText(b) {
+  const groups = [];
+  [1, 2, 3, 4, 5, 6, 0].forEach(n => {
+    const s = sessionsOn(b, n), key = JSON.stringify(s), last = groups[groups.length - 1];
+    if (!s.length) return;
+    if (last && last.key === key && last.to === (n + 6) % 7) last.to = n; else groups.push({ key, from: n, to: n, s });
+  });
+  return groups.map(g => `${g.from === g.to ? DOW_SHORT[g.from] : `${DOW_SHORT[g.from]}–${DOW_SHORT[g.to]}`} · ${sessText(g.s)}`).join('; ') || 'Closed';
+}
 function branchStatus(b, d = nowIST()) {
   const h = d.getHours() + d.getMinutes() / 60;
-  if (d.getDay() !== 0) {
-    for (const [s, e] of b.sessions) if (h >= s && h < e) return { open: true, text: `Open now · till ${fmtHour(e)}` };
-    for (const [s] of b.sessions) if (h < s) return { open: false, text: `Opens ${fmtHour(s)} today` };
+  if (worksOn(b, d)) {
+    for (const [s, e] of sessionsOn(b, d)) if (h >= s && h < e) return { open: true, text: `Open now · till ${fmtHour(e)}` };
+    for (const [s] of sessionsOn(b, d)) if (h < s) return { open: false, text: `Opens ${fmtHour(s)} today` };
   }
-  const tomorrowSunday = d.getDay() === 6;
-  return { open: false, text: `Closed · opens ${tomorrowSunday ? 'Mon' : 'tomorrow'} ${fmtHour(b.sessions[0][0])}` };
+  const nx = nextOpen(b, d);
+  return { open: false, text: nx ? `Closed · opens ${nx.when} ${fmtHour(nx.at)}` : 'Closed' };
 }
 function greeting(d = nowIST()) { const h = d.getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
 function hash(s) { let x = 0; for (const c of s) x = (x * 31 + c.charCodeAt(0)) >>> 0; return x; }
 // Slots every 30 minutes; some marked taken (sample data); past times today are hidden.
 function slotsFor(b, day, sessionIdx) {
-  const [s, e] = b.sessions[sessionIdx];
+  const ss = sessionsOn(b, day); if (!ss[sessionIdx]) return [];
+  const [s, e] = ss[sessionIdx];
   const now = nowIST(); const today = day.toDateString() === now.toDateString();
   const out = [];
-  for (let t = s; t < e; t += .5) {
+  // one time per appointment length (the clinic sets it; half an hour until it says otherwise)
+  const step = (b.slot || 30) / 60;
+  for (let t = s; t + step <= e + 1e-6; t = +(t + step).toFixed(4)) {
     if (today && t <= now.getHours() + now.getMinutes() / 60 + .25) continue;
-    const hh = Math.floor(t) % 12 || 12, mm = t % 1 ? '30' : '00';
+    const hh = Math.floor(t) % 12 || 12, mm = String(Math.round((t % 1) * 60)).padStart(2, '0');
     out.push({ t, label: `${hh}:${mm}`, suffix: t >= 12 ? 'pm' : 'am', taken: hash(b.id + day.toDateString() + t) % 4 === 0 });
   }
   return out;
@@ -169,8 +199,8 @@ function nextFree(b) {
   const d = nowIST();
   for (let i = 0; i < 7; i++) {
     const day = new Date(d); day.setDate(d.getDate() + i);
-    if (day.getDay() === 0) continue;
-    for (let si = 0; si < b.sessions.length; si++) {
+    if (!worksOn(b, day)) continue;
+    for (let si = 0; si < sessionsOn(b, day).length; si++) {
       const f = slotsFor(b, day, si).find(x => !x.taken);
       if (f) return { day, slot: f, today: i === 0 };
     }

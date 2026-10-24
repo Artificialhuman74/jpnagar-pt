@@ -50,8 +50,11 @@ const WP = window.JPN_API ? (() => {
   const fail = r => toast((r.data && r.data.message) || 'That didn’t save. Please try again.');
 
   /* ---------- the plugin's shapes <-> the admin's ---------- */
-  const timingsIn = t => ({ days: [...(t.days || [])], sessions: (t.sessions || []).map(([a, b]) => [H(a), H(b)]), slot: t.slot || 30 });
-  const timingsOut = t => ({ days: t.days, sessions: t.sessions.map(([a, b]) => [M(a), M(b)]), slot: t.slot });
+  // timings carry each weekday's own sessions (t.week, a list or a {day: sessions} map); older ones only days + sessions
+  const hrs = list => (list || []).map(([a, b]) => [H(a), H(b)]), mins = list => list.map(([a, b]) => [M(a), M(b)]);
+  const timingsIn = t => ({ days: [...(t.days || [])], sessions: hrs(t.sessions), slot: t.slot || 30,
+    ...(t.week ? { week: Object.fromEntries(Object.entries(t.week).map(([k, v]) => [k, hrs(v)])) } : {}) });
+  const timingsOut = t => ({ week: Object.fromEntries(Object.entries(t.week || {}).map(([k, v]) => [k, mins(v)])), slot: t.slot });
   function contentIn(c, urls) {
     return {
       home: c.home || { headline: '', intro: '' }, services: Array.isArray(c.services) ? {} : { ...(c.services || {}) },

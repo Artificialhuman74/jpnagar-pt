@@ -32,22 +32,30 @@ function jpn_build_snapshot( $content = null ) {
 	$c        = null === $content ? jpn_content( 'live' ) : $content;
 	$schedule = jpn_schedule();
 	$branches = array();
+	// the pages work in hours (9.5 = 9:30 am)
+	$hours = function ( $list ) {
+		return array_map(
+			function ( $s ) {
+				return array( $s[0] / 60, $s[1] / 60 );
+			},
+			(array) $list
+		);
+	};
 	foreach ( jpn_branches() as $id => $b ) {
-		$info              = $c['branches'][ $id ] ?? array();
-		$sc                = $schedule[ $id ] ?? array( 'days' => array(), 'sessions' => array() );
-		$branches[ $id ]   = array(
+		$info            = $c['branches'][ $id ] ?? array();
+		$sc              = $schedule[ $id ] ?? array( 'days' => array(), 'sessions' => array() );
+		$week            = jpn_week_of( $sc );
+		$branches[ $id ] = array(
 			'name'     => $b['name'],
 			'phone'    => $info['phone'] ?? $b['phone'],
 			'addr'     => $info['addr'] ?? $b['addr'],
 			'landmark' => $info['landmark'] ?? $b['landmark'],
-			// the pages work in hours (9.5 = 9:30 am)
-			'sessions' => array_map(
-				function ( $s ) {
-					return array( $s[0] / 60, $s[1] / 60 );
-				},
-				$sc['sessions']
-			),
-			'days'     => $sc['days'],
+			'sessions' => $hours( $sc['sessions'] ),
+			'days'     => array_keys( $week ),
+			// each weekday's own hours, so the website shows a day's real times
+			'week'     => (object) array_map( $hours, $week ),
+			// minutes per appointment, so the pages draw the same times the diary offers
+			'slot'     => (int) ( $sc['slot'] ?? 30 ),
 		);
 	}
 	$doctors = array();

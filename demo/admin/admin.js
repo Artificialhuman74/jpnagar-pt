@@ -66,8 +66,9 @@ function sampleBookings(doctors, schedule) {
   const probs = ['Lower back', 'Neck', 'Knee', 'Shoulder', 'After surgery', 'Hip', 'Ankle', 'Sports injury'];
   const out = []; let n = 0;
   for (let o = -1; o < 7; o++) {
-    const d = addDays(today(), o); if (d.getDay() === 0) continue;
+    const d = addDays(today(), o);
     BRANCHES.forEach(b => {
+      if (!schedule[b.id].days.includes(d.getDay())) return;
       const docs = doctors.filter(x => x.branches.includes(b.id)), sc = schedule[b.id];
       const times = sc.sessions.flatMap(([s, e]) => { const r = []; for (let t = s; t < e; t += sc.slot / 60) r.push(t); return r; });
       const count = 3 + (hash(b.id + iso(d)) % 3);
@@ -94,7 +95,7 @@ if (!S.live) S.live = clone(S.content);
   const unsaved = JSON.stringify(S.content) !== JSON.stringify(S.live);
   if (!unsaved) S.content = clone(c);
   S.live = c; S.publishedAt = w.at;
-  Object.entries(w.branches).forEach(([k, v]) => { if (S.schedule[k] && v.sessions) { S.schedule[k].sessions = v.sessions; if (v.days) S.schedule[k].days = v.days; } });
+  Object.entries(w.branches).forEach(([k, v]) => { if (S.schedule[k] && v.sessions) { S.schedule[k].sessions = v.sessions; if (v.days) S.schedule[k].days = v.days; if (v.week) S.schedule[k].week = v.week; } });
 })();
 function clone(x) { return JSON.parse(JSON.stringify(x)); }
 function save() {
@@ -111,13 +112,15 @@ const rowName = d => { const w = shortName(d).replace(/^Dr\.?\s*/, '').split(/\s
 const initials = d => shortName(d).replace(/^Dr\.?\s*/, '').split(/\s+/).filter(w => /^[A-Za-z]/.test(w) && w.length > 1).slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'Dr';
 const docsAt = b => S.content.doctors.filter(d => d.branches.includes(b));
 const timingsFor = (b, docId) => S.schedule[b].own[docId] || S.schedule[b];
+// a branch is open on a day if its timings, or any doctor's own timings there, include that weekday
+const branchWorks = (b, d) => [S.schedule[b], ...Object.values(S.schedule[b].own || {})].some(t => sessionsOnDay(t, d.getDay()).length);
 const onLeave = (docId, b, date) => S.leave.some(l => l.doc === docId && l.branch === b && l.date === date);
 const isClosed = (b, date) => S.closed.some(c => c.branch === b && c.date === date);
 // the times a doctor works at a branch on a day (none on leave, closed days or days off)
 function docTimes(b, docId, d) {
   const date = iso(d), tm = timingsFor(b, docId);
-  if (isClosed(b, date) || onLeave(docId, b, date) || !tm.days.includes(d.getDay())) return [];
-  return tm.sessions.filter(Boolean).flatMap(([s, e]) => { const r = []; for (let t = s; t + tm.slot / 60 <= e + 1e-6; t += tm.slot / 60) r.push(+t.toFixed(4)); return r; });
+  if (isClosed(b, date) || onLeave(docId, b, date)) return [];
+  return sessionsOnDay(tm, d.getDay()).flatMap(([s, e]) => { const r = []; for (let t = s; t + tm.slot / 60 <= e + 1e-6; t += tm.slot / 60) r.push(+t.toFixed(4)); return r; });
 }
 const live = x => x.status !== 'cancelled';
 // one patient per doctor per slot; "Any" bookings take whichever doctor is still free
@@ -176,7 +179,7 @@ function renderToday() {
     if (isClosed(b.id, date)) notes.push(notice(`${b.short} is closed ${dayLabel(d).toLowerCase() === 'today' ? 'today' : 'this day'}.`, 'leave'));
     S.leave.filter(l => l.branch === b.id && l.date === date).forEach(l => { const doc = docById(l.doc); if (doc) notes.push(notice(`${shortName(doc)} is on leave at ${b.short}.`, 'leave')); });
   });
-  if (d.getDay() === 0) notes.push(notice('Sunday: all branches are closed.', 'leave'));
+  BRANCHES.filter(b => (V.branch === 'all' || b.id === V.branch) && !branchWorks(b.id, d)).forEach(b => notes.push(notice(`${b.short} doesn’t open on ${DOWL[d.getDay()]}s.`, 'leave')));
   const isToday = V.day === 0, nowT = nowHours();
   const rows = []; let nowPlaced = !isToday;
   list.forEach(x => {
@@ -289,7 +292,7 @@ function openAdd(startDay) {
     const docs = docsAt(A.b).map(doc => [doc.id, shortName(doc) + (onLeave(doc.id, A.b, iso(A.day)) ? ' (on leave)' : ''), onLeave(doc.id, A.b, iso(A.day))]);
     picks(docBox, [[null, 'Any doctor'], ...docs], A.doc, v => { A.doc = v; A.t = null; paint(); });
     dayBox.replaceChildren(...[...Array(7)].map((_, i) => {
-      const d = addDays(today(), i), off = d.getDay() === 0 || isClosed(A.b, iso(d));
+      const d = addDays(today(), i), off = isClosed(A.b, iso(d)) || !(A.doc ? [A.doc] : docsAt(A.b).map(x => x.id)).some(id => sessionsOnDay(timingsFor(A.b, id), d.getDay()).length);
       const b = el('button', { class: 'day' + (iso(d) === iso(A.day) ? ' is-on' : '') + (off ? ' is-off' : ''), type: 'button', 'aria-pressed': String(iso(d) === iso(A.day)) }, el('small', {}, i === 0 ? 'Today' : DOW[d.getDay()]), el('b', {}, String(d.getDate())));
       if (off) b.disabled = true;
       b.addEventListener('click', () => { A.day = d; A.t = null; paint(); }); return b;
@@ -319,40 +322,149 @@ function openAdd(startDay) {
 }
 
 /* ---------- Schedule: timings for everyone, each doctor's own, leave, closed days ---------- */
-const HOURS = [...Array(29)].map((_, i) => 7 + i / 2); // 7 am to 9 pm, every half hour
+// Timings are a week: each weekday's own sessions in hours ([[9, 13], [16, 20]]), plus the slot length. Older timings
+// (one set of sessions on chosen days) read as those sessions on each of those days.
+const ORDER = [1, 2, 3, 4, 5, 6, 0];
+function weekOf(tm) {
+  if (tm.week) return Object.fromEntries(ORDER.map(n => [n, (tm.week[n] || []).map(s => [...s])]));
+  return Object.fromEntries(ORDER.map(n => [n, (tm.days || []).includes(n) ? (tm.sessions || []).filter(Boolean).map(s => [...s]) : []]));
+}
+const sessionsOnDay = (tm, n) => weekOf(tm)[n] || [];
+const hoursLine = list => list.map(([s, e]) => `${timeText(s).replace(':00', '')}–${timeText(e).replace(':00', '')}`).join(', ');
+
+/* The week, drawn: one row per day with its hours as blocks on a 6 am – 10 pm track. Drag a block to move it, drag
+   its ends to change the hours, tap an empty part of a row to add hours there, tap the day to open or close it.
+   Everything snaps to half hours. Keyboard: a block moves with the arrows and its end with Shift+arrows; Delete
+   removes it; + adds hours after it. */
+const TRACK = [6, 22], SPAN = TRACK[1] - TRACK[0], STEP = .5, MIN_LEN = 1, MAX_SESS = 3;
+const pct = h => `${(h - TRACK[0]) / SPAN * 100}%`;
+const snap = h => Math.round(h / STEP) * STEP;
+const shortH = h => timeOf(h).label.replace(':00', '');
 function timingsForm(tm, onChange) {
-  const T = { days: [...tm.days], sessions: tm.sessions.map(s => s && [...s]), slot: tm.slot };
-  while (T.sessions.length < 2) T.sessions.push(null);
-  const wd = el('div', { class: 'wdays', role: 'group', 'aria-label': 'Working days' }, ...[1, 2, 3, 4, 5, 6, 0].map(i => {
-    const b = el('button', { type: 'button', 'aria-pressed': String(T.days.includes(i)), 'aria-label': DOWL[i] }, DOW[i].slice(0, 2));
-    b.addEventListener('click', () => { T.days = T.days.includes(i) ? T.days.filter(x => x !== i) : [...T.days, i]; b.setAttribute('aria-pressed', String(T.days.includes(i))); onChange(T); }); return b;
-  }));
-  const sel = (val, on, label) => { const s = el('select', { 'aria-label': label }, ...HOURS.map(h => { const o = el('option', { value: h }, timeText(h)); if (h === val) o.selected = true; return o; })); s.addEventListener('change', () => on(+s.value)); return s; };
-  const sessRow = (i, name, dflt) => {
-    const row = el('div', { class: 'sess' + (T.sessions[i] ? '' : ' is-off') });
-    const paintRow = () => {
-      const s = T.sessions[i] || dflt;
-      const off = el('button', { class: 'off', type: 'button' }, T.sessions[i] ? 'Off' : 'Turn on');
-      off.addEventListener('click', () => { T.sessions[i] = T.sessions[i] ? null : [...dflt]; row.classList.toggle('is-off', !T.sessions[i]); paintRow(); onChange(T); });
-      const a = sel(s[0], v => { T.sessions[i] = [v, Math.max(v + .5, (T.sessions[i] || dflt)[1])]; paintRow(); onChange(T); }, `${name} from`);
-      const b = sel(s[1], v => { T.sessions[i] = [Math.min((T.sessions[i] || dflt)[0], v - .5), v]; paintRow(); onChange(T); }, `${name} to`);
-      if (!T.sessions[i]) { a.disabled = true; b.disabled = true; }
-      row.replaceChildren(el('span', {}, name), a, el('span', {}, 'to'), b, off);
+  const T = { week: weekOf(tm), slot: tm.slot };
+  const kept = {}; // a day that is closed and reopened gets its hours back
+  let sel = null, edited = null;
+  const rows = {};
+  const copyAll = el('button', { class: 'wk-copy', type: 'button', hidden: '' });
+  copyAll.addEventListener('click', () => {
+    ORDER.forEach(n => { if (n !== edited && T.week[n].length) { T.week[n] = T.week[edited].map(s => [...s]); paint(n); } });
+    copyAll.hidden = true; changed(null);
+  });
+  function changed(n) {
+    if (n != null) { edited = n; copyAll.hidden = !T.week[n].length || ORDER.filter(x => T.week[x].length).length < 2; copyAll.textContent = `Use ${DOWL[n]}’s hours on every open day`; }
+    onChange(T);
+  }
+  const hourAt = (track, x) => { const r = track.getBoundingClientRect(); return TRACK[0] + Math.min(1, Math.max(0, (x - r.left) / r.width)) * SPAN; };
+  // the free stretch around an hour on a day (between the blocks either side), or null if the hour is inside a block
+  function gapAt(n, h) {
+    let from = TRACK[0], to = TRACK[1];
+    for (const [s, e] of T.week[n]) { if (h >= s && h < e) return null; if (e <= h) from = Math.max(from, e); if (s > h) to = Math.min(to, s); }
+    return [from, to];
+  }
+  function add(n, h) {
+    if (T.week[n].length >= MAX_SESS) { toast('Up to three sessions a day'); return; }
+    const g = gapAt(n, h); if (!g || g[1] - g[0] < MIN_LEN) return;
+    let s = snap(h - 1), e = s + 2; if (s < g[0]) { s = g[0]; e = s + 2; } if (e > g[1]) { e = g[1]; s = Math.max(g[0], e - 2); }
+    T.week[n].push([s, e]); T.week[n].sort((a, b) => a[0] - b[0]);
+    sel = { n, i: T.week[n].findIndex(x => x[0] === s) }; paint(n); changed(n); focusSel();
+  }
+  function toggleDay(n) {
+    if (T.week[n].length) { kept[n] = T.week[n]; T.week[n] = []; }
+    else T.week[n] = kept[n] || weekOf(tm)[n].length && weekOf(tm)[n] || [[9, 13], [16, 20]];
+    sel = null; paint(n); changed(n);
+  }
+  function remove(n, i) { T.week[n].splice(i, 1); sel = null; paint(n); changed(n); rows[n].day.focus(); }
+  // a block's new hours, kept inside the day and clear of its neighbours, at least an hour long
+  function place(n, i, s, e, mode) {
+    const list = T.week[n], lo = i ? list[i - 1][1] : TRACK[0], hi = i < list.length - 1 ? list[i + 1][0] : TRACK[1];
+    if (mode === 'move') { const len = e - s; s = Math.min(Math.max(lo, s), hi - len); e = s + len; }
+    if (mode === 'start') s = Math.min(Math.max(lo, s), e - MIN_LEN);
+    if (mode === 'end') e = Math.max(Math.min(hi, e), s + MIN_LEN);
+    list[i] = [snap(s), snap(e)];
+  }
+  const focusSel = () => { if (sel) { const b = rows[sel.n].track.querySelectorAll('.wk-block')[sel.i]; if (b) b.focus({ preventScroll: true }); } };
+  function blockLabel(n, [s, e]) { return `${DOWL[n]}, ${timeText(s)} to ${timeText(e)}. Drag or use the arrows to move; Shift with arrows changes the end; Delete removes.`; }
+  function setBlock(b, n, s) {
+    b.style.left = pct(s[0]); b.style.width = `${(s[1] - s[0]) / SPAN * 100}%`;
+    // the hours as "9–1"; a block too short for that shows only when it starts (the full hours are in its label)
+    const full = `${shortH(s[0])}–${shortH(s[1])}`, room = (s[1] - s[0]) / SPAN * (rows[n].track.clientWidth || 300);
+    b.firstChild.textContent = room >= full.length * 7.5 + 20 ? full : shortH(s[0]); b.setAttribute('aria-label', blockLabel(n, s));
+  }
+  function paint(n) {
+    const { day, track } = rows[n], list = T.week[n], open = list.length > 0;
+    day.setAttribute('aria-pressed', String(open)); day.setAttribute('aria-label', `${DOWL[n]}: ${open ? hoursLine(list) : 'closed'}. Tap to ${open ? 'close' : 'open'} this day`);
+    track.classList.toggle('is-closed', !open);
+    track.replaceChildren(...list.map((s, i) => {
+      const b = el('button', { class: 'wk-block' + (sel && sel.n === n && sel.i === i ? ' is-sel' : ''), type: 'button' }, el('span', {}), el('i', { class: 'wk-grip s', 'data-end': 'start', 'aria-hidden': 'true' }), el('i', { class: 'wk-grip e', 'data-end': 'end', 'aria-hidden': 'true' }));
+      setBlock(b, n, s);
+      b.addEventListener('pointerdown', e => drag(e, n, i, b));
+      b.addEventListener('keydown', e => key(e, n, i));
+      return b;
+    }), ...(sel && sel.n === n && list[sel.i] ? [(() => {
+      const x = el('button', { class: 'wk-x', type: 'button', 'aria-label': `Remove ${hoursLine([list[sel.i]])} on ${DOWL[n]}`, style: `left:${pct(list[sel.i][1])}` }, icon('close'));
+      x.addEventListener('click', () => remove(n, sel.i)); return x;
+    })()] : []));
+  }
+  function drag(e, n, i, b) {
+    e.preventDefault(); b.setPointerCapture(e.pointerId);
+    const mode = e.target.dataset.end || 'move', track = rows[n].track, w = track.getBoundingClientRect().width, x0 = e.clientX, orig = [...T.week[n][i]];
+    let moved = false;
+    b.classList.add('is-drag');
+    const onMove = ev => {
+      const dh = (ev.clientX - x0) / w * SPAN; if (Math.abs(ev.clientX - x0) > 4) moved = true; if (!moved) return;
+      place(n, i, orig[0] + (mode !== 'end' ? dh : 0), orig[1] + (mode !== 'start' ? dh : 0), mode);
+      setBlock(b, n, T.week[n][i]);
     };
-    paintRow(); return row;
-  };
+    const onUp = () => {
+      b.removeEventListener('pointermove', onMove); b.removeEventListener('pointerup', onUp); b.removeEventListener('pointercancel', onUp);
+      b.classList.remove('is-drag');
+      // a tap selects the block (and shows its remove button); a drag saves the new hours
+      sel = moved ? sel : (sel && sel.n === n && sel.i === i ? null : { n, i });
+      paint(n); if (moved) changed(n); focusSel();
+    };
+    b.addEventListener('pointermove', onMove); b.addEventListener('pointerup', onUp); b.addEventListener('pointercancel', onUp);
+  }
+  function key(e, n, i) {
+    const s = T.week[n][i], d = e.key === 'ArrowRight' ? STEP : e.key === 'ArrowLeft' ? -STEP : 0;
+    if (d) { e.preventDefault(); e.shiftKey ? place(n, i, s[0], s[1] + d, 'end') : place(n, i, s[0] + d, s[1] + d, 'move'); sel = { n, i }; paint(n); changed(n); focusSel(); }
+    else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); remove(n, i); }
+    else if (e.key === '+') { e.preventDefault(); add(n, s[1] + 1.5); }
+  }
+  const grid = el('div', { class: 'hrs-week', role: 'group', 'aria-label': 'Hours on each day' },
+    el('div', { class: 'wk-marks', 'aria-hidden': 'true' }, el('span'), el('div', {}, ...[9, 12, 15, 18].map(h => el('i', { style: `left:${pct(h)}` }, `${h % 12 || 12} ${h < 12 ? 'am' : 'pm'}`)))),
+    ...ORDER.map(n => {
+      const day = el('button', { class: 'wk-day', type: 'button' }, DOW[n]), track = el('div', { class: 'wk-track' });
+      day.addEventListener('click', () => toggleDay(n));
+      // tapping the empty part of a row adds two hours there
+      track.addEventListener('click', e => { if (e.target === track && T.week[n].length) add(n, hourAt(track, e.clientX)); else if (e.target === track) toggleDay(n); });
+      rows[n] = { day, track };
+      return el('div', { class: 'wk-row' }, day, track);
+    }));
+  ORDER.forEach(paint);
   const slen = el('div', { class: 'slen', role: 'group', 'aria-label': 'Slot length' }, ...[15, 20, 30, 45, 60].map(m => {
     const p = el('button', { class: 'pill', type: 'button', 'aria-pressed': String(m === T.slot) }, `${m} min`);
     p.addEventListener('click', () => { T.slot = m; $$('.pill', slen).forEach(x => x.setAttribute('aria-pressed', String(x === p))); onChange(T); }); return p;
   }));
   onChange(T);
-  return el('div', {}, el('h3', {}, 'Working days'), wd, el('h3', {}, 'Hours'), sessRow(0, 'Morning', [9, 13]), sessRow(1, 'Evening', [16, 20]), el('h3', {}, 'Each appointment'), slen);
+  return el('div', {}, el('h3', {}, 'Hours'), grid, copyAll, el('p', { class: 'wk-hint' }, 'Drag to change · tap a row to add hours · tap a day to close it'), el('h3', {}, 'Each appointment'), slen);
 }
-const pack = T => ({ days: T.days.sort((a, b) => a - b), sessions: T.sessions.filter(Boolean), slot: T.slot });
+// the form's week as saved timings: the week, plus the days worked and the most common day's hours
+const pack = T => {
+  const week = Object.fromEntries(ORDER.filter(n => T.week[n].length).map(n => [n, T.week[n].map(s => [...s])]));
+  const counts = {}; Object.values(week).forEach(l => { const k = JSON.stringify(l); counts[k] = (counts[k] || 0) + 1; });
+  const common = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  return { days: Object.keys(week).map(Number).sort((a, b) => a - b), sessions: common ? JSON.parse(common[0]) : [], week, slot: T.slot };
+};
+// one line: "Mon–Sat · 9 am–1 pm, 4 pm–8 pm · 30 min", or the days grouped when their hours differ
 const describe = tm => {
-  const days = [...tm.days].sort((a, b) => (a || 7) - (b || 7));
-  const run = days.length === 6 && !days.includes(0) ? 'Mon–Sat' : days.length === 7 ? 'Every day' : days.map(d => DOW[d]).join(', ') || 'No days';
-  return `${run} · ${tm.sessions.map(([s, e]) => `${timeText(s).replace(':00', '')}–${timeText(e).replace(':00', '')}`).join(', ') || 'no hours'} · ${tm.slot} min`;
+  const w = weekOf(tm), groups = [];
+  ORDER.forEach(n => {
+    const k = JSON.stringify(w[n]), g = groups[groups.length - 1];
+    if (!w[n].length) return;
+    if (g && g.k === k && ORDER.indexOf(g.to) === ORDER.indexOf(n) - 1) g.to = n; else groups.push({ k, from: n, to: n, s: w[n] });
+  });
+  const text = groups.map(g => `${g.from === g.to ? DOW[g.from] : `${DOW[g.from]}–${DOW[g.to]}`} ${hoursLine(g.s)}`).join('; ');
+  return `${text || 'Closed every day'} · ${tm.slot} min`;
 };
 // the doctor goes on leave: their bookings at this branch that day are cancelled, and the patients are listed to call
 async function applyLeave(docId, b, date) {
@@ -442,7 +554,7 @@ function openDocTimings(doc, b) {
   let pick = null;
   const dayBox = el('div', { class: 'days' }), leaveBtn = btn('Apply leave', 'btn--danger btn--block', () => { if (pick) { closeSheet(); applyLeave(doc.id, b, iso(pick)); } });
   const paintDays = () => dayBox.replaceChildren(...[...Array(14)].map((_, i) => {
-    const d = addDays(today(), i), off = d.getDay() === 0, on = onLeave(doc.id, b, iso(d));
+    const d = addDays(today(), i), off = !sessionsOnDay(timingsFor(b, doc.id), d.getDay()).length, on = onLeave(doc.id, b, iso(d));
     const x = el('button', { class: 'day' + (pick && iso(pick) === iso(d) ? ' is-on' : '') + (off ? ' is-off' : ''), type: 'button', 'aria-pressed': String(!!pick && iso(pick) === iso(d)) },
       el('small', {}, i === 0 ? 'Today' : DOW[d.getDay()]), el('b', {}, String(d.getDate())), on ? el('small', {}, 'Leave') : '');
     if (off || on) x.disabled = true;
@@ -471,7 +583,7 @@ function openCloseDay(b) {
   });
   go.disabled = true;
   const paint = () => dayBox.replaceChildren(...[...Array(30)].map((_, i) => {
-    const d = addDays(today(), i), off = d.getDay() === 0 || isClosed(b, iso(d));
+    const d = addDays(today(), i), off = !branchWorks(b, d) || isClosed(b, iso(d));
     const x = el('button', { class: 'day' + (pick && iso(pick) === iso(d) ? ' is-on' : '') + (off ? ' is-off' : ''), type: 'button' }, el('small', {}, i === 0 ? 'Today' : DOW[d.getDay()]), el('b', {}, String(d.getDate())));
     if (off) x.disabled = true;
     x.addEventListener('click', () => { pick = d; go.disabled = false; go.textContent = `Close ${BR(b).short} · ${dayLabel(d)}`; paint(); }); return x;
@@ -677,7 +789,7 @@ function paintPub() {
 function writeSnapshot() {
   const c = S.live;
   const snap = { v: 1, at: S.publishedAt, home: c.home, services: c.services, photos: c.photos,
-    branches: Object.fromEntries(BRANCHES.map(b => [b.id, { ...c.branches[b.id], sessions: S.schedule[b.id].sessions, days: S.schedule[b.id].days }])),
+    branches: Object.fromEntries(BRANCHES.map(b => [b.id, { ...c.branches[b.id], sessions: S.schedule[b.id].sessions, days: pack({ week: weekOf(S.schedule[b.id]), slot: 30 }).days, week: weekOf(S.schedule[b.id]) }])),
     doctors: c.doctors.map(d => ({ id: d.id, name: d.name, role: d.role, years: d.years, deg: d.deg, treats: d.treats, bg: d.bg, branches: d.branches, photo: d.photo })) };
   try { localStorage.setItem(PUB, JSON.stringify(snap)); } catch (_) {}
   // the server writes it to the one static file every device's website loads

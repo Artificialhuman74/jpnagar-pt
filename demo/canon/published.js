@@ -23,6 +23,10 @@ if (PUBLISHED) {
     const x = PUBLISHED.branches[b.id]; if (!x) return;
     ['phone', 'addr', 'landmark'].forEach(k => { if (x[k]) b[k] = x[k]; });
     if (x.sessions && x.sessions.length) b.sessions = x.sessions.map(s => [...s]);
+    if (Array.isArray(x.days)) b.days = [...x.days];
+    if (x.slot) b.slot = x.slot;
+    // each weekday's own hours (a list or a {day: hours} map, depending on which days are open)
+    if (x.week && typeof x.week === 'object') b.week = Object.fromEntries(Object.entries(x.week).map(([k, v]) => [k, v.map(s => [...s])]));
   });
   // the desktop site's team list (it carries a short "card" line)
   if (typeof TEAM !== 'undefined' && Array.isArray(TEAM) && TEAM.length && 'card' in TEAM[0] && PUBLISHED.doctors)
@@ -64,20 +68,40 @@ if (PUBLISHED) document.addEventListener('DOMContentLoaded', () => {
    plugin instead of the sample ones: each day is fetched once, slotsFor() answers from what has arrived, and a
    'jpn:slots' event tells the page to redraw when a day comes in. Confirming a booking saves it in WordPress. */
 const DIARY = window.JPN_API ? (() => {
-  const days = new Map(), isoOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const days = new Map(), asked = new Map(), isoOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const url = (route, q = {}) => window.JPN_API + route + Object.entries(q).map(([k, v]) => `&${k}=${encodeURIComponent(v)}`).join('');
+  let watched = null, timer = 0;
+  // A day's free times. While a newer answer is on its way the last one stays in use (nothing flips to free), and an
+  // answer that arrives after a newer request is dropped. The page hears 'jpn:slots' only when something changed.
   function load(branch, date) {
-    const key = `${branch}|${date}`;
-    days.set(key, null);
-    fetch(url('/slots', { branch, date }), { cache: 'no-store' }).then(r => r.ok ? r.json() : { times: [] }).catch(() => ({ times: [] })).then(j => {
-      days.set(key, new Map((j.times || []).map(x => [x.t, x.doctors])));
-      document.dispatchEvent(new CustomEvent('jpn:slots', { detail: { branch, date } }));
+    const key = `${branch}|${date}`, n = (asked.get(key) || 0) + 1;
+    asked.set(key, n); if (!days.has(key)) days.set(key, undefined);
+    fetch(url('/slots', { branch, date }), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null).then(j => {
+      if (!j || asked.get(key) !== n) return;
+      const next = new Map((j.times || []).map(x => [x.t, x.doctors])), prev = days.get(key);
+      days.set(key, next);
+      if (!prev || JSON.stringify([...prev]) !== JSON.stringify([...next])) document.dispatchEvent(new CustomEvent('jpn:slots', { detail: { branch, date } }));
     });
   }
+  // other patients book too: the day on screen is checked again every 30 seconds while the page is visible, and at
+  // once when the visitor comes back to it, so a time someone else has just taken stops being offered
+  function tick() { clearTimeout(timer); if (watched && document.visibilityState === 'visible') { load(...watched); timer = setTimeout(tick, 30000); } }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tick(); else clearTimeout(timer); });
   return {
     isoOf,
+    // the doctor the visitor has picked (an id), or null for "Any available": times that doctor isn't free count as taken
+    want: null,
     // minute of the day -> free doctor ids, or undefined while the day is still on its way
-    free(branch, day) { const key = `${branch}|${isoOf(day)}`; if (!days.has(key)) load(branch, isoOf(day)); return days.get(key) || undefined; },
+    free(branch, day) {
+      const date = isoOf(day), key = `${branch}|${date}`;
+      if (!days.has(key)) load(branch, date);
+      return days.get(key);
+    },
+    // keep this day fresh while it is on screen
+    watch(branch, day) {
+      const w = [branch, isoOf(day)];
+      if (!watched || watched[0] !== w[0] || watched[1] !== w[1]) { watched = w; clearTimeout(timer); timer = setTimeout(tick, 30000); }
+    },
     refresh(branch, day) { load(branch, isoOf(day)); },
     // resolves to { ok, status, data }: data is the booking, or WordPress's error with a message to show
     book(b) {
@@ -89,10 +113,15 @@ const DIARY = window.JPN_API ? (() => {
 })() : null;
 if (DIARY && typeof slotsFor === 'function') {
   const sampleSlots = slotsFor;
-  // the same slot list the page always drew, with "taken" from the real diary (a time nobody is free for is taken);
+  // the same slot list the page always drew, with "taken" from the real diary: a time is taken when no doctor is free
+  // then, since each doctor sees one patient per slot;
   // until the day has arrived nothing is marked taken, and the page redraws on 'jpn:slots'
   slotsFor = function (b, day, si) {
     const free = DIARY.free(b.id, day);
-    return sampleSlots(b, day, si).map(x => { const docs = free && free.get(Math.round(x.t * 60)); return { ...x, taken: free ? !docs : false, doctors: docs || [] }; });
+    // with a doctor picked, a time is free only if that doctor is
+    return sampleSlots(b, day, si).map(x => {
+      const docs = free && free.get(Math.round(x.t * 60));
+      return { ...x, taken: free ? !docs || (!!DIARY.want && !docs.includes(DIARY.want)) : false, doctors: docs || [] };
+    });
   };
 }

@@ -21,10 +21,12 @@ if (S.service && SVC_REASON[S.service.id]) S.reasons.add(SVC_REASON[S.service.id
 const KEYS = new Set(['front', 'back'].flatMap(face => REGIONS.map(([type, pos]) => spotKey(face, type, pos))));
 (q.get('area') || '').split(',').map(a => a.includes('~') ? a : `${a}~back`).filter(k => KEYS.has(k)).forEach(k => S.areas.add(k));
 
+const sessName = ([s]) => s < 12 ? 'Morning' : s < 16 ? 'Afternoon' : 'Evening';
 function pickSession() {
   const b = BRANCHES[S.b];
-  if (S.slot) { S.sess = b.sessions.findIndex(([s, e]) => S.slot.t >= s && S.slot.t < e); return; }
-  const i = b.sessions.findIndex((_, si) => slotsFor(b, S.day, si).some(s => !s.taken));
+  const ss = sessionsOn(b, S.day);
+  if (S.slot) { S.sess = ss.findIndex(([s, e]) => S.slot.t >= s && S.slot.t < e); return; }
+  const i = ss.findIndex((_, si) => slotsFor(b, S.day, si).some(s => !s.taken));
   S.sess = i < 0 ? 0 : i;
 }
 
@@ -127,22 +129,26 @@ function renderWhen() {
     const st = branchStatus(BRANCHES[i]), live = n.querySelector('.live');
     n.setAttribute('aria-checked', String(i === S.b)); live.classList.toggle('closed', !st.open); live.lastChild.textContent = st.text;
   });
-  calendar($('[data-cal]'), { selected: S.day, isOpen: d => freeSlots(b, d).length > 0, onPick: d => { if (sameDay(d, S.day)) return; S.day = d; S.slot = null; pickSession(); renderWhen(); update(); } });
+  calendar($('[data-cal]'), { selected: S.day, works: d => worksOn(b, d), worksText: worksDays(b), isOpen: d => freeSlots(b, d).length > 0, onPick: d => { if (sameDay(d, S.day)) return; S.day = d; S.slot = null; pickSession(); renderWhen(); update(); } });
   $('[data-slot-title]').textContent = `Times ${isToday(S.day) ? 'today' : `on ${DAYS[S.day.getDay()]}`}, ${S.day.getDate()} ${MONTHS[S.day.getMonth()]}`;
-  if (sessBtns.length !== b.sessions.length) {
-    sessBtns = b.sessions.map((_, si) => { const n = el('button', { type: 'button', role: 'radio' }); n.addEventListener('click', () => { if (S.sess === si) return; S.sess = si; renderWhen(); }); return n; });
+  // the day's own sessions (a branch can open different hours on different days)
+  const ss = sessionsOn(b, S.day);
+  if (S.sess >= ss.length) S.sess = 0;
+  if (sessBtns.length !== ss.length) {
+    sessBtns = ss.map((_, si) => { const n = el('button', { type: 'button', role: 'radio' }); n.addEventListener('click', () => { if (S.sess === si) return; S.sess = si; renderWhen(); }); return n; });
     $('[data-sessions]').replaceChildren(...sessBtns);
   }
   sessBtns.forEach((n, si) => {
-    const [s, e] = b.sessions[si];
-    n.textContent = `${si ? 'Evening' : 'Morning'} · ${fmtHour(s)}–${fmtHour(e)}`;
+    const [s, e] = ss[si];
+    n.textContent = `${sessName(ss[si])} · ${fmtHour(s)}–${fmtHour(e)}`;
     n.setAttribute('aria-checked', String(si === S.sess));
     n.disabled = !slotsFor(b, S.day, si).some(x => !x.taken);
   });
   const grid = $('[data-slots]'), key = `${S.b}|${dayISO(S.day)}|${S.sess}`;
   if (key === timesKey) { grid.querySelectorAll('.slot').forEach(n => n.setAttribute('aria-checked', String(!!S.slot && S.slot.t === +n.dataset.t))); return; }
   timesKey = key;
-  const rows = Math.ceil(Math.max(...b.sessions.map(([s, e]) => (e - s) * 2)) / 4);
+  // held at the week's longest session, so changing day never moves the page
+  const rows = Math.ceil(Math.max(1, ...[0, 1, 2, 3, 4, 5, 6].flatMap(n => sessionsOn(b, n)).map(([s, e]) => (e - s) * 2)) / 4);
   grid.style.minHeight = `${rows * 52 + (rows - 1) * 10}px`;
   const list = slotsFor(b, S.day, S.sess);
   grid.replaceChildren(...(list.length ? list.map((x, i) => {
@@ -214,6 +220,7 @@ function setLine(k, sig, ...nodes) {
 }
 function listText(a) { return a.length < 2 ? a.join('') : `${a.slice(0, -1).join(', ')} and ${a[a.length - 1]}`; }
 function update() {
+  followDoctor();
   paintFit();
   const b = BRANCHES[S.b], tsig = S.slot ? String(S.slot.t) : '';
   setLine('day', dayISO(S.day), dayLong(S.day));
@@ -276,7 +283,22 @@ $('[data-confirm]').addEventListener('click', e => {
   });
 });
 // the real diary arrives a day at a time; redraw the times when one comes in
-if (DIARY) document.addEventListener('jpn:slots', () => { timesKey = ''; if (S.slot && slotsFor(BRANCHES[S.b], S.day, S.sess).some(x => x.t === S.slot.t && x.taken)) S.slot = null; renderWhen(); update(); });
+// a picked time can stop being free: someone else booked it, or the visitor picked a doctor who is busy then
+function slotGone(why) {
+  if (!S.slot || !slotsFor(BRANCHES[S.b], S.day, S.sess).some(x => x.t === S.slot.t && x.taken)) return false;
+  toast(`${S.slot.label} ${S.slot.suffix} ${why}. Please pick another time.`); S.slot = null; return true;
+}
+if (DIARY) document.addEventListener('jpn:slots', () => { timesKey = ''; slotGone('was just booked by someone else'); renderWhen(); update(); });
+// the times shown follow the physiotherapist picked: only times they are free count
+function followDoctor() {
+  if (!DIARY) return;
+  const want = S.ther >= 0 && TEAM[S.ther] ? TEAM[S.ther].id : null;
+  DIARY.watch(BRANCHES[S.b].id, S.day);
+  if (want === DIARY.want) return;
+  DIARY.want = want; timesKey = '';
+  slotGone(`isn’t free with ${TEAM[S.ther] ? TEAM[S.ther].short : 'that physiotherapist'}`);
+  renderWhen();
+}
 
 placeSpots(); paintPicked(); renderWhen(); renderDocs(); paintIcons(); update();
 

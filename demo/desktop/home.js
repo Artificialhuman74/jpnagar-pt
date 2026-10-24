@@ -17,7 +17,7 @@ function renderBar() {
   $('[data-qb-day]').textContent = dayShort(H.day);
   const status = $('[data-qb-status]');
   if (isToday(H.day)) paintLive(status, b);
-  else { status.classList.remove('closed'); status.replaceChildren(el('i'), el('span', {}, `${DAYS[H.day.getDay()]} · ${hoursText(b)}`)); }
+  else { status.classList.remove('closed'); status.replaceChildren(el('i'), el('span', {}, `${DAYS[H.day.getDay()]} · ${hoursText(b, H.day)}`)); }
   const chips = free.slice(0, 5).map(s => {
     const on = H.slot && H.slot.t === s.t;
     const c = el('button', { class: 'tchip', type: 'button', role: 'radio', 'aria-checked': String(!!on) }, `${s.label} ${s.suffix}`);
@@ -51,7 +51,7 @@ function fillBranches() {
     return o;
   }));
 }
-function fillDays() { calendar(pops.day, { selected: H.day, isOpen: d => freeSlots(BRANCHES[H.b], d).length > 0, onPick: pickDay }); }
+function fillDays() { calendar(pops.day, { selected: H.day, works: d => worksOn(BRANCHES[H.b], d), worksText: worksDays(BRANCHES[H.b]), isOpen: d => freeSlots(BRANCHES[H.b], d).length > 0, onPick: pickDay }); }
 function openPopover(which) {
   if (activePop === which) { closePopover(); return; }
   closePopover();
@@ -108,5 +108,5 @@ addEventListener('keydown', e => {
 $('[data-ready]').replaceChildren(...BRANCHES.map(b => {
   const st = branchStatus(b);
   return el('li', {}, el('b', {}, b.short), el('span', { class: 'live' + (st.open ? '' : ' closed') }, el('i'), el('span', {}, st.text)),
-    el('span', {}, 'Mon–Sat · ', ...hoursNodes(b)), el('a', { class: 'link', href: `book.html?branch=${b.id}` }, 'Book here', icon('chevron')));
+    el('span', {}, ...hoursNodes(b)), el('a', { class: 'link', href: `book.html?branch=${b.id}` }, 'Book here', icon('chevron')));
 }));

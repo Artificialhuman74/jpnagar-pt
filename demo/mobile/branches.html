@@ -32,7 +32,7 @@
 <script>
 const list = document.querySelector('[data-blist]'), now = nowIST();
 const cards = BRANCHES.map((b, i) => {
-  const st = branchStatus(b), today = b.sessions.map(([s, e]) => `${fmtHour(s)}–${fmtHour(e)}`).join(', ');
+  const st = branchStatus(b), today = sessText(sessionsOn(b, now));
   const dist = el('span', { 'data-dist': '' }, kmText(b) || b.landmark), tag = el('span', { class: 'near-tag', hidden: '' }, 'Nearest');
   const card = el('article', { class: 'bcard', 'data-id': b.id },
     el('div', { class: 'photo tilt', 'data-label': `Photo: ${b.short} entrance (to be shot)` }),
@@ -40,7 +40,7 @@ const cards = BRANCHES.map((b, i) => {
       el('div', { class: 'h' }, el('h2', {}, b.name), tag),
       el('div', { class: 'meta' }, el('span', { class: 'open' + (st.open ? '' : ' closed') }, st.text), el('span', {}, '·'), dist),
       el('p', { class: 'addr' }, b.addr),
-      el('p', { class: 'addr' }, now.getDay() === 0 ? 'Closed on Sundays' : `Today: ${today}`),
+      el('p', { class: 'addr' }, worksOn(b, now) ? `Today: ${today}` : 'Closed today'),
       el('div', { class: 'acts' },
         el('a', { href: mapsLink(b), target: '_blank', rel: 'noopener' }, icon('pin'), 'Directions'),
         el('a', { href: 'tel:' + b.phone }, icon('phone'), 'Call'),

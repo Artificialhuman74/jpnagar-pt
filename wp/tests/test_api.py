@@ -166,6 +166,20 @@ check('snapshot: .gz matches .js, no temp files left', 'same' in gz and '.tmp' n
 s, r = call('GET', f'/slots?branch=arekere&date={DAY}')
 check('timings: 20:00 slot now exists, 20:30 does not', any(x['t'] == 1200 for x in r['times']) and not any(x['t'] == 1230 for x in r['times']), r)
 
+# ---- hours that differ by day
+week = {'1': [[540, 780]], '2': [[600, 720], [690, 900]], '3': []}  # Mon mornings; Tue overlapping (second dropped); Wed closed
+s, r = call('PUT', '/admin/schedule/arekere', {'timings': {'week': week, 'slot': 60}}, owner=True)
+check('week: per-day hours saved', s == 200 and r.get('days') == [1, 2], (s, r))
+check('week: overlapping hours cleaned up', s == 200 and r['week']['2'] if isinstance(r.get('week'), dict) else r.get('week', [None, None, None])[2] == [[600, 720]], r.get('week'))
+s, r = call('GET', f'/slots?branch=arekere&date={DAY}')
+check('week: Monday offers 9-12 on the hour only', [x['t'] for x in r['times']] == [540, 600, 660, 720] or set(x['t'] for x in r['times']) <= {540, 600, 660, 720}, r)
+s, r = call('GET', f'/slots?branch=arekere&date={TUESDAY}')
+check('week: Tuesday follows its own hours', s == 200 and all(600 <= x['t'] < 720 for x in r['times']) and r['times'], r)
+js = subprocess.run(['curl','-s', SITE + '/wp-content/uploads/jpnagar/site-data.js'], capture_output=True, text=True).stdout
+check('week: website file has each day and the slot length', '"week":{"1":[[9,13]],"2":[[10,12]]}' in js and '"slot":60' in js, js[js.find('"arekere"'):js.find('"arekere"') + 300])
+s, r = call('PUT', '/admin/schedule/arekere', {'timings': {'days': [1, 2, 3, 4, 5, 6], 'sessions': [[540, 780], [960, 1230]], 'slot': 30}}, owner=True)
+check('week: older one-set-of-hours timings still accepted', s == 200 and r.get('days') == [1, 2, 3, 4, 5, 6], (s, r))
+
 # ---- content draft + publish
 s, st8 = call('GET', '/admin/state', owner=True)
 draft = st8.get('draft') or st8.get('content') or {}

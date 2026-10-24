@@ -478,7 +478,9 @@ const REASON = { surgery: 'After surgery', neuro: 'Stroke or nerve problem', chi
 function bookingId(b, day, t) { const h = Math.floor(t), m = Math.round((t % 1) * 60); return `JP-${b.code}-${pad(day.getDate())}${pad(day.getMonth() + 1)}-${pad(h)}${pad(m)}`; }
 function arriveBy(t) { return timeText(t - 1 / 6); }
 // fits the ticket's side notches onto its perforations
-function fitNotches(tk) { $$('.tk-perf', tk).forEach((p, i) => tk.style.setProperty(`--n${i + 1}`, (p.offsetTop + 1) + 'px')); }
+// (only when a notch has actually moved: the notches are the ticket's mask, and resetting it makes Safari redraw the
+// whole ticket, shadow and all, on every change)
+function fitNotches(tk) { $$('.tk-perf', tk).forEach((p, i) => { const k = `--n${i + 1}`, v = (p.offsetTop + 1) + 'px'; if (tk.style.getPropertyValue(k) !== v) tk.style.setProperty(k, v); }); }
 // Code 128 (set B), so the stub carries a real barcode of the booking ID
 const C128 = ['212222','222122','222221','121223','121322','131222','122213','122312','132212','221213','221312','231212','112232','122132','122231','113222','123122','123221','223211','221132','221231','213212','223112','312131','311222','321122','321221','312212','322112','322211','212123','212321','232121','111323','131123','131321','112313','132113','132311','211313','231113','231311','112133','112331','132131','113123','113321','133121','313121','211331','231131','213113','213311','213131','311123','311321','331121','312113','312311','332111','314111','221411','431111','111224','111422','121124','121421','141122','141221','112214','112412','122114','122411','142112','142211','241211','221114','413111','241112','134111','111242','121142','121241','114212','124112','124211','411212','421112','421211','212141','214121','412121','111143','111341','131141','114113','114311','411113','411311','113141','114131','311141','411131','211412','211214','211232','2331112'];
 function drawBarcode(svg, text) {

@@ -236,11 +236,13 @@ function jpn_notify_branch( array $row ) {
 			break;
 		}
 	}
-	$d  = jpn_doctor( $row['doctor'] );
-	$t  = sprintf( '%d:%02d', intdiv( (int) $row['slot_time'], 60 ), (int) $row['slot_time'] % 60 );
+	$d   = jpn_doctor( $row['doctor'] );
+	$day = DateTimeImmutable::createFromFormat( '!Y-m-d', $row['slot_date'], wp_timezone() );
+	// written the way the front desk says it: "Tue 27 Oct, 10:00 am"
+	$when = $day ? $day->modify( '+' . (int) $row['slot_time'] . ' minutes' )->format( 'D j M, g:i a' ) : $row['slot_date'];
 	$sent = $to && wp_mail(
 		$to,
-		sprintf( 'New booking: %s, %s %s at %s', $row['name'], $row['slot_date'], $t, $b['name'] ),
+		sprintf( 'New booking: %s, %s at %s', $row['name'], $when, $b['name'] ),
 		implode(
 			"\n",
 			array(
@@ -248,7 +250,7 @@ function jpn_notify_branch( array $row ) {
 				'Mobile: +91 ' . $row['phone'],
 				'Branch: ' . $b['name'],
 				'Doctor: ' . ( $d ? $d['name'] : $row['doctor'] ),
-				'When: ' . $row['slot_date'] . ' ' . $t,
+				'When: ' . $when,
 				'Problem: ' . ( $row['problem'] ? $row['problem'] : 'Not said' ),
 				'Note: ' . ( $row['note'] ? $row['note'] : '-' ),
 			)

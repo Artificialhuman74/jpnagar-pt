@@ -42,6 +42,13 @@ Owner (`/admin/...`):
 - `publish`
 - `photos`
 
+## Tests
+
+`bash wp/tests/run.sh` builds a fresh WordPress matching the host (PHP 7.4, WordPress 6.1) in Docker, activates the
+plugin and runs the API suite in `wp/tests/test_api.py`: slots, bookings, six people booking one slot at once, the
+spam limits, owner login, leave and closed days with undo, timings, Publish, the booking email, photo uploads, and
+no PHP warnings. Run it before every push; add `--down` to remove the test site afterwards.
+
 ## Still to do
 
 - Port the patient pages and the admin from `demo/` onto this API.

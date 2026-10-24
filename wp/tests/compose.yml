@@ -1,0 +1,27 @@
+# A throwaway WordPress matching the live host (PHP 7.4, WordPress 6.1) with the plugin mounted read-only.
+# run.sh builds it fresh for every run; nothing here is used in production.
+name: jpn-tests
+services:
+  db:
+    image: mariadb:10.6
+    environment: { MARIADB_DATABASE: wp, MARIADB_USER: wp, MARIADB_PASSWORD: wp, MARIADB_ROOT_PASSWORD: root }
+    healthcheck: { test: ["CMD", "healthcheck.sh", "--connect"], interval: 3s, retries: 30 }
+  wp:
+    image: wordpress:6.1-php7.4-apache
+    depends_on: { db: { condition: service_healthy } }
+    ports: ["127.0.0.1:${JPN_TEST_PORT:-8899}:80"]
+    environment: { WORDPRESS_DB_HOST: db, WORDPRESS_DB_USER: wp, WORDPRESS_DB_PASSWORD: wp, WORDPRESS_DB_NAME: wp, WORDPRESS_DEBUG: "1" }
+    volumes:
+      - wpdata:/var/www/html
+      - ../jpnagar-clinic:/var/www/html/wp-content/plugins/jpnagar-clinic:ro
+      - ./catch-mail.php:/var/www/html/wp-content/mu-plugins/catch-mail.php:ro
+  cli:
+    image: wordpress:cli-php7.4
+    profiles: [cli]
+    user: "33:33"
+    depends_on: [wp]
+    environment: { WORDPRESS_DB_HOST: db, WORDPRESS_DB_USER: wp, WORDPRESS_DB_PASSWORD: wp, WORDPRESS_DB_NAME: wp }
+    volumes:
+      - wpdata:/var/www/html
+      - ../jpnagar-clinic:/var/www/html/wp-content/plugins/jpnagar-clinic:ro
+volumes: { wpdata: {} }

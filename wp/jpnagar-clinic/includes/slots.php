@@ -137,7 +137,10 @@ function jpn_create_booking( array $b ) {
 		);
 		if ( $ok ) {
 			$wpdb->suppress_errors( $quiet );
-			return jpn_get_booking( (int) $wpdb->insert_id );
+			$row = jpn_get_booking( (int) $wpdb->insert_id );
+			// Notifications are queued only after the slot has actually been reserved.
+			do_action( 'jpn_booking_created', $row, $b );
+			return $row;
 		}
 		if ( false === stripos( (string) $wpdb->last_error, 'Duplicate entry' ) ) {
 			$wpdb->suppress_errors( $quiet );

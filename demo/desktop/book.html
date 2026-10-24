@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&amp;display=swap">
 <link rel="stylesheet" href="desktop.css">
+<link rel="stylesheet" href="../canon/booking.css">
 </head>
 <body data-page="book" class="tint">
 <a class="skiplink" href="#main">Skip to content</a>
@@ -105,7 +106,8 @@
           <div class="field" data-f="phone"><label for="ph">Mobile number</label><div class="input"><span class="pre">+91</span><input id="ph" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="e.g. 98765 43210"></div><p class="msg">Enter a 10-digit mobile number, like 98765 43210.</p></div>
           <div class="field full" data-f="email"><label for="em">Email <small>(optional)</small></label><div class="input"><input id="em" type="email" autocomplete="email" placeholder="you@example.com"></div><p class="msg">That email doesn’t look right. Check it, or leave it empty.</p></div>
         </div>
-        <p class="assure"><i data-icon="shield"></i>Only the clinic sees these.</p>
+        <label class="jpn-wa-consent" for="wa-consent"><input id="wa-consent" type="checkbox"><span>Send my booking confirmation on WhatsApp (optional).</span></label>
+        <p class="assure"><i data-icon="shield"></i>Your details are used only to arrange your visit.</p>
       </section>
     </div>
 

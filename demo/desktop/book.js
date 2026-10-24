@@ -268,7 +268,7 @@ $('[data-confirm]').addEventListener('click', e => {
   // shows whoever the diary gave the patient
   const problem = [...S.areas].map(labelOf).concat([...S.reasons].map(r => REASON[r]), S.service ? [S.service.name] : []).join(', ');
   DIARY.book({ branch: b.id, date: dayISO(S.day), time: Math.round(S.slot.t * 60), doctor: S.ther >= 0 ? TEAM[S.ther].id : null,
-    name: S.name, phone: S.phone, email: S.email, problem, note: S.story }).then(r => {
+    name: S.name, phone: S.phone, email: S.email, problem, note: S.story, whatsapp_consent: $('#wa-consent').checked }).then(r => {
     if (r.ok) { booking.id = `JP-${b.code}-${String(r.data.id).padStart(5, '0')}`; booking.ther = TEAM.findIndex(t => t.id === r.data.doctor); return done(); }
     btn.classList.remove('is-busy'); btn.firstElementChild.textContent = 'Confirm booking';
     toast((r.data && r.data.message) || 'That didn’t go through. Please try again, or call the clinic.');

@@ -13,6 +13,10 @@ pages and the clinic admin use. The frontends are ported from `demo/` (see CLAUD
 | `includes/snapshot.php` | Publishing: writes `uploads/jpnagar/site-data.js` (+ `.gz`) and clears the page cache |
 | `includes/images.php` | Photo uploads: resized and saved as WebP |
 | `includes/rest.php` | The API under `/wp-json/jpnagar/v1/` |
+| `includes/whatsapp.php` | Optional Meta Cloud API booking notifications, durable queue and signed delivery webhooks |
+
+Automated WhatsApp confirmations are implemented as an opt-in paid messaging add-on and are **disabled by default**.
+See [WHATSAPP.md](WHATSAPP.md) for provider comparison, templates, server configuration, activation and tests.
 
 ## How the rules are kept
 

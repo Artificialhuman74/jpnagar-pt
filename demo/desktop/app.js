@@ -244,7 +244,8 @@ function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('show'); 
 
 /* ---------- header: is the nearest branch open? ---------- */
 function paintLive(n, b) { const st = branchStatus(b); n.classList.toggle('closed', !st.open); n.replaceChildren(el('i'), el('span', {}, liveLine(b))); }
-$$('[data-live]').forEach(n => paintLive(n, BRANCHES[0]));
+// the header shows the branch booking starts at: the nearest once shared, else JP Nagar
+$$('[data-live]').forEach(n => paintLive(n, BRANCHES[nearestIndex()]));
 
 /* ---------- dock: equal items, a sliding indicator that remembers where you came from ---------- */
 const DOCK = [['home', 'Home', 'home.html'], ['services', 'Services', 'services.html'], ['book', 'Book', 'book.html'], ['branches', 'Branches', 'branches.html'], ['team', 'Team', 'team.html']];

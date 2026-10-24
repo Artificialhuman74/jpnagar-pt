@@ -157,13 +157,21 @@ function renderWhen() {
     n.setAttribute('aria-checked', String(si === S.sess));
     n.disabled = !slotsFor(b, S.day, si).some(x => !x.taken);
   });
-  const grid = $('[data-slots]'), key = `${S.b}|${dayISO(S.day)}|${S.sess}`;
-  if (key === timesKey) { grid.querySelectorAll('.slot').forEach(n => n.setAttribute('aria-checked', String(!!S.slot && S.slot.t === +n.dataset.t))); return; }
+  // The grid is rebuilt (and animates in) only when its times change: a new branch, day or session. Fresh news from
+  // the diary, or a different physiotherapist, only changes which times are taken, so the buttons update in place.
+  const list = slotsFor(b, S.day, S.sess), grid = $('[data-slots]'), key = `${S.b}|${dayISO(S.day)}|${S.sess}|${list.map(x => x.t).join(',')}`;
+  if (key === timesKey) {
+    grid.querySelectorAll('.slot').forEach((n, i) => {
+      const x = list[i]; if (!x) return;
+      n.disabled = x.taken; n.setAttribute('aria-label', `${x.label} ${x.suffix}${x.taken ? ', taken' : ''}`);
+      n.setAttribute('aria-checked', String(!!S.slot && S.slot.t === x.t));
+    });
+    return;
+  }
   timesKey = key;
   // held at the week's longest session, so changing day never moves the page
   const rows = Math.ceil(Math.max(1, ...[0, 1, 2, 3, 4, 5, 6].flatMap(n => sessionsOn(b, n)).map(([s, e]) => (e - s) * 2)) / 4);
   grid.style.minHeight = `${rows * 52 + (rows - 1) * 10}px`;
-  const list = slotsFor(b, S.day, S.sess);
   grid.replaceChildren(...(list.length ? list.map((x, i) => {
     const n = el('button', { class: 'slot', type: 'button', role: 'radio', 'data-t': x.t, style: `--i:${i}`, 'aria-checked': String(!!S.slot && S.slot.t === x.t), 'aria-label': `${x.label} ${x.suffix}${x.taken ? ', taken' : ''}` }, `${x.label} ${x.suffix}`);
     n.disabled = x.taken;
@@ -301,14 +309,14 @@ function slotGone(why) {
   if (!S.slot || !slotsFor(BRANCHES[S.b], S.day, S.sess).some(x => x.t === S.slot.t && x.taken)) return false;
   toast(`${S.slot.label} ${S.slot.suffix} ${why}. Please pick another time.`); S.slot = null; return true;
 }
-if (DIARY) document.addEventListener('jpn:slots', () => { timesKey = ''; slotGone('was just booked by someone else'); renderWhen(); update(); });
+if (DIARY) document.addEventListener('jpn:slots', () => { slotGone('was just booked by someone else'); renderWhen(); update(); });
 // the times shown follow the physiotherapist picked: only times they are free count
 function followDoctor() {
   if (!DIARY) return;
   const want = S.ther >= 0 && TEAM[S.ther] ? TEAM[S.ther].id : null;
   DIARY.watch(BRANCHES[S.b].id, S.day);
   if (want === DIARY.want) return;
-  DIARY.want = want; timesKey = '';
+  DIARY.want = want;
   slotGone(`isn’t free with ${TEAM[S.ther] ? TEAM[S.ther].short : 'that physiotherapist'}`);
   renderWhen();
 }

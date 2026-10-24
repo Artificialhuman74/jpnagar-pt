@@ -475,7 +475,7 @@ function renderTime() {
   if (DIARY) {
     const doc = DOCS.find(d => d.name === S.ther && !d.any), want = doc ? doc.id : null;
     DIARY.watch(b.id, S.day);
-    if (want !== DIARY.want) { DIARY.want = want; timesKey = ''; slotGone(`isn’t free with ${S.ther}`); }
+    if (want !== DIARY.want) { DIARY.want = want; slotGone(`isn’t free with ${S.ther}`); }
   }
   [...tabs.querySelectorAll('.tab')].forEach((t, i) => { t.classList.toggle('is-on', i === S.b); t.setAttribute('aria-selected', i === S.b); });
   const on = tabs.querySelectorAll('.tab')[S.b];
@@ -511,13 +511,18 @@ function renderTime() {
     n.className = si === S.sess ? 'on' : '';
     n.disabled = !slotsFor(b, S.day, si).some(x => !x.taken);
   });
-  const grid = $('[data-slots]'), key = `${S.b}|${S.day.toDateString()}|${S.sess}`;
+  // The grid is rebuilt only when its times change (a new branch, day or session). Fresh news from the diary, or a
+  // different physiotherapist, only changes which times are taken, so the buttons update in place.
+  const list = slotsFor(b, S.day, S.sess), grid = $('[data-slots]'), key = `${S.b}|${S.day.toDateString()}|${S.sess}|${list.map(x => x.t).join(',')}`;
+  if (key === timesKey) grid.querySelectorAll('.slot').forEach((n, i) => {
+    const x = list[i]; if (!x) return;
+    n.disabled = x.taken; n.classList.toggle('is-taken', x.taken); n.setAttribute('aria-label', `${x.label} ${x.suffix}${x.taken ? ', taken' : ''}`);
+  });
   if (key !== timesKey) {
     timesKey = key;
     // held at the week's longest session, so changing day never moves the page
     const rows = Math.ceil(Math.max(1, ...[0, 1, 2, 3, 4, 5, 6].flatMap(n => sessionsOn(b, n)).map(([s, e]) => (e - s) * 2)) / 3);
     grid.style.minHeight = `${rows * 48 + (rows - 1) * 8}px`;
-    const list = slotsFor(b, S.day, S.sess);
     grid.replaceChildren(...(list.length ? list.map(x => {
       const n = el('button', { class: 'slot' + (x.taken ? ' is-taken' : ''), 'aria-label': `${x.label} ${x.suffix}${x.taken ? ', taken' : ''}` }, `${x.label} ${x.suffix}`);
       if (x.taken) n.disabled = true;
@@ -641,7 +646,7 @@ function slotGone(why) {
   if (!S.slot || !slotsFor(BRANCHES[S.b], S.day, S.sess).some(x => x.t === S.slot.t && x.taken)) return false;
   toast(`${S.slot.label} ${S.slot.suffix} ${why}. Please pick another time.`); S.slot = null; return true;
 }
-if (DIARY) document.addEventListener('jpn:slots', () => { timesKey = ''; slotGone('was just booked by someone else'); if (S.step === 2) renderTime(); else setBar(); });
+if (DIARY) document.addEventListener('jpn:slots', () => { slotGone('was just booked by someone else'); if (S.step === 2) renderTime(); else setBar(); });
 
 /* ---------- details ---------- */
 function validate() {

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Arekere Branch · J.P. Nagar Physio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="../canon/base.css">
+<link rel="stylesheet" href="site.css">
+</head><body class="has-sticky">
+<header class="top"><img class="logo" src="../canon/logo.webp" alt="J.P. Nagar Medical & Physiotherapy Centre" width="408" height="301"></header>
+<section class="hero" data-inview style="height:380px">
+  <div class="photo" data-label="Photo: Arekere clinic (to be shot)"></div>
+  <div class="copy">
+    <div class="live" data-live><i></i><span></span></div>
+    <h1>Physiotherapy in Arekere</h1>
+    <p style="margin-bottom:0">Near L&amp;T South City, Bannerghatta Main Road.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <h2 data-reveal>Next free times</h2>
+  <div class="quick" data-quick></div>
+</section>
+
+<section class="sec">
+  <h2 data-reveal>Finding us</h2>
+  <ul class="landmarks" data-reveal>
+    <li><i data-icon="pin"></i><span>No. 129, 1st Floor, Lakshmi Nivas, 3rd Cross, Arekere MICO Layout 2nd Stage, Bengaluru 560076</span></li>
+    <li><i data-icon="tick"></i><span>Near L&amp;T South City, off Bannerghatta Main Road</span></li>
+    <li><i data-icon="tick"></i><span>Parking available</span></li>
+    <li><i data-icon="phone"></i><span>+91 99161 16625 · 080 2648 9922</span></li>
+  </ul>
+  <div class="acts" style="grid-template-columns:1fr 1fr">
+    <a data-dir target="_blank" rel="noopener"><i data-icon="pin"></i>Directions</a>
+    <a href="tel:+918026489922"><i data-icon="phone"></i>Call branch</a>
+  </div>
+</section>
+<div class="mapbox photo" data-label="Google Maps embed · Arekere"></div>
+
+<section class="sec">
+  <h2 data-reveal>Opening hours</h2>
+  <div class="week" data-week></div>
+</section>
+
+<section class="sec">
+  <h2 data-reveal>Physiotherapists here</h2>
+  <div class="who-treats">
+    <a href="team.html?open=2"><div class="photo"></div><b>Dr. Jeya Chitra Devi</b><small>HOD · 15+ years</small></a>
+    <a href="team.html"><div class="photo"></div><b>[More to confirm]</b><small>Clinic to confirm</small></a>
+  </div>
+</section>
+
+<section class="sec">
+  <h2 data-reveal>Often treated here</h2>
+  <div class="helps" data-reveal><span>Back and neck pain</span><span>Knee pain</span><span>Sports injuries</span><span>After surgery</span><span>Posture problems</span></div>
+</section>
+
+<div class="stickybook"><a class="btn btn--act" href="book.html?branch=arekere">Book at Arekere</a></div>
+<nav class="dock" data-active="branches"></nav>
+<script src="app.js"></script>
+<script src="../canon/published-data.js"></script>
+<script src="../canon/published.js"></script>
+<script>
+const b = BRANCHES.find(x => x.id === 'arekere'), st = branchStatus(b);
+const live = document.querySelector('[data-live]');
+live.classList.toggle('closed', !st.open); live.querySelector('span').textContent = st.text;
+document.querySelector('[data-dir]').href = mapsLink(b);
+// next three free slots, straight into booking
+const quick = document.querySelector('[data-quick]'), d0 = nowIST(), found = [];
+for (let i = 0; i < 7 && found.length < 3; i++) {
+  const day = new Date(d0); day.setDate(d0.getDate() + i); if (day.getDay() === 0) continue;
+  b.sessions.forEach((_, si) => slotsFor(b, day, si).filter(s => !s.taken).forEach(s => found.length < 3 && found.push({ day, s, i })));
+}
+const DOWN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+found.forEach(({ day, s, i }) => quick.append(el('a', { href: 'book.html?branch=arekere' },
+  el('small', {}, i === 0 ? 'Today' : `${DOWN[day.getDay()]} ${day.getDate()}`), `${s.label} ${s.suffix}`)));
+// week with today highlighted
+const week = document.querySelector('[data-week]'), names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+names.forEach((n, i) => {
+  const dow = (i + 1) % 7, isToday = dow === d0.getDay();
+  week.append(el('div', { class: (isToday ? 'today' : '') + (dow === 0 ? ' off' : '') },
+    el('span', {}, n + (isToday ? ' · today' : '')),
+    el('span', {}, dow === 0 ? 'Closed' : b.sessions.map(([s, e]) => `${fmtHour(s)}–${fmtHour(e)}`).join(', '))));
+});
+</script>
+</body></html>

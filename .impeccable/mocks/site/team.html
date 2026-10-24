@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Team · J.P. Nagar Physio</title>
+<link rel="stylesheet" href="../canon/base.css">
+<link rel="stylesheet" href="site.css">
+</head><body>
+<header class="top"><img class="logo" src="../canon/logo.png" alt="J.P. Nagar Medical & Physiotherapy Centre"></header>
+<div class="phead" data-reveal>
+  <h1>Our physiotherapists</h1>
+  <p>Senior, qualified, and focused only on physiotherapy. Tap anyone to get to know them.</p>
+</div>
+<div class="team" data-team></div>
+
+<section class="sec">
+  <h2 data-reveal>How we work together</h2>
+  <ul class="ticks why" data-inview>
+    <li><i class="draw" data-icon="tick"></i><div><b>One therapist leads your plan</b><span class="small muted">Others step in when your recovery needs it.</span></div></li>
+    <li><i class="draw" data-icon="tick"></i><div><b>Same standards at every branch</b><span class="small muted">Trained and guided by Dr. P. Senthil.</span></div></li>
+    <li><i class="draw" data-icon="tick"></i><div><b>Referrals when needed</b><span class="small muted">We work with a network of other specialists.</span></div></li>
+  </ul>
+</section>
+<div class="sec"><a class="btn btn--act btn--block" href="book.html">Book a visit</a></div>
+
+<div class="scrim" data-scrim></div>
+<section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-name" data-sheet>
+  <div class="grab" aria-hidden="true"></div>
+  <button class="iconbtn x" aria-label="Close" data-icon="close" data-close></button>
+  <div class="who"><div class="photo tilt"></div><div><h2 id="sh-name"></h2><p class="role" data-sh-role></p></div></div>
+  <div class="deg" data-sh-deg></div>
+  <p class="explain" data-sh-explain>Tap a qualification to see what it means.</p>
+  <h3>What they treat</h3><ul class="ticks" data-sh-treat></ul>
+  <h3>Background</h3><ul class="ticks" data-sh-bg></ul>
+  <a class="btn btn--act btn--block" data-sh-book>Book with</a>
+</section>
+
+<div class="fab"></div>
+<nav class="dock" data-active="team"></nav>
+<script src="app.js"></script>
+<script>
+// From the clinic's live "Our Professionals" page; who works at which branch is still to be confirmed.
+const TEAM = [
+  { name: 'Dr. P. Senthil (PT)', short: 'Dr. P. Senthil', role: 'Founder · Chief Consultant Physiotherapist', years: '27+ years',
+    deg: ['MPT', 'MD(A.M)', 'D.ACU', 'COMT', 'MIAP'], feature: true,
+    treat: ['Orthopaedic and sports injuries', 'Neurological conditions', 'Long-term and complex pain', 'Acute and chronic joint and muscle problems'],
+    bg: ['BPT and MPT (Sports & Musculoskeletal), Rajah Muthiah Medical College', 'Certified Orthopaedic Manual Therapist', 'Advanced training in acupuncture and alternative medicine', 'Founded the clinic in 2012'] },
+  { name: 'Dr. Vanitha Senthil (PT)', short: 'Dr. Vanitha Senthil', role: 'Senior Consultant Physiotherapist', years: '',
+    deg: ['MPT', 'COMT', 'MIAP'],
+    treat: ['Restoring mobility', 'Reducing pain', 'Structured rehabilitation programmes', 'Guided therapeutic exercise'],
+    bg: ['Master of Physiotherapy', 'Certified Orthopaedic Manual Therapist', 'Known for compassionate, patient-centred care'] },
+  { name: 'Dr. Jeya Chitra Devi (PT)', short: 'Dr. Jeya Chitra Devi', role: 'HOD & Senior Consultant · Arekere', years: '15+ years',
+    deg: ['BPT'],
+    treat: ['Orthopaedic and post-surgery rehab', 'Sports physiotherapy', 'Neurological rehabilitation', 'Posture and work-related (ergonomic) problems'],
+    bg: ['BPT, Dr. MGR Medical University', 'Head of Department at the Arekere branch', 'Focus on long-term recovery, not just temporary relief'] }
+];
+const grid = document.querySelector('[data-team]');
+TEAM.forEach((t, i) => {
+  const b = el('button', { class: 'member' + (t.feature ? ' feature' : ''), 'data-reveal': '', 'aria-haspopup': 'dialog' },
+    el('div', { class: 'photo tilt' }),
+    el('div', { class: 'body' },
+      el('b', {}, t.name), el('small', {}, t.role + (t.years ? ` · ${t.years}` : '')),
+      el('span', { class: 'deg' }, ...t.deg.slice(0, 3).map(d => el('em', {}, d))),
+      el('span', { class: 'more' }, 'Know more', icon('chevron'))));
+  b.addEventListener('click', () => openSheet(i, b));
+  grid.append(b);
+});
+document.querySelectorAll('[data-team] [data-reveal]').forEach(n => io.observe(n));
+
+const sheet = document.querySelector('[data-sheet]'), scrim = document.querySelector('[data-scrim]');
+let opener;
+function openSheet(i, from) {
+  const t = TEAM[i]; opener = from;
+  document.getElementById('sh-name').textContent = t.name;
+  document.querySelector('[data-sh-role]').textContent = t.role + (t.years ? ` · ${t.years}` : '');
+  const ex = document.querySelector('[data-sh-explain]');
+  ex.textContent = 'Tap a qualification to see what it means.';
+  document.querySelector('[data-sh-deg]').replaceChildren(...t.deg.map(d => {
+    const c = el('button', { class: 'chipbtn' }, d);
+    c.addEventListener('click', () => {
+      document.querySelectorAll('[data-sh-deg] .chipbtn').forEach(x => x.classList.toggle('on', x === c));
+      ex.textContent = `${d}: ${DEGREES[d] || d}`;
+    });
+    return c;
+  }));
+  const list = (sel, items) => document.querySelector(sel).replaceChildren(...items.map(x => el('li', {}, icon('tick'), el('span', {}, x))));
+  list('[data-sh-treat]', t.treat); list('[data-sh-bg]', t.bg);
+  const bk = document.querySelector('[data-sh-book]');
+  bk.textContent = `Book with ${t.short}`; bk.href = 'book.html?ther=' + encodeURIComponent(t.short);
+  sheet.classList.add('is-open'); scrim.classList.add('is-open'); sheet.scrollTop = 0;
+  document.querySelector('[data-close]').focus();
+}
+function closeSheet() { sheet.classList.remove('is-open'); scrim.classList.remove('is-open'); opener && opener.focus(); }
+document.querySelector('[data-close]').addEventListener('click', closeSheet);
+scrim.addEventListener('click', closeSheet);
+addEventListener('keydown', e => { if (e.key === 'Escape' && sheet.classList.contains('is-open')) closeSheet(); });
+// drag the sheet down to dismiss
+let sy = null;
+sheet.addEventListener('pointerdown', e => { if (sheet.scrollTop <= 0) sy = e.clientY; });
+sheet.addEventListener('pointermove', e => { if (sy === null) return; const dy = Math.max(0, e.clientY - sy); sheet.style.transition = 'none'; sheet.style.transform = `translateY(${dy}px)`; });
+addEventListener('pointerup', e => {
+  if (sy === null) return; const dy = e.clientY - sy; sy = null;
+  sheet.style.transition = ''; sheet.style.transform = '';
+  if (dy > 90) closeSheet();
+});
+const want = new URLSearchParams(location.search).get('open');
+if (want !== null && TEAM[+want]) openSheet(+want);
+</script>
+</body></html>

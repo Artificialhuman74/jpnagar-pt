@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>C · Inset Photo and Slots</title>
+<link rel="stylesheet" href="base.css">
+<style>
+.hero{margin:0 10px;border-radius:30px;overflow:hidden;position:relative;height:430px}
+.hero .photo{position:absolute;inset:0}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(24,20,26,0) 35%,rgba(24,20,26,.72))}
+.hero .copy{position:absolute;left:20px;right:20px;bottom:22px;color:#fff;z-index:2}
+.hero h1{font-size:38px}
+.hero p{margin-top:8px;color:rgba(255,255,255,.88)}
+.next{padding:22px 18px 0}
+.next .head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.next h2{font-size:20px}
+.next a.all{font-size:14px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.strip{display:flex;gap:8px;overflow:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}
+.strip .slot{flex:0 0 auto;width:88px;height:58px;display:grid;align-content:center;gap:0}
+.strip .slot small{font-size:11px;font-weight:600;color:var(--ink-2)}
+.strip .slot.is-on small{color:rgba(255,255,255,.8)}
+.next .btn{margin-top:14px}
+.why{display:grid;gap:14px}
+.why li{font-size:16px}
+.why b{display:block}
+.why span{color:var(--ink-2);font-size:14px}
+.gallery{display:flex;gap:12px;overflow:auto;scrollbar-width:none;margin:0 -18px;padding:6px 18px 18px;perspective:900px}
+.gallery .photo{flex:0 0 auto;width:220px;height:280px;border-radius:22px;box-shadow:var(--shadow)}
+.gallery .photo:nth-child(2){transform:rotateY(-8deg)}
+.gallery .photo:nth-child(3){transform:rotateY(-14deg)}
+</style></head><body>
+<header class="top"><img class="logo" src="logo.png" alt="J.P. Nagar Medical & Physiotherapy Centre"></header>
+<section class="hero">
+  <div class="photo" data-label="Photo: Arekere clinic (to be shot)"></div>
+  <div class="copy"><h1>Feel better, sooner.</h1><p>Expert physiotherapy at 3 branches in South Bangalore.</p></div>
+</section>
+<section class="next" data-booking>
+  <div class="head"><h2>Next free at Arekere</h2><a class="all" href="#">All times</a></div>
+  <div class="strip slots">
+    <button class="slot"><small>Today</small>4:30</button>
+    <button class="slot is-on"><small>Today</small>5:30</button>
+    <button class="slot"><small>Today</small>6:00</button>
+    <button class="slot"><small>Fri</small>9:00</button>
+    <button class="slot"><small>Fri</small>9:30</button>
+  </div>
+  <a class="btn btn--act btn--block" href="#" data-cta>Book 5:30 pm</a>
+</section>
+<section class="sec">
+  <h2>Why patients choose us</h2>
+  <ul class="ticks why">
+    <li><i data-icon="tick"></i><div><b>Assessed on your first visit</b><span>We find the cause, not just the pain.</span></div></li>
+    <li><i data-icon="tick"></i><div><b>A plan made for you</b><span>Exercises and therapy for your goals.</span></div></li>
+    <li><i data-icon="tick"></i><div><b>Senior physiotherapists</b><span>Led by Dr. P. Senthil, MPT, 27+ years.</span></div></li>
+  </ul>
+</section>
+<section class="sec">
+  <h2>Inside our clinics</h2>
+  <div class="gallery"><div class="photo tilt" data-label="Gallery photo"></div><div class="photo" data-label="Gallery photo"></div><div class="photo" data-label="Gallery photo"></div></div>
+</section>
+<div class="fab"></div>
+<nav class="dock dock--bar" data-active="home"></nav>
+<script src="ui.js"></script>
+</body></html>

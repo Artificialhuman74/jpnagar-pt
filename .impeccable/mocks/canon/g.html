@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>G · Branch Tabs</title>
+<link rel="stylesheet" href="base.css">
+<style>
+.hero{margin:0 10px;border-radius:30px;overflow:hidden;position:relative;height:300px}
+.hero .photo{position:absolute;inset:0}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,22,41,0) 25%,rgba(20,22,41,.74))}
+.hero .copy{position:absolute;left:20px;right:20px;bottom:20px;color:#fff;z-index:2}
+.hero h1{font-size:36px}
+.book{padding:22px 10px 0}
+.book h2{padding:0 8px;margin-bottom:12px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:16px;background:var(--surface)}
+.tab{border:0;background:transparent;border-radius:12px;padding:9px 6px;text-align:center;cursor:pointer;font:inherit;color:var(--ink-2)}
+.tab b{display:block;font-size:14px;color:var(--ink)}
+.tab small{font-size:12px}
+.tab.is-on{background:var(--canvas);box-shadow:0 2px 8px -3px rgba(20,22,41,.25)}
+.tab.is-on small{color:var(--sky-ink);font-weight:700}
+.status{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:14px}
+.status a{font-weight:700;color:var(--sky-ink)}
+.quote{background:var(--surface);border-radius:22px;padding:18px}
+.quote p{font-size:17px;font-weight:500;line-height:1.4}
+.quote small{display:block;margin-top:10px;color:var(--ink-2);font-size:13px}
+.quote .stars{margin-bottom:10px}
+.svc{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.svc a{border-radius:20px;background:var(--surface);padding:16px;min-height:96px;display:flex;flex-direction:column;justify-content:space-between;font-weight:700}
+.svc a i{width:30px;height:30px;border-radius:10px;background:var(--canvas);color:var(--sky-ink);display:grid;place-items:center}
+.svc a i svg{width:16px;height:16px}
+</style></head><body>
+<header class="top"><img class="logo" src="logo.png" alt="J.P. Nagar Medical & Physiotherapy Centre"></header>
+<section class="hero">
+  <div class="photo" data-label="Photo: reception (to be shot)"></div>
+  <div class="copy"><h1>Feel better, sooner.</h1></div>
+</section>
+<section class="book">
+  <h2>Book at your nearest branch</h2>
+  <div class="bk" data-booking>
+    <div class="tabs" role="tablist">
+      <button class="tab is-on" role="tab" aria-selected="true"><b>Arekere</b><small>1.2 km</small></button>
+      <button class="tab" role="tab"><b>Bannerghatta</b><small>2.8 km</small></button>
+      <button class="tab" role="tab"><b>JP Nagar</b><small>4.1 km</small></button>
+    </div>
+    <div class="status"><span class="open">Open now · till 9 pm</span><a href="#">Directions</a></div>
+    <div class="days"><div class="day is-on"><small>Today</small><b>22</b></div><div class="day"><small>Fri</small><b>23</b></div><div class="day"><small>Sat</small><b>24</b></div><div class="day is-off"><small>Sun</small><b>25</b></div><div class="day"><small>Mon</small><b>26</b></div></div>
+    <p class="session">Evening · 4 – 9 pm</p>
+    <div class="slots"><button class="slot">4:30</button><button class="slot is-taken">5:00</button><button class="slot is-on">5:30</button><button class="slot">6:00</button><button class="slot is-taken">6:30</button><button class="slot">7:00</button></div>
+    <a class="btn btn--act btn--block" href="#" data-cta>Book 5:30 pm</a>
+  </div>
+</section>
+<section class="sec">
+  <div class="quote"><span class="stars"><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i></span><p>“Sample review. Real Google reviews from each branch load here.”</p><small>Google review · placeholder</small></div>
+</section>
+<section class="sec">
+  <h2>What hurts?</h2>
+  <div class="svc">
+    <a href="#">Back &amp; neck<i data-icon="chevron"></i></a>
+    <a href="#">Knee &amp; joints<i data-icon="chevron"></i></a>
+    <a href="#">After surgery<i data-icon="chevron"></i></a>
+    <a href="#">Sports injury<i data-icon="chevron"></i></a>
+  </div>
+</section>
+<div class="fab"></div>
+<nav class="dock dock--dot" data-active="home"></nav>
+<script src="ui.js"></script>
+<script>
+document.querySelectorAll('.tabs').forEach(t => t.addEventListener('click', e => {
+  const b = e.target.closest('.tab'); if (!b) return;
+  t.querySelectorAll('.tab').forEach(x => { x.classList.remove('is-on'); x.setAttribute('aria-selected', 'false'); });
+  b.classList.add('is-on'); b.setAttribute('aria-selected', 'true');
+}));
+</script>
+</body></html>

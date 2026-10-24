@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kinesio Strip sketch</title>
+<style>
+:root{--paper:#FFFFFF;--stone:#EFEEEC;--tape:#8E1B2C;--tape-deep:#5A0F1C;--ink:#1A1416;--mute:#6B6466}
+*{box-sizing:border-box;margin:0}
+body{width:390px;height:844px;overflow:hidden;background:var(--paper);font-family:-apple-system,"Helvetica Neue",system-ui,sans-serif;color:var(--ink);position:relative}
+.tape{position:absolute;height:46px;border-radius:23px;background:
+ repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0 2px,transparent 2px 5px),
+ repeating-linear-gradient(0deg,rgba(0,0,0,.08) 0 1px,transparent 1px 4px),var(--tape);
+ box-shadow:0 2px 0 rgba(0,0,0,.08)}
+.t1{width:560px;left:-120px;top:236px;transform:rotate(-14deg)}
+.t2{width:520px;left:-60px;top:610px;transform:rotate(-14deg);opacity:.92}
+.logo{position:absolute;top:20px;left:20px;width:64px;height:48px;border-radius:6px;background:linear-gradient(90deg,#2B3990 0 45%,#29ABE2 55%)}
+h1{position:absolute;top:96px;left:20px;right:20px;font-size:40px;line-height:1.02;letter-spacing:-.035em;font-weight:800}
+.card{position:absolute;top:262px;left:18px;right:18px;height:388px;background:var(--paper);border-radius:22px;padding:22px;
+ box-shadow:0 1px 0 rgba(26,20,22,.06),0 24px 48px -24px rgba(26,20,22,.35);border:1px solid #E6E3E2}
+.corner{position:absolute;width:70px;height:26px;border-radius:13px;background:var(--tape);opacity:.9}
+.c1{top:-10px;left:-14px;transform:rotate(-32deg)}.c2{top:-10px;right:-14px;transform:rotate(32deg)}
+.near{display:flex;justify-content:space-between;align-items:baseline}
+.near h2{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.open{font-size:14px;font-weight:700;color:var(--tape)}
+.dist{margin-top:4px;font-size:14px;color:var(--mute)}
+.slots{margin-top:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.slot{height:64px;border-radius:32px;background:var(--stone);display:grid;place-items:center;font-size:23px;font-weight:750}
+.slot.x{color:#B3AEAF;text-decoration:line-through;background:#F7F6F5}
+.slot.on{background:var(--tape);color:#fff;transform:rotate(-3deg)}
+.cta{position:absolute;left:22px;right:22px;bottom:58px;height:60px;border-radius:30px;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:23px;font-weight:800}
+.foot{position:absolute;left:22px;right:22px;bottom:20px;display:flex;justify-content:space-between;font-size:13px;color:var(--mute)}
+.dock{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:334px;height:68px;border-radius:26px;background:rgba(255,255,255,.62);border:1px solid rgba(26,20,22,.08);backdrop-filter:blur(18px) saturate(1.5);box-shadow:0 14px 30px -14px rgba(26,20,22,.5);display:flex;justify-content:space-around;align-items:center}
+.dock i{width:26px;height:26px;border-radius:8px;background:#8D8789}
+.dock .bk{width:56px;height:56px;border-radius:28px;background:var(--tape)}
+.fab{position:absolute;right:14px;bottom:102px;display:grid;gap:10px}
+.fab i{width:46px;height:46px;border-radius:50%;background:#fff;border:1px solid #E3E0DF;box-shadow:0 6px 14px -6px rgba(0,0,0,.3)}
+</style></head><body>
+<div class="tape t1"></div><div class="tape t2"></div>
+<div class="logo"></div>
+<h1>Physio near you. Book today.</h1>
+<div class="card"><span class="corner c1"></span><span class="corner c2"></span>
+ <div class="near"><h2>Arekere</h2><span class="open">● Open now</span></div>
+ <p class="dist">1.2 km · closes 9 pm · parking</p>
+ <div class="slots"><div class="slot">4:30</div><div class="slot x">5:00</div><div class="slot on">5:30</div><div class="slot">6:00</div><div class="slot">6:30</div><div class="slot">7:00</div></div>
+ <div class="cta">Book 5:30 pm</div>
+ <div class="foot"><span>★ Google rating</span><span>Dr. P. Senthil · 27+ yrs</span></div>
+</div>
+<div class="fab"><i></i><i></i></div>
+<nav class="dock"><i></i><i></i><span class="bk"></span><i></i><i></i></nav>
+</body></html>

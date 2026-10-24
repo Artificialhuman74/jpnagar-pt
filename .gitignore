@@ -1,0 +1,11 @@
+# local machine
+.DS_Store
+__pycache__/
+*.pyc
+*.tmp
+# written by demo/start.sh and demo/tools/serve.py on each run
+demo/lan.json
+demo/canon/published-data.js
+# impeccable runtime state
+.impeccable/live/
+.impeccable/config.local.json

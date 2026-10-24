@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>E · Photo then Booking</title>
+<link rel="stylesheet" href="base.css">
+<style>
+.hero{margin:0 10px;border-radius:30px;overflow:hidden;position:relative;height:400px}
+.hero .photo{position:absolute;inset:0}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,22,41,0) 35%,rgba(20,22,41,.74))}
+.hero .copy{position:absolute;left:20px;right:20px;bottom:22px;color:#fff;z-index:2}
+.hero h1{font-size:38px}
+.hero p{margin-top:8px;color:rgba(255,255,255,.88)}
+.book{padding:26px 10px 0}
+.book h2{padding:0 8px;margin-bottom:12px}
+.trust{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.founder{display:grid;grid-template-columns:76px 1fr;gap:14px;align-items:center;background:var(--surface);border-radius:22px;padding:14px}
+.founder .photo{width:76px;height:76px;border-radius:18px}
+.founder .photo::after{display:none}
+.founder b{font-size:17px}
+.marquee{overflow:hidden;margin:0 -18px;padding:8px 0 22px;perspective:1000px}
+.track{display:flex;gap:14px;width:max-content;animation:drift 40s linear infinite}
+.marquee:hover .track{animation-play-state:paused}
+.track .photo{width:200px;height:250px;border-radius:22px;box-shadow:var(--shadow)}
+.track .photo::after{font-size:10px}
+@keyframes drift{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.track{animation:none}}
+</style></head><body>
+<header class="top"><img class="logo" src="logo.png" alt="J.P. Nagar Medical & Physiotherapy Centre"></header>
+<section class="hero">
+  <div class="photo" data-label="Photo: Arekere clinic (to be shot)"></div>
+  <div class="copy"><h1>Feel better, sooner.</h1><p>Expert physiotherapy at 3 branches in South Bangalore.</p></div>
+</section>
+<section class="book">
+  <h2>Book a visit</h2>
+  <div class="bk" data-booking>
+    <div class="loc"><div class="where"><i data-icon="pin"></i><div><b>Arekere MICO Layout</b><small><span class="open">Open now</span> · 1.2 km</small></div></div><a class="change" href="#">Change</a></div>
+    <div class="days"><div class="day is-on"><small>Today</small><b>22</b></div><div class="day"><small>Fri</small><b>23</b></div><div class="day"><small>Sat</small><b>24</b></div><div class="day is-off"><small>Sun</small><b>25</b></div><div class="day"><small>Mon</small><b>26</b></div></div>
+    <p class="session">Evening · 4 – 9 pm</p>
+    <div class="slots"><button class="slot">4:30</button><button class="slot is-taken">5:00</button><button class="slot is-on">5:30</button><button class="slot">6:00</button><button class="slot is-taken">6:30</button><button class="slot">7:00</button></div>
+    <a class="btn btn--act btn--block" href="#" data-cta>Book 5:30 pm</a>
+  </div>
+</section>
+<section class="sec">
+  <h2>Why patients choose us</h2>
+  <ul class="ticks">
+    <li><i data-icon="tick"></i><div><b>Assessed on your first visit</b><br><span class="small muted">We find the cause, not just the pain.</span></div></li>
+    <li><i data-icon="tick"></i><div><b>A plan made for you</b><br><span class="small muted">Exercises and therapy for your goals.</span></div></li>
+    <li><i data-icon="tick"></i><div><b>Senior physiotherapists</b><br><span class="small muted">Led by Dr. P. Senthil, 27+ years.</span></div></li>
+  </ul>
+</section>
+<section class="sec">
+  <div class="trust"><span class="stars"><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i></span><span class="small muted">[4.x] on Google · reviews load here</span></div>
+  <div class="founder tilt"><div class="photo"></div><div><b>Dr. P. Senthil (PT)</b><p class="small muted">Founder · Chief Physiotherapist</p><div class="chips"><span>MPT</span><span>COMT</span><span>MIAP</span></div></div></div>
+</section>
+<section class="sec">
+  <h2>Inside our clinics</h2>
+  <div class="marquee"><div class="track">
+    <div class="photo tilt" data-label="Gallery"></div><div class="photo tilt" data-label="Gallery"></div><div class="photo tilt" data-label="Gallery"></div><div class="photo tilt" data-label="Gallery"></div>
+    <div class="photo tilt" data-label="Gallery"></div><div class="photo tilt" data-label="Gallery"></div><div class="photo tilt" data-label="Gallery"></div><div class="photo tilt" data-label="Gallery"></div>
+  </div></div>
+</section>
+<div class="fab"></div>
+<nav class="dock dock--bar" data-active="home"></nav>
+<script src="ui.js"></script>
+</body></html>

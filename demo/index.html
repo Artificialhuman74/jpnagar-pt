@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>J.P. Nagar Physio · Demo</title>
+<link rel="stylesheet" href="canon/base.css">
+<style>
+body{background:var(--surface);padding:0 16px 60px}
+.wrap{max-width:980px;margin:0 auto}
+.top{padding:24px 0 8px}
+h1{font-size:46px;letter-spacing:-.04em;margin-top:8px}
+.lede{color:var(--ink-2);font-size:18px;margin-top:8px;max-width:60ch}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:28px}
+.card{display:flex;flex-direction:column;gap:10px;padding:26px;border-radius:28px;background:var(--canvas);box-shadow:var(--shadow)}
+.card h2{font-size:28px}
+.card p{color:var(--ink-2)}
+.card ul{list-style:none;display:grid;gap:6px;margin:6px 0 10px;font-size:15px}
+.card li::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--sky);margin:0 8px 2px 0}
+.card .btn{margin-top:auto}
+.card--wide{grid-column:1/-1}
+.card .alt{font-size:14px;font-weight:700;color:var(--sky-ink);text-align:center}
+/* the phone link: filled in from lan.json, which start.sh rewrites with this Mac's address on every start */
+.phone-link{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:24px;padding:18px 20px;border-radius:24px;background:var(--canvas);box-shadow:var(--shadow)}
+.phone-link[hidden]{display:none}
+.phone-link .ic{flex:none;width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:var(--sky-soft);color:var(--sky-ink)}
+.phone-link .ic svg{width:24px;height:24px}
+.phone-link .txt{flex:1;min-width:220px}
+.phone-link .txt b{display:block;font-size:15px}
+.phone-link .txt span{font-size:14px;color:var(--ink-2)}
+.phone-link .url{display:block;margin-top:4px;font-size:28px;font-weight:800;letter-spacing:-.02em;color:var(--act);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.phone-link .btn{height:46px;padding:0 18px;font-size:15px}
+.note{margin-top:24px;padding:18px 20px;border-radius:20px;background:var(--canvas);font-size:15px;color:var(--ink-2)}
+.note b{color:var(--ink)}
+@media (max-width:760px){.cards{grid-template-columns:1fr}h1{font-size:34px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><img class="logo" src="canon/logo.webp" alt="J.P. Nagar Medical &amp; Physiotherapy Centre" style="height:72px" width="408" height="301"></header>
+  <h1>Website demo</h1>
+  <p class="lede">Two versions of the same site. Everything is clickable; photos, reviews, distances and taken slots are samples.</p>
+  <section class="phone-link" data-lan hidden aria-label="Open on a phone">
+    <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2.8" width="11" height="18.4" rx="2.6"/><path d="M10.5 18h3"/></svg></span>
+    <div class="txt"><b>On a phone</b><span>Join the same Wi-Fi as this Mac, then type this in the phone's browser:</span><a class="url" data-lan-url href="#"></a></div>
+    <button class="btn btn--ghost" type="button" data-lan-copy>Copy link</button>
+  </section>
+  <div class="cards">
+    <section class="card">
+      <h2>Mobile app</h2>
+      <p>The full working prototype.</p>
+      <ul>
+        <li>Body map: male or female, front or back flip</li>
+        <li>Live opening hours and slots, therapist photos</li>
+        <li>The printed ticket at the end</li>
+        <li>Branches sorted by your location</li>
+      </ul>
+      <a class="btn btn--act btn--block" href="mobile/index.html">Open in a phone frame</a>
+      <a class="alt" href="mobile/home.html">Or open it full screen (best on a phone)</a>
+    </section>
+    <section class="card">
+      <h2>Desktop site</h2>
+      <p>Rebuilt for big screens, in the same look as the app.</p>
+      <ul>
+        <li>A booking bar in the hero: branch, day and the next free times</li>
+        <li>Booking with front and back side by side; the ticket fills in as you go</li>
+        <li>Services you can find by pointing at the body, and each treatment shown animated</li>
+        <li>A Spine &amp; Back Care page: where it hurts, then how it’s treated, step by step</li>
+        <li>Branches beside a map, profiles in a side panel</li>
+      </ul>
+      <a class="btn btn--act btn--block" href="desktop/home.html?t=16:40">Open the desktop site</a>
+      <a class="alt" href="desktop/book.html?t=16:40">Jump straight to booking</a>
+    </section>
+    <section class="card card--wide">
+      <h2>Clinic admin</h2>
+      <p>For Dr. Senthil, on his phone. Will live at admin.jpnagarmedicalandphysiotherapy.com.</p>
+      <ul>
+        <li>Today’s bookings, walk-ins, arrived and cancelled</li>
+        <li>Timings for every doctor at once, one-tap leave, closed days</li>
+        <li>Add or remove doctors; edit website text and photos, then publish</li>
+      </ul>
+      <a class="btn btn--act btn--block" href="admin/?t=16:40">Open the admin</a>
+      <a class="alt" href="mobile/team.html?t=16:40">See published changes on the phone site</a>
+    </section>
+  </div>
+  <p class="note"><b>Tip:</b> the links here add <b>?t=16:40</b> so the clinic shows as open at 4:40 pm. Remove it from the address to use the real time in India. The earlier desktop layout is kept at <b>desktop-v1/home.html</b> for comparison.</p>
+</div>
+<script>
+// the address phones use: this page's own when it's already opened over Wi-Fi, otherwise what start.sh saved
+(async () => {
+  const box = document.querySelector('[data-lan]'), url = document.querySelector('[data-lan-url]'), copy = document.querySelector('[data-lan-copy]');
+  let host = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) ? null : location.host;
+  if (!host) {
+    try { const d = await (await fetch('lan.json', { cache: 'no-store' })).json(); if (d.ip) host = `${d.ip}:${d.port || 8080}`; } catch (_) {}
+  }
+  if (!host) return;
+  url.textContent = `${host}/m`; url.href = `http://${host}/m`;
+  box.hidden = false;
+  copy.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(`http://${host}/m`); copy.textContent = 'Copied'; } catch (_) { copy.textContent = 'Copy failed'; }
+    setTimeout(() => { copy.textContent = 'Copy link'; }, 1600);
+  });
+})();
+</script>
+</body>
+</html>

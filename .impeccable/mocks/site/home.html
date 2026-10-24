@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Home · J.P. Nagar Physio</title>
+<link rel="stylesheet" href="../canon/base.css">
+<link rel="stylesheet" href="site.css">
+</head><body>
+<header class="top"><img class="logo" src="../canon/logo.png" alt="J.P. Nagar Medical & Physiotherapy Centre"></header>
+<p class="hello"><span data-greet>Hello</span> · <b>Arekere</b> is your closest branch</p>
+
+<section class="hero" data-inview>
+  <div class="photo" data-label="Photo: Arekere clinic (to be shot)"></div>
+  <div class="copy">
+    <div class="live" data-live><i></i><span>Checking hours…</span></div>
+    <h1>Feel better, sooner.</h1>
+    <p>Expert physiotherapy at 3 branches in South Bangalore.</p>
+    <a class="btn btn--act btn--block" href="book.html">Book a visit <i data-icon="arrow"></i></a>
+  </div>
+</section>
+
+<section class="sec">
+  <h2 data-reveal>Your first visit</h2>
+  <ol class="steps" data-inview>
+    <li data-reveal><div><b>We assess you</b><span>Your history, pain and how you move.</span></div></li>
+    <li data-reveal><div><b>We plan with you</b><span>Therapy and exercises for your goals.</span></div></li>
+    <li data-reveal><div><b>You recover</b><span>Clinic sessions plus simple home exercises.</span></div></li>
+  </ol>
+</section>
+
+<section class="sec">
+  <h2 data-reveal>Why patients choose us</h2>
+  <ul class="ticks why" data-inview>
+    <li><i class="draw" data-icon="tick"></i><div><b>Assessed on your first visit</b><span class="small muted">We find the cause, not just the pain.</span></div></li>
+    <li><i class="draw" data-icon="tick"></i><div><b>A plan made for you</b><span class="small muted">Exercises and therapy for your goals.</span></div></li>
+    <li><i class="draw" data-icon="tick"></i><div><b>Senior physiotherapists</b><span class="small muted">Led by Dr. P. Senthil, MPT, 27+ years.</span></div></li>
+  </ul>
+  <div class="rating" data-inview>
+    <span class="stars"><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i></span>
+    <span class="small muted"><b style="color:var(--ink)">[4.x]</b> on Google · sample until the reviews widget is connected</span>
+  </div>
+  <div class="reviews" data-reviews>
+    <article class="review"><p>“Sample review. The widget shows real Google reviews from all three branches here.”</p><footer><i>A</i>Google review · Arekere · sample</footer></article>
+    <article class="review"><p>“Sample review. Short quotes read best: what hurt, and how they feel now.”</p><footer><i>J</i>Google review · JP Nagar · sample</footer></article>
+    <article class="review"><p>“Sample review. Swipe sideways for more; the dots show where you are.”</p><footer><i>B</i>Google review · Bannerghatta · sample</footer></article>
+  </div>
+  <div class="dots" aria-hidden="true"><span class="on"></span><span></span><span></span></div>
+</section>
+
+<section class="sec">
+  <h2 data-reveal>Inside our clinics</h2>
+  <div class="marquee"><div class="track" data-gallery></div></div>
+</section>
+
+<section class="close-cta" data-reveal>
+  <h2>Ready when you are.</h2>
+  <p>Three branches, open Monday to Saturday.</p>
+  <ul data-hours></ul>
+  <a class="btn btn--act btn--block" href="book.html">Book a visit</a>
+</section>
+
+<div class="viewer" role="dialog" aria-modal="true" aria-label="Clinic photos" data-viewer>
+  <p class="count"></p>
+  <div class="frame photo" data-label="Gallery photo"></div>
+  <button class="close" aria-label="Close" data-icon="close"></button>
+  <button class="prev" aria-label="Previous photo" data-icon="chevron"></button>
+  <button class="next" aria-label="Next photo" data-icon="chevron"></button>
+</div>
+
+<div class="fab"></div>
+<nav class="dock" data-active="home"></nav>
+<script src="app.js"></script>
+<script>
+// greeting + live status for the closest branch
+document.querySelector('[data-greet]').textContent = greeting();
+const near = BRANCHES[0], st = branchStatus(near), nf = nextFree(near);
+const live = document.querySelector('[data-live]');
+live.classList.toggle('closed', !st.open);
+live.querySelector('span').textContent = st.open && nf && nf.today
+  ? `${near.short} open now · next free ${nf.slot.label} ${nf.slot.suffix}`
+  : `${near.short} · ${st.text.toLowerCase()}`;
+
+// branch hours in the closing section
+const ul = document.querySelector('[data-hours]');
+BRANCHES.forEach(b => ul.append(el('li', {}, el('span', {}, b.short),
+  el('span', {}, b.sessions.map(([s, e]) => `${fmtHour(s)}–${fmtHour(e)}`).join(', ')))));
+
+// reviews: dots follow the swipe
+const rv = document.querySelector('[data-reviews]'), dots = [...document.querySelectorAll('.dots span')];
+rv.addEventListener('scroll', () => {
+  const i = Math.round(rv.scrollLeft / (rv.firstElementChild.offsetWidth + 12));
+  dots.forEach((d, k) => d.classList.toggle('on', k === i));
+}, { passive: true });
+
+// gallery: drifting 3D cards, tap to open full screen
+const LABELS = ['Arekere · treatment room', 'JP Nagar · reception', 'Bannerghatta · exercise area', 'Equipment · traction', 'Team at work', 'Arekere · waiting area'];
+const track = document.querySelector('[data-gallery]');
+[...LABELS, ...LABELS].forEach((l, i) => {
+  const b = el('button', { 'aria-label': `Open photo: ${l}`, ...(i >= LABELS.length ? { tabindex: '-1', 'aria-hidden': 'true' } : {}) },
+    el('div', { class: 'photo tilt', 'data-label': l }));
+  b.addEventListener('click', () => openViewer(i % LABELS.length));
+  track.append(b);
+});
+document.querySelectorAll('[data-gallery] .tilt').forEach(c => {
+  if (reduceMotion || !matchMedia('(hover: hover)').matches) return;
+  c.addEventListener('pointermove', e => { const r = c.getBoundingClientRect(); const x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5; c.style.transform = `perspective(900px) rotateY(${x * 10}deg) rotateX(${-y * 10}deg)`; });
+  c.addEventListener('pointerleave', () => { c.style.transform = ''; });
+});
+const vw = document.querySelector('[data-viewer]'), frame = vw.querySelector('.frame'), count = vw.querySelector('.count');
+let cur = 0, lastFocus;
+function show(i) { cur = (i + LABELS.length) % LABELS.length; frame.dataset.label = LABELS[cur]; count.textContent = `${cur + 1} / ${LABELS.length}`; }
+function openViewer(i) { lastFocus = document.activeElement; show(i); vw.classList.add('is-open'); vw.querySelector('.close').focus(); }
+function closeViewer() { vw.classList.remove('is-open'); lastFocus && lastFocus.focus(); }
+vw.querySelector('.close').onclick = closeViewer;
+vw.querySelector('.prev').onclick = () => show(cur - 1);
+vw.querySelector('.next').onclick = () => show(cur + 1);
+vw.addEventListener('click', e => { if (e.target === vw) closeViewer(); });
+addEventListener('keydown', e => { if (!vw.classList.contains('is-open')) return; if (e.key === 'Escape') closeViewer(); if (e.key === 'ArrowRight') show(cur + 1); if (e.key === 'ArrowLeft') show(cur - 1); });
+let sx = null;
+frame.addEventListener('pointerdown', e => { sx = e.clientX; });
+frame.addEventListener('pointerup', e => { if (sx === null) return; const dx = e.clientX - sx; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); sx = null; });
+</script>
+</body></html>

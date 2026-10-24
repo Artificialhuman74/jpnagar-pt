@@ -1,0 +1,646 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-24T14:59:03+00:00",
+  "title": "Design System: J.P. Nagar Medical & Physiotherapy Centre",
+  "extensions": {
+    "colorMeta": {
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Clinic White",
+        "canonical": "#FFFFFF",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Cool Grey Ground",
+        "canonical": "#F3F4F7",
+        "oklch": "oklch(96.7% 0.004 271.4)",
+        "tonalRamp": [
+          "#0A0B0D",
+          "#242527",
+          "#414244",
+          "#606164",
+          "#818285",
+          "#A4A5A8",
+          "#C8C9CC",
+          "#EDEEF1"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#E2E4EA",
+        "oklch": "oklch(91.9% 0.008 271.3)",
+        "tonalRamp": [
+          "#0A0B0F",
+          "#232529",
+          "#404247",
+          "#5F6166",
+          "#808287",
+          "#A3A5AA",
+          "#C7C9CF",
+          "#ECEEF4"
+        ]
+      },
+      "line-2": {
+        "role": "neutral",
+        "displayName": "Hairline Strong",
+        "canonical": "#C9CCD6",
+        "oklch": "oklch(84.6% 0.014 272.7)",
+        "tonalRamp": [
+          "#090B11",
+          "#23252C",
+          "#3F424A",
+          "#5E616A",
+          "#7F828B",
+          "#A2A5AE",
+          "#C6C9D3",
+          "#EBEEF8"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#141629",
+        "oklch": "oklch(20.9% 0.038 278.0)",
+        "tonalRamp": [
+          "#090A13",
+          "#222432",
+          "#3E4054",
+          "#5C5F77",
+          "#7D8199",
+          "#9FA3BD",
+          "#C4C8DF",
+          "#EAEDFF"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Slate",
+        "canonical": "#565A6E",
+        "oklch": "oklch(47.2% 0.033 276.2)",
+        "tonalRamp": [
+          "#090B12",
+          "#222430",
+          "#3E4152",
+          "#5C6074",
+          "#7D8196",
+          "#9FA4BA",
+          "#C4C8DC",
+          "#EAEEFE"
+        ]
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "Muted Slate",
+        "canonical": "#666A7D",
+        "oklch": "oklch(52.8% 0.030 275.9)",
+        "tonalRamp": [
+          "#090B12",
+          "#22242F",
+          "#3E4150",
+          "#5C6073",
+          "#7D8195",
+          "#9FA4B8",
+          "#C4C8DA",
+          "#EAEEFC"
+        ],
+        "note": "Tuned to pass 4.5:1 on canvas and surface; do not lighten."
+      },
+      "act": {
+        "role": "primary",
+        "displayName": "Logo Navy",
+        "canonical": "#2B3192",
+        "oklch": "oklch(37.6% 0.157 273.3)",
+        "tonalRamp": [
+          "#05042B",
+          "#171B58",
+          "#2D368A",
+          "#4755B8",
+          "#6578DF",
+          "#869BFF",
+          "#ADC2FF",
+          "#D7EAFF"
+        ]
+      },
+      "act-press": {
+        "role": "primary",
+        "displayName": "Pressed Navy",
+        "canonical": "#1F2470",
+        "oklch": "oklch(31.1% 0.129 273.3)",
+        "tonalRamp": [
+          "#050626",
+          "#181F4F",
+          "#303A7D",
+          "#4B59A9",
+          "#6A7BCF",
+          "#8B9EF6",
+          "#B2C4FF",
+          "#DBEBFF"
+        ]
+      },
+      "act-soft": {
+        "role": "primary",
+        "displayName": "Navy Wash",
+        "canonical": "#ECEDF8",
+        "oklch": "oklch(94.9% 0.015 282.0)",
+        "tonalRamp": [
+          "#0A0A11",
+          "#24242C",
+          "#40414A",
+          "#60606A",
+          "#81818B",
+          "#A3A4AE",
+          "#C7C8D3",
+          "#ECEDF8"
+        ]
+      },
+      "sky": {
+        "role": "secondary",
+        "displayName": "Logo Cyan",
+        "canonical": "#00A8EC",
+        "oklch": "oklch(69.2% 0.150 236.4)",
+        "tonalRamp": [
+          "#000C26",
+          "#002950",
+          "#00487E",
+          "#006AAA",
+          "#008DCF",
+          "#1EB1F6",
+          "#6DD6FF",
+          "#ACF9FF"
+        ],
+        "note": "Marks only: dots, 2-3px lines, ticks, halos. Never text on white, never a fill."
+      },
+      "sky-soft": {
+        "role": "secondary",
+        "displayName": "Cyan Mist",
+        "canonical": "#E6F6FD",
+        "oklch": "oklch(96.3% 0.019 225.7)",
+        "tonalRamp": [
+          "#030D11",
+          "#1B272C",
+          "#37444A",
+          "#56646A",
+          "#77858B",
+          "#99A8AE",
+          "#BDCCD3",
+          "#E2F2F9"
+        ]
+      },
+      "sky-ink": {
+        "role": "secondary",
+        "displayName": "Deep Cyan Text",
+        "canonical": "#0070A8",
+        "oklch": "oklch(52.1% 0.122 241.0)",
+        "tonalRamp": [
+          "#000C22",
+          "#002849",
+          "#004775",
+          "#00689F",
+          "#2E8AC4",
+          "#56AEEA",
+          "#89D2FF",
+          "#BEF6FF"
+        ]
+      },
+      "err": {
+        "role": "error",
+        "displayName": "Clinic Red",
+        "canonical": "#B42318",
+        "oklch": "oklch(50.0% 0.182 29.5)",
+        "tonalRamp": [
+          "#260000",
+          "#520000",
+          "#830000",
+          "#B12015",
+          "#DA4A3B",
+          "#FF705E",
+          "#FF9F8C",
+          "#FFCFBF"
+        ]
+      },
+      "err-soft": {
+        "role": "error",
+        "displayName": "Red Wash",
+        "canonical": "#FDECEC",
+        "oklch": "oklch(95.7% 0.018 17.5)",
+        "tonalRamp": [
+          "#120808",
+          "#2E2222",
+          "#4B3E3E",
+          "#6B5D5D",
+          "#8D7E7E",
+          "#B0A1A1",
+          "#D5C5C5",
+          "#FBEAEA"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Desktop home hero only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Desktop page titles."
+      },
+      "headline-phone": {
+        "displayName": "Headline (phone)",
+        "purpose": "Phone page heads (34px); hero uses 40px, booking steps 32px."
+      },
+      "headline-admin": {
+        "displayName": "Headline (admin)",
+        "purpose": "Admin screen heading; always one line."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Desktop section heads."
+      },
+      "title-phone": {
+        "displayName": "Title (phone)",
+        "purpose": "Phone section heads and sheet titles; admin card heads drop to 18px."
+      },
+      "title-sm": {
+        "displayName": "Title Small",
+        "purpose": "Desktop sub-heads, card backs."
+      },
+      "name": {
+        "displayName": "Name",
+        "purpose": "Patient, therapist or branch name in a row or step."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Desktop running copy."
+      },
+      "body-phone": {
+        "displayName": "Body (phone)",
+        "purpose": "Phone and admin running copy."
+      },
+      "small": {
+        "displayName": "Small",
+        "purpose": "Sublines, meta, secondary text."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field labels, tag text, ticket labels."
+      },
+      "time": {
+        "displayName": "Time",
+        "purpose": "Tabular row times in the admin and slot labels."
+      },
+      "ticket-time": {
+        "displayName": "Ticket Time",
+        "purpose": "The one oversized numeral, on the appointment ticket."
+      }
+    },
+    "shadows": [
+      {
+        "name": "rest",
+        "value": "0 1px 2px rgba(20,22,41,.06),0 12px 28px -14px rgba(20,22,41,.28)",
+        "purpose": "Patient-site cards, booking card, ticket."
+      },
+      {
+        "name": "lift",
+        "value": "0 2px 4px rgba(20,22,41,.06),0 26px 50px -22px rgba(20,22,41,.36)",
+        "purpose": "Desktop hover on profile and branch cards."
+      },
+      {
+        "name": "whisper",
+        "value": "0 1px 2px rgba(20,22,41,.05)",
+        "purpose": "Admin list cards on the grey ground."
+      },
+      {
+        "name": "navy-glow",
+        "value": "0 14px 30px -14px rgba(43,49,146,.6)",
+        "purpose": "Pinned primary actions and navy indicators."
+      },
+      {
+        "name": "dock-glass",
+        "value": "0 1px 0 rgba(255,255,255,.9) inset,0 0 0 1px rgba(20,22,41,.06),0 18px 36px -16px rgba(20,22,41,.45)",
+        "purpose": "The dock only."
+      },
+      {
+        "name": "sheet",
+        "value": "0 -20px 50px -20px rgba(20,22,41,.45)",
+        "purpose": "Bottom sheets."
+      },
+      {
+        "name": "segment-thumb",
+        "value": "0 2px 8px -3px rgba(20,22,41,.25)",
+        "purpose": "Selected segment in a track."
+      },
+      {
+        "name": "focus-ring-field",
+        "value": "0 0 0 4px #E6F6FD",
+        "purpose": "Field focus halo with navy border."
+      }
+    ],
+    "glass": [
+      {
+        "name": "dock",
+        "value": "background:rgba(255,255,255,.62);backdrop-filter:blur(20px) saturate(1.8)",
+        "purpose": "Dock (desktop .66 / blur 22px)."
+      },
+      {
+        "name": "sheet",
+        "value": "background:rgba(255,255,255,.94);backdrop-filter:blur(24px) saturate(1.6)",
+        "purpose": "Bottom sheets."
+      },
+      {
+        "name": "bar",
+        "value": "background:rgba(255,255,255,.86-.92);backdrop-filter:blur(16px)",
+        "purpose": "Sticky booking head, publish bar."
+      },
+      {
+        "name": "fab",
+        "value": "background:rgba(255,255,255,.82);backdrop-filter:blur(14px) saturate(1.4)",
+        "purpose": "Call and WhatsApp buttons."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(.16,1,.3,1)",
+        "purpose": "House ease for every transform/opacity transition."
+      },
+      {
+        "name": "ease-sheet",
+        "value": ".6s cubic-bezier(.2,.9,.25,1.04)",
+        "purpose": "Bottom sheet rise, slight overshoot."
+      },
+      {
+        "name": "ease-turn",
+        "value": "1s cubic-bezier(.65,0,.25,1)",
+        "purpose": "Body-map front/back 3D turn."
+      },
+      {
+        "name": "indicator-slide",
+        "value": "transform .55s cubic-bezier(.16,1,.3,1)",
+        "purpose": "Dock and track indicators."
+      },
+      {
+        "name": "reveal",
+        "value": "opacity/translateY(18px) .7s cubic-bezier(.16,1,.3,1)",
+        "purpose": "Scroll reveal, only when JS adds .motion."
+      },
+      {
+        "name": "press",
+        "value": "scale(.98) .2s",
+        "purpose": "Button press; dock icons scale(.88)."
+      },
+      {
+        "name": "beat",
+        "value": "2.4s infinite, ring scale 1 to 3 and fade",
+        "purpose": "Open-status dot; only on the status read first."
+      },
+      {
+        "name": "glow-crossfade",
+        "value": "opacity 1.6s cubic-bezier(.45,0,.55,1)",
+        "purpose": "Carousel glow crossfade between pre-coloured layers."
+      },
+      {
+        "name": "rules",
+        "value": "transform and opacity only; IntersectionObserver pauses scenes, carousels and timers off screen; prefers-reduced-motion shows one still frame; phones play anatomy scenes in calm mode",
+        "purpose": "Global motion contract."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone-calm",
+        "value": "600px",
+        "purpose": "Below this, anatomy labels scale 1.25 and scenes play calm."
+      },
+      {
+        "name": "admin-column",
+        "value": "640px",
+        "purpose": "Admin centres as a 560px column."
+      },
+      {
+        "name": "desktop-container-sm",
+        "value": "720px / 780px (container queries)",
+        "purpose": "Inner grids reflow."
+      },
+      {
+        "name": "desktop-stack",
+        "value": "1020px",
+        "purpose": "Two-column compositions stack."
+      },
+      {
+        "name": "desktop-narrow",
+        "value": "1180px",
+        "purpose": "Four-column grids go to two."
+      },
+      {
+        "name": "desktop-max",
+        "value": "1360px content",
+        "purpose": "Frame max width."
+      }
+    ],
+    "illustration": {
+      "name": "Porcelain Atlas",
+      "palette": {
+        "skin": [
+          "#F9FAFC",
+          "#D6DBE8"
+        ],
+        "hand": [
+          "#FBFBFD",
+          "#D8DDEA"
+        ],
+        "handLine": "#9DA5BC",
+        "hair": [
+          "#C9CEDC",
+          "#B0B7CB"
+        ],
+        "bone": [
+          "#FFFFFF",
+          "#ECEFF6"
+        ],
+        "boneLine": "#A3ACC4",
+        "disc": "#B9E8FA",
+        "couch": [
+          "#E8EBF2",
+          "#DDE2EB"
+        ],
+        "accent": "#00A8EC",
+        "accentDeep": "#0079B8",
+        "heat": "#FF8A4C",
+        "heatSoft": "#FFE3D2"
+      },
+      "rules": [
+        "Measured adult proportions; realistic, seamless joints; articulated hands, no mittens.",
+        "Open on the whole patient, then settle the camera on the treated area.",
+        "One shared clock; scenes off screen stop; with reduced motion show one considered frame.",
+        "Phones: calm mode (camera holds, no breathing) and setAttribute dedupe.",
+        "No SVG filters inside masked or filtered parents; use plain fills there."
+      ]
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Navy action: Book, Add a booking, Publish. The only filled-navy control.",
+      "html": "<button class=\"ds-btn-act\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg>Add a booking</button>",
+      "css": ".ds-btn-act{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:54px;padding:0 22px;border:0;border-radius:16px;background:#2B3192;color:#fff;font-family:Figtree,-apple-system,system-ui,sans-serif;font-weight:700;font-size:17px;line-height:1;cursor:pointer;box-shadow:0 14px 30px -14px rgba(43,49,146,.6);transition:background .2s,transform .2s cubic-bezier(.16,1,.3,1)} .ds-btn-act:hover{background:#1F2470} .ds-btn-act:active{transform:scale(.98)} .ds-btn-act:focus-visible{outline:2px solid #2B3192;outline-offset:3px}"
+    },
+    {
+      "name": "Ghost and Line Buttons",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary actions: grey ghost fill, or white with an inset hairline ring.",
+      "html": "<div class=\"ds-row\"><button class=\"ds-btn ds-ghost\">Call</button><button class=\"ds-btn ds-line\">Mark arrived</button><button class=\"ds-btn ds-danger\">Cancel</button></div>",
+      "css": ".ds-row{display:flex;gap:10px;flex-wrap:wrap} .ds-btn{height:54px;padding:0 22px;border:0;border-radius:16px;font-family:Figtree,-apple-system,system-ui,sans-serif;font-weight:700;font-size:17px;cursor:pointer;transition:background .2s,transform .2s cubic-bezier(.16,1,.3,1)} .ds-btn:active{transform:scale(.98)} .ds-btn:focus-visible{outline:2px solid #2B3192;outline-offset:3px} .ds-ghost{background:#F3F4F7;color:#141629} .ds-ghost:hover{background:#E7E9EF} .ds-line{background:#fff;color:#141629;box-shadow:inset 0 0 0 1.5px #E2E4EA} .ds-line:hover{box-shadow:inset 0 0 0 1.5px #666A7D} .ds-danger{background:#FDECEC;color:#B42318}"
+    },
+    {
+      "name": "Pills",
+      "kind": "chip",
+      "refersTo": "pill",
+      "description": "Choices (cyan-mist selected) and admin filters (solid navy selected).",
+      "html": "<div class=\"ds-pills\"><button class=\"ds-pill\" aria-pressed=\"true\">Back</button><button class=\"ds-pill\">Knee</button><button class=\"ds-pill ds-filter\" aria-pressed=\"true\">All branches</button><button class=\"ds-pill ds-filter\">Arekere</button></div>",
+      "css": ".ds-pills{display:flex;flex-wrap:wrap;gap:8px} .ds-pill{min-height:44px;padding:9px 14px;border:1.5px solid #E2E4EA;border-radius:999px;background:#fff;color:#141629;font-family:Figtree,-apple-system,system-ui,sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:border-color .2s,background .2s,color .2s} .ds-pill:hover{border-color:#666A7D} .ds-pill:focus-visible{outline:2px solid #2B3192;outline-offset:3px} .ds-pill[aria-pressed=\"true\"]{border-color:#2B3192;background:#E6F6FD;color:#2B3192} .ds-filter[aria-pressed=\"true\"]{background:#2B3192;color:#fff}"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "54px rounded field; navy border with a cyan-mist ring on focus.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-lab\">Phone</span><span class=\"ds-input\"><b>+91</b><input placeholder=\"98xxx xxxxx\"></span></label>",
+      "css": ".ds-field{display:grid;gap:6px;font-family:Figtree,-apple-system,system-ui,sans-serif;max-width:340px} .ds-lab{font-size:14px;font-weight:700;color:#141629} .ds-input{display:flex;align-items:center;height:54px;padding:0 14px;border:1.5px solid #E2E4EA;border-radius:16px;background:#fff;transition:border-color .2s} .ds-input:focus-within{border-color:#2B3192;box-shadow:0 0 0 4px #E6F6FD} .ds-input b{color:#565A6E;margin-right:8px} .ds-input input{border:0;outline:0;font:inherit;font-size:17px;width:100%;background:transparent;color:#141629} .ds-input input::placeholder{color:#666A7D}"
+    },
+    {
+      "name": "Segmented Track",
+      "kind": "custom",
+      "refersTo": "segmented-track",
+      "description": "Grey track with a white sliding thumb.",
+      "html": "<div class=\"ds-seg\" role=\"radiogroup\"><button role=\"radio\" aria-checked=\"true\">Front</button><button role=\"radio\" aria-checked=\"false\">Back</button></div>",
+      "css": ".ds-seg{display:inline-grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border-radius:14px;background:#F3F4F7;font-family:Figtree,-apple-system,system-ui,sans-serif;} .ds-seg button{min-height:40px;border:0;background:none;border-radius:10px;padding:9px 18px;font:inherit;font-weight:700;font-size:14px;color:#565A6E;cursor:pointer;transition:color .2s} .ds-seg button:hover{color:#141629} .ds-seg button:focus-visible{outline:2px solid #2B3192;outline-offset:2px} .ds-seg button[aria-checked=\"true\"]{background:#fff;color:#141629;box-shadow:0 2px 8px -3px rgba(20,22,41,.25)}"
+    },
+    {
+      "name": "Liquid Glass Dock",
+      "kind": "nav",
+      "refersTo": "dock",
+      "description": "Floating frosted dock of equal items; a navy-wash indicator with a cyan top bar slides behind the current item.",
+      "html": "<nav class=\"ds-dock\"><span class=\"ds-ind\"></span><a aria-current=\"page\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"23\" height=\"23\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3.5\" y=\"5\" width=\"17\" height=\"15\" rx=\"3\"/><path d=\"M3.5 10h17M8 3v4M16 3v4\"/></svg><span>Today</span></a><a href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"23\" height=\"23\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"12\" r=\"8.5\"/><path d=\"M12 7.5V12l3 2\"/></svg><span>Schedule</span></a><a href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"23\" height=\"23\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><circle cx=\"9\" cy=\"8.5\" r=\"3.5\"/><path d=\"M3 19c.8-3.3 3.2-5 6-5s5.2 1.7 6 5M16 5.5a3.2 3.2 0 0 1 0 6.2M18 14.3c1.6.7 2.6 2.2 3 4.7\"/></svg><span>Doctors</span></a><a href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"23\" height=\"23\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 3.5h8l4 4V20a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 20z\"/><path d=\"M9 12h6M9 16h6\"/></svg><span>Content</span></a></nav>",
+      "css": ".ds-dock{position:relative;isolation:isolate;display:grid;grid-template-columns:repeat(4,1fr);width:360px;padding:6px;border-radius:26px;background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.75);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 0 0 1px rgba(20,22,41,.06),0 18px 36px -16px rgba(20,22,41,.45);backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);font-family:Figtree,-apple-system,system-ui,sans-serif;} .ds-dock a{height:56px;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#666A7D;font-size:11px;font-weight:600;text-decoration:none;transition:color .25s} .ds-dock a:hover{color:#141629} .ds-dock a:focus-visible{outline:2px solid #141629;outline-offset:-2px} .ds-dock a[aria-current=\"page\"]{color:#2B3192} .ds-dock svg{transition:transform .25s cubic-bezier(.16,1,.3,1)} .ds-dock a:active svg{transform:scale(.88)} .ds-ind{position:absolute;z-index:-1;top:6px;left:6px;width:calc((100% - 12px)/4);height:56px;border-radius:20px;background:rgba(43,49,146,.07);transition:transform .55s cubic-bezier(.16,1,.3,1)} .ds-ind::before{content:\"\";position:absolute;top:-6px;left:50%;width:28px;height:3px;margin-left:-14px;border-radius:0 0 3px 3px;background:#00A8EC}"
+    },
+    {
+      "name": "Admin Day Sheet",
+      "kind": "card",
+      "refersTo": "list-card",
+      "description": "White list card of time rows with status tags and the cyan NOW line between past and upcoming.",
+      "html": "<div class=\"ds-card\"><button class=\"ds-r ds-past\"><span class=\"ds-t\">9:00<small>45 min</small></span><span><b>Lakshmi R.</b><span class=\"ds-sub\">JP Nagar · Dr. Vanitha · Knee</span></span><span class=\"ds-st ds-arr\">Arrived</span></button><div class=\"ds-now\">NOW</div><button class=\"ds-r\"><span class=\"ds-t\">10:00<small>45 min</small></span><span><b>Suresh K.</b><span class=\"ds-sub\">Arekere · Any available · Back</span></span><span class=\"ds-go\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 6 6 6-6 6\"/></svg></span></button><button class=\"ds-r ds-cx\"><span class=\"ds-t\">10:45<small>45 min</small></span><span><b>Anita M.</b><span class=\"ds-sub\">JP Nagar · Dr. Senthil · Shoulder</span></span><span class=\"ds-st ds-can\">Cancelled</span></button></div>",
+      "css": ".ds-card{width:360px;background:#fff;border-radius:22px;box-shadow:0 1px 2px rgba(20,22,41,.05);overflow:hidden;font-family:Figtree,-apple-system,system-ui,sans-serif;color:#141629} .ds-r{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;min-height:64px;padding:12px 16px;border:0;background:none;text-align:left;font:inherit;color:inherit;cursor:pointer} .ds-r + .ds-r{border-top:1px solid #E2E4EA} .ds-r:hover,.ds-r:active{background:#F3F4F7} .ds-r:focus-visible{outline:2px solid #141629;outline-offset:-2px} .ds-t{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums} .ds-t small{display:block;font-size:12px;font-weight:700;color:#666A7D} .ds-r b{display:block;font-size:17px;line-height:1.25} .ds-sub{display:block;font-size:14px;color:#565A6E;line-height:1.35} .ds-past b,.ds-past .ds-t{color:#565A6E} .ds-cx b{text-decoration:line-through;text-decoration-thickness:2px;color:#666A7D} .ds-st{font-size:12px;font-weight:800;padding:5px 9px;border-radius:8px;white-space:nowrap} .ds-arr{background:#E6F6FD;color:#0070A8} .ds-can{background:#FDECEC;color:#B42318} .ds-go{color:#666A7D} .ds-now{display:flex;align-items:center;gap:8px;padding:4px 16px;font-size:12px;font-weight:800;color:#0070A8;letter-spacing:.04em} .ds-now::after{content:\"\";flex:1;height:2px;border-radius:2px;background:#00A8EC}"
+    },
+    {
+      "name": "Time Slots",
+      "kind": "custom",
+      "refersTo": "slot",
+      "description": "Three-column slot grid; chosen slot navy, taken slots struck through on grey.",
+      "html": "<div class=\"ds-slots\"><button class=\"ds-slot\">9:00</button><button class=\"ds-slot ds-on\">9:45</button><button class=\"ds-slot\" disabled>10:30</button></div>",
+      "css": ".ds-slots{display:grid;grid-template-columns:repeat(3,96px);gap:8px;font-family:Figtree,-apple-system,system-ui,sans-serif;} .ds-slot{height:48px;border-radius:14px;border:1.5px solid #E2E4EA;background:#fff;font:inherit;font-weight:700;font-size:16px;font-variant-numeric:tabular-nums;color:#141629;cursor:pointer;transition:border-color .2s,background .2s} .ds-slot:hover{border-color:#666A7D} .ds-slot:focus-visible{outline:2px solid #141629;outline-offset:3px} .ds-on{background:#2B3192;border-color:#2B3192;color:#fff} .ds-slot:disabled{color:#666A7D;text-decoration:line-through;background:#F3F4F7;border-color:transparent;cursor:not-allowed}"
+    },
+    {
+      "name": "Ticket Header",
+      "kind": "card",
+      "refersTo": "ticket",
+      "description": "The printed appointment ticket: navy header with cyan glow, tabular time, perforation into a white body.",
+      "html": "<div class=\"ds-tk\"><div class=\"ds-tk-h\"><small>Tue 28 Oct</small><div class=\"ds-tk-time\">10:00<em>am</em></div><b>JP Nagar branch</b></div><div class=\"ds-perf\"></div><dl class=\"ds-tk-b\"><div><dt>Therapist</dt><dd>Dr. Vanitha Senthil</dd></div><div><dt>For</dt><dd>Knee pain</dd></div></dl></div>",
+      "css": ".ds-tk{width:320px;border-radius:22px;background:#fff;overflow:hidden;font-family:Figtree,-apple-system,system-ui,sans-serif;box-shadow:0 1px 2px rgba(20,22,41,.06),0 12px 28px -14px rgba(20,22,41,.28)} .ds-tk-h{padding:18px 20px 22px;color:#fff;background:radial-gradient(120% 90% at 100% 0%,rgba(0,168,236,.55),rgba(0,168,236,0) 55%),radial-gradient(rgba(255,255,255,.09) 1.2px,transparent 1.7px) 0 0/14px 14px,linear-gradient(160deg,#2B3192,#1E2378)} .ds-tk-h small{font-size:16px;font-weight:600;color:rgba(255,255,255,.88)} .ds-tk-time{font-size:68px;font-weight:800;letter-spacing:-.045em;line-height:.95;font-variant-numeric:tabular-nums} .ds-tk-time em{font-style:normal;font-size:24px;letter-spacing:0;margin-left:6px;color:#8EDBFA} .ds-tk-h b{display:block;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.18);font-size:16px} .ds-perf{height:2px;margin:0 22px;background:repeating-linear-gradient(90deg,#D3D7E2 0 7px,transparent 7px 13px)} .ds-tk-b{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;padding:18px 20px;margin:0} .ds-tk-b dt{font-size:11px;font-weight:700;color:#565A6E;letter-spacing:.02em} .ds-tk-b dd{margin:2px 0 0;font-size:15px;font-weight:700;color:#141629}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Porcelain Clinic",
+    "overview": "A neighbourhood physiotherapy clinic presented with the calm of a well-run front desk: cool white and grey rooms, one navy ink for anything you can press, and small cyan marks that say \"open\", \"now\", \"here\". The world is light and quiet so that the two things with real character stand out: the porcelain-atlas anatomy (cool grey bodies, ivory bones, cyan accents, realistic hands) and the few tactile objects the patient holds, the printed appointment ticket, the tilting team cards and the liquid glass dock.\n\nThree surfaces share the world. The desktop site is a 12-column editorial frame with a large Figtree type scale and hover states. The phone site is the same world compressed into an app: thumb-reach actions pinned above a frosted dock, sheets that rise from the bottom, one task per screen. The clinic admin is the phone site turned into a day sheet for one owner: a grey ground, white rounded list cards of time-ordered rows, a cyan NOW line, and one navy action pinned above the dock. Density is low everywhere; big type and 44px targets come from an audience that is often older or in pain.\n\nThe palette is the logo's: navy (#2B3192) and cyan (#00A8EC) over cooled neutrals. Nothing else is coloured except error red and the anatomy's heat accent.",
+    "keyCharacteristics": [
+      "One family (Figtree), heavy 800 headings with tight negative tracking, tabular numbers for every time.",
+      "Navy is the action colour and the selected state; cyan is never a fill larger than a dot, line, tick or tag.",
+      "Cool grey (#F3F4F7) ground with white cards, or white ground with grey insets; depth is soft, cool and navy-tinted.",
+      "Generous radii that scale with the object (8px tags up to 30px heroes), pills fully round.",
+      "Motion is eased (cubic-bezier(.16,1,.3,1)), moves only transform and opacity, and stops when off screen."
+    ],
+    "rules": [
+      {
+        "name": "The Navy Presses Rule",
+        "body": "If it is navy, it is an action or the current choice. Navy never decorates a heading, an icon in a list or a background panel.",
+        "section": "colors"
+      },
+      {
+        "name": "The Cyan Is a Mark Rule",
+        "body": "Cyan appears as dots, 2-3px lines, ticks, tags and halos. It is never a button fill, never a large surface, and never body text (use sky-ink for cyan text).",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Logo Colours Rule",
+        "body": "The palette is the logo's navy and cyan plus cool neutrals and error red. The photo placeholders' warm taupe and the anatomy's heat orange (#FF8A4C) are content colours, not UI colours.",
+        "section": "colors"
+      },
+      {
+        "name": "The Weight Not Family Rule",
+        "body": "Hierarchy comes from Figtree's weight and size alone. No second typeface, no italics for emphasis, no uppercase section labels.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Time Rule",
+        "body": "Every time, date number, ticket ID and phone number uses tabular numerals so columns of times align.",
+        "section": "typography"
+      },
+      {
+        "name": "The Balanced Heading Rule",
+        "body": "Headings use `text-wrap: balance`, paragraphs and list items `text-wrap: pretty`. Admin headings fit one line; their sublines wrap.",
+        "section": "typography"
+      },
+      {
+        "name": "The Cool Shadow Rule",
+        "body": "Shadows are tinted rgba(20,22,41) (or navy rgba(43,49,146) under navy actions), soft and offset downward with negative spread. No hard offset shadows, no black.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Small Glass Rule",
+        "body": "`backdrop-filter` (always with `-webkit-backdrop-filter`) is for small floating elements only: dock, floating buttons, sticky bars, sheets. Never a full-page or large-card effect.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Solid Backing Rule",
+        "body": "When a pinned action sits above the dock, a fixed gradient from transparent to the page ground fills the gap beneath both, so the list never shows through between them.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** use Logo Navy (#2B3192) for every primary action and current selection, and nothing else.",
+      "**Do** keep cyan to dots, 2-3px lines, ticks, tags and halos; use Deep Cyan Text (#0070A8) when cyan must be read.",
+      "**Do** keep Muted Slate at #666A7D so muted text still passes 4.5:1.",
+      "**Do** set every time and number in tabular Figtree, and headings at 800 with negative tracking.",
+      "**Do** give every target at least 44px and keep the primary action within thumb reach above the dock on phones.",
+      "**Do** animate only `transform` and `opacity` on the house ease cubic-bezier(.16,1,.3,1); crossfade pre-coloured layers instead of animating colour.",
+      "**Do** stop scene clocks, carousels and auto-advance timers when they leave the screen (IntersectionObserver), and honour `prefers-reduced-motion` with a single still frame.",
+      "**Do** play anatomy scenes in calm mode on phones (no camera drift, no breathing once the camera arrives) and keep the setAttribute dedupe.",
+      "**Do** draw every icon as inline SVG with a consistent stroke; size icons to the text beside them (18-24px).",
+      "**Do** pair `backdrop-filter` with `-webkit-backdrop-filter` and use `dvh` with a `vh` fallback for viewport heights."
+    ],
+    "donts": [
+      "**Don't** fill a button, banner or large surface with cyan, or use plain cyan for text.",
+      "**Don't** enlarge or recolour one dock item over the others; the current page shows only the sliding indicator.",
+      "**Don't** introduce a second typeface, uppercase letter-spaced section labels or eyebrow text above headings.",
+      "**Don't** use black or hard offset shadows; shadows are soft and tinted rgba(20,22,41).",
+      "**Don't** animate `filter`, blur, `box-shadow`, `clip-path`, `width`/`height`, `top`/`left` or margins.",
+      "**Don't** put SVG filters inside masked or filtered parents (the ticket's figures use plain fills).",
+      "**Don't** draw mitten hands, seams at joints, or stylised cartoon bodies; the anatomy stays porcelain and realistic.",
+      "**Don't** turn the admin into a dashboard of widgets and charts; it is a time-ordered day sheet with one pinned action.",
+      "**Don't** split one list into floating separate cards; rows share a card and are divided by hairlines."
+    ]
+  }
+}

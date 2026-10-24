@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>You’re booked · J.P. Nagar Physio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="desktop.css">
+</head>
+<body data-page="booked" class="tint">
+<a class="skiplink" href="#main">Skip to content</a>
+<header class="hd">
+  <div class="wrap hd-in">
+    <a class="hd-logo" href="home.html"><img src="../canon/logo.webp" alt="J.P. Nagar Medical &amp; Physiotherapy Centre, home" width="408" height="301"></a>
+    <div class="hd-right">
+      <span class="live" data-live></span>
+      <span class="hd-sep" aria-hidden="true"></span>
+      <a class="hd-call" href="tel:+919916116625"><i data-icon="phone"></i>+91 99161 16625</a>
+      <a class="btn btn--ghost btn--sm" href="https://wa.me/919916116625" target="_blank" rel="noopener"><i data-icon="whatsapp"></i>WhatsApp</a>
+    </div>
+  </div>
+</header>
+
+<main id="main" tabindex="-1" class="wrap">
+  <div class="booked">
+    <section class="booked-copy" aria-labelledby="booked-h">
+      <div class="check"><i data-icon="check"></i></div>
+      <h1 class="h1" id="booked-h" data-hello>You’re booked.</h1>
+      <p class="lead" data-see></p>
+      <div class="booked-acts">
+        <a class="btn btn--act btn--lg" data-wa href="https://wa.me/919916116625" target="_blank" rel="noopener"><i data-icon="whatsapp"></i>Also send it on WhatsApp</a>
+        <button class="btn btn--line" type="button" data-ics><i data-icon="calendar"></i>Add to calendar</button>
+        <a class="btn btn--line" data-dir href="branches.html" target="_blank" rel="noopener"><i data-icon="pin"></i>Directions</a>
+        <button class="btn btn--line" type="button" data-print><i data-icon="print"></i>Print ticket</button>
+        <button class="btn btn--line" type="button" data-share><i data-icon="share"></i>Share booking</button>
+      </div>
+      <div class="next">
+        <h2>What happens next</h2>
+        <ol class="vsteps">
+          <li><div><b>The branch has your booking</b><span>It’s sent to them straight away. They’ll only call if something needs checking.</span></div></li>
+          <li><div><b data-arrive>Arrive 10 minutes early</b><span>Bring any reports, X-rays or scans you have.</span></div></li>
+          <li><div><b>Your first session</b><span data-first>Assessment and your first treatment.</span></div></li>
+        </ol>
+      </div>
+      <a class="link home-link" href="home.html">Back to home<i data-icon="chevron"></i></a>
+    </section>
+
+    <div class="stage">
+      <div class="stage-in">
+        <div class="printer" aria-hidden="true"><span></span></div>
+        <div class="tk-wrap" data-wrap>
+          <article class="tk" data-tk aria-label="Appointment ticket">
+            <header class="tk-head">
+              <div class="tk-top"><span class="tk-logo"><img src="../canon/logo.webp" alt="J.P. Nagar Medical &amp; Physiotherapy Centre" width="408" height="301"></span><span class="tk-id"><small>Booking ID</small><b data-tk-id></b></span></div>
+              <p class="tk-day" data-tk-day></p>
+              <p class="tk-time"><span data-tk-time></span><em data-tk-ampm></em></p>
+              <div class="tk-where"><i data-icon="pin"></i><span><b data-tk-branch></b><small data-tk-landmark></small></span></div>
+            </header>
+            <div class="tk-perf" aria-hidden="true"></div>
+            <div class="tk-body">
+              <dl class="tk-grid">
+                <div><dt>Physiotherapist</dt><dd data-tk-ther></dd></div>
+                <div><dt>Arrive by</dt><dd data-tk-arrive></dd></div>
+                <div><dt>Patient</dt><dd data-tk-name></dd></div>
+                <div><dt>Mobile</dt><dd data-tk-phone></dd></div>
+              </dl>
+              <div class="tk-hurt" data-tk-hurt>
+                <p class="tk-label">Where it hurts</p>
+                <div class="tk-figs" data-tk-figs></div>
+                <div class="tk-chips" data-tk-chips></div>
+              </div>
+              <blockquote class="tk-note" data-tk-note hidden></blockquote>
+            </div>
+            <div class="tk-perf" aria-hidden="true"></div>
+            <footer class="tk-stub">
+              <svg class="tk-bar" data-tk-bar role="img" aria-label="Barcode of the booking ID"></svg>
+              <p><span data-tk-id2></span><small>Show this, or say your booking ID</small></p>
+            </footer>
+            <span class="tk-stamp" aria-hidden="true"><b>Confirmed</b><small data-tk-stamp></small></span>
+            <span class="tk-sheen" aria-hidden="true"></span>
+          </article>
+        </div>
+        <p class="stage-note">Show it at reception on your phone, print it, or just say your booking ID.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="ft" data-footer="slim"></footer>
+<nav class="dock" data-active="book"></nav>
+<script src="app.js"></script>
+<script src="../canon/published-data.js"></script>
+<script src="../canon/published.js"></script>
+<script src="booked.js"></script>
+</body>
+</html>

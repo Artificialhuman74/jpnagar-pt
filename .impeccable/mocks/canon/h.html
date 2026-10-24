@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>H · Slots on the Photo</title>
+<link rel="stylesheet" href="base.css">
+<style>
+.hero{margin:0 10px;border-radius:30px;overflow:hidden;position:relative;height:560px}
+.hero .photo{position:absolute;inset:0}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,22,41,.55) 0%,rgba(20,22,41,0) 40%)}
+.hero .copy{position:absolute;left:20px;right:20px;top:22px;color:#fff;z-index:2}
+.hero h1{font-size:38px}
+.hero .photo::after{top:auto;bottom:240px}
+.glass{position:absolute;left:10px;right:10px;bottom:10px;z-index:3;border-radius:24px;padding:16px;
+  background:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.85);
+  backdrop-filter:blur(22px) saturate(1.6);-webkit-backdrop-filter:blur(22px) saturate(1.6);
+  box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 20px 40px -20px rgba(20,22,41,.5)}
+.glass .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.glass .head b{font-size:17px}
+.glass .head small{display:block;font-size:13px;color:var(--ink-2)}
+.glass .change{font-size:14px;font-weight:700;color:var(--sky-ink);text-decoration:underline;text-underline-offset:3px}
+.glass .slot{background:rgba(255,255,255,.75)}
+.glass .slot.is-on{background:var(--act)}
+.glass .btn{margin-top:12px}
+.more{display:flex;justify-content:center;margin-top:12px}
+.more a{font-size:14px;font-weight:700;color:var(--sky-ink)}
+.first{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.first div{background:var(--surface);border-radius:18px;padding:14px 12px}
+.first i{width:30px;height:30px;border-radius:50%;background:var(--sky-soft);color:var(--sky-ink);display:grid;place-items:center;font-style:normal;font-weight:800;margin-bottom:10px}
+.first b{display:block;font-size:15px;line-height:1.2}
+.first span{font-size:13px;color:var(--ink-2)}
+.loclist a{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 12px;padding:15px 0;border-bottom:1px solid var(--line)}
+.loclist a:first-child{border-top:1px solid var(--line)}
+.loclist b{font-size:18px}
+.loclist small{grid-column:1;font-size:14px;color:var(--ink-2)}
+.loclist i{grid-row:1/3;grid-column:2;color:var(--ink-3)}
+.loclist i svg{width:18px;height:18px}
+</style></head><body>
+<header class="top"><img class="logo" src="logo.png" alt="J.P. Nagar Medical & Physiotherapy Centre"></header>
+<section class="hero">
+  <div class="photo" data-label="Photo: Arekere clinic (to be shot)"></div>
+  <div class="copy"><h1>Feel better, sooner.</h1></div>
+  <div class="glass" data-booking>
+    <div class="head"><div><b>Next free at Arekere</b><small><span class="open">Open now</span> · 1.2 km</small></div><a class="change" href="#">Change</a></div>
+    <div class="slots"><button class="slot" data-time="4:30">4:30</button><button class="slot is-on" data-time="5:30">5:30</button><button class="slot" data-time="6:00">6:00</button></div>
+    <a class="btn btn--act btn--block" href="#" data-cta>Book 5:30 pm</a>
+  </div>
+</section>
+<div class="more"><a href="#">See all days and times</a></div>
+<section class="sec">
+  <h2>Your first visit</h2>
+  <div class="first">
+    <div><i>1</i><b>Assessment</b><span>Find the cause</span></div>
+    <div><i>2</i><b>Your plan</b><span>Made for you</span></div>
+    <div><i>3</i><b>Recovery</b><span>Clinic + home</span></div>
+  </div>
+</section>
+<section class="sec">
+  <h2>Branches near you</h2>
+  <div class="loclist">
+    <a href="#"><b>Arekere MICO Layout</b><small><span class="open">Open now</span> · 1.2 km</small><i data-icon="chevron"></i></a>
+    <a href="#"><b>Bannerghatta Road</b><small>2.8 km · opens 4 pm</small><i data-icon="chevron"></i></a>
+    <a href="#"><b>JP Nagar 7th Phase</b><small>4.1 km · opens 5 pm</small><i data-icon="chevron"></i></a>
+  </div>
+</section>
+<div class="fab"></div>
+<nav class="dock dock--label" data-active="home"></nav>
+<script src="ui.js"></script>
+</body></html>

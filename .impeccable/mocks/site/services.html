@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Services · J.P. Nagar Physio</title>
+<link rel="stylesheet" href="../canon/base.css">
+<link rel="stylesheet" href="site.css">
+</head><body>
+<header class="top"><img class="logo" src="../canon/logo.png" alt="J.P. Nagar Medical & Physiotherapy Centre"></header>
+<div class="phead" data-reveal>
+  <h1>What we treat</h1>
+  <p>Ten areas of care, one clinic. Find yours by body area or by situation.</p>
+</div>
+
+<a class="finder" href="book.html" data-reveal>
+  <svg class="mini" viewBox="0 0 240 480" aria-hidden="true">
+    <g fill="#DCE0EC"><ellipse cx="120" cy="40" rx="21" ry="26"/><path d="M107 80 C96 84 80 86 72 94 C66 100 66 110 70 120 L78 150 C82 172 84 190 84 204 C82 218 80 232 82 246 L120 260 L158 246 C160 232 158 218 156 204 C156 190 158 172 162 150 L170 120 C174 110 174 100 168 94 C160 86 144 84 133 80 Z"/><path d="M70 97 C60 110 56 140 56 172 C54 202 50 228 47 256 L60 258 C63 230 67 204 70 178 C73 152 77 130 80 118 Z"/><path d="M170 97 C180 110 184 140 184 172 C186 202 190 228 193 256 L180 258 C177 230 173 204 170 178 C167 152 163 130 160 118 Z"/><path d="M82 238 C79 282 82 312 86 340 C88 370 90 400 92 430 L106 430 C106 400 108 370 110 340 C114 312 119 290 119 258 Z"/><path d="M158 238 C161 282 158 312 154 340 C152 370 150 400 148 430 L134 430 C134 400 132 370 130 340 C126 312 121 290 121 258 Z"/></g>
+    <circle cx="120" cy="200" r="16" fill="#00A8EC" opacity=".35"/><circle cx="120" cy="200" r="6" fill="#00A8EC"/>
+    <circle cx="143" cy="340" r="12" fill="#00A8EC" opacity=".35"/><circle cx="143" cy="340" r="5" fill="#00A8EC"/>
+  </svg>
+  <div><b>Not sure what you need?</b><p>Tap where it hurts and we'll match you to the right care.</p><span class="btn btn--act">Show me where it hurts</span></div>
+</a>
+
+<div class="filters" role="radiogroup" aria-label="Filter services" data-filters></div>
+<p class="count" data-count aria-live="polite"></p>
+<div class="svcs" data-svcs></div>
+
+<section class="sec">
+  <h2 data-reveal>Treatments we use</h2>
+  <div class="helps" data-reveal>
+    <span>Manual therapy</span><span>Exercise therapy</span><span>IFT</span><span>Ultrasound</span><span>TENS</span>
+    <span>Short wave diathermy</span><span>Lumbar traction</span><span>Myofascial release</span><span>Hot and cold therapy</span><span>Stretching</span>
+  </div>
+</section>
+
+<div class="fab"></div>
+<nav class="dock" data-active="services"></nav>
+<script src="app.js"></script>
+<script>
+const SERVICES = [
+  { name: 'Spine & Back Care', tags: ['back'], helps: ['Back and neck pain', 'Slip disc and sciatica', 'Posture problems'], href: 'spine.html' },
+  { name: 'Orthopaedic Physiotherapy', tags: ['joints'], helps: ['Joint and muscle pain', 'Frozen shoulder', 'Fracture recovery'] },
+  { name: 'Sports Physiotherapy', tags: ['sports', 'joints'], helps: ['Sprains and ligament tears', 'Running and gym injuries', 'Safe return to sport'] },
+  { name: 'Post-Operative Rehab', tags: ['surgery'], helps: ['After knee or hip replacement', 'After fracture surgery', 'After spine surgery'] },
+  { name: 'Neurological Physiotherapy', tags: ['neuro'], helps: ['Stroke recovery', 'Parkinson’s and balance', 'Nerve injuries'] },
+  { name: 'Women’s Health', tags: ['women'], helps: ['Pregnancy back pain', 'After delivery recovery', 'Pelvic floor care'] },
+  { name: 'Paediatric Physiotherapy', tags: ['children'], helps: ['Delayed walking or crawling', 'Posture in children', 'Sports injuries in teens'] },
+  { name: 'Geriatric Physiotherapy', tags: ['elderly', 'joints'], helps: ['Arthritis', 'Balance and fall prevention', 'Staying mobile'] },
+  { name: 'Home Care Physiotherapy', tags: ['elderly', 'surgery'], helps: ['When travel is hard', 'After a hospital stay', 'Bedside rehab'] },
+  { name: 'Therapies & Equipment', tags: [], helps: ['Manual therapy and exercise', 'IFT, TENS and ultrasound', 'Traction and heat therapy'] }
+];
+const FILTERS = [['all', 'All'], ['back', 'Back & neck'], ['joints', 'Joints'], ['sports', 'Sports'], ['surgery', 'After surgery'], ['neuro', 'Stroke & nerves'], ['women', 'Women'], ['children', 'Children'], ['elderly', 'Elderly']];
+const list = document.querySelector('[data-svcs]');
+const cards = SERVICES.map(s => {
+  const a = el('a', { class: 'svc', href: s.href || '#' },
+    el('div', { class: 'photo tilt' }),
+    el('div', {}, el('h3', {}, s.name), el('ul', {}, ...s.helps.map(h => el('li', {}, h))),
+      el('span', { class: 'go' }, s.href ? 'See how we treat it' : 'Page coming next', icon('chevron'))));
+  if (!s.href) a.addEventListener('click', e => { e.preventDefault(); toast('This service page is built from the same template'); });
+  list.append(a); return a;
+});
+let current = 'all';
+const fbar = document.querySelector('[data-filters]');
+FILTERS.forEach(([k, label]) => {
+  const p = el('button', { class: 'pill' + (k === current ? ' on' : ''), role: 'radio', 'aria-checked': k === current }, label);
+  p.addEventListener('click', () => { current = k; render(); });
+  fbar.append(p);
+});
+function render() {
+  [...fbar.children].forEach((p, i) => { const on = FILTERS[i][0] === current; p.classList.toggle('on', on); p.setAttribute('aria-checked', on); });
+  let n = 0;
+  cards.forEach((c, i) => {
+    const show = current === 'all' || SERVICES[i].tags.includes(current);
+    c.hidden = !show; if (show) { n++; c.style.animation = 'none'; void c.offsetWidth; c.style.animation = `rise .45s var(--ease) ${n * .04}s backwards`; }
+  });
+  document.querySelector('[data-count]').textContent = current === 'all' ? `${n} areas of care` : `${n} matching`;
+}
+render();
+</script>
+</body></html>

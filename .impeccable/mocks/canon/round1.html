@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Round One Iterations</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@500;700;800&display=swap");
+:root{--bg:#ECEAE9;--ink:#18141A;--muted:#5E585B}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Figtree",-apple-system,system-ui,sans-serif;padding:32px 16px 48px}
+h1{font-size:24px;text-align:center;letter-spacing:-.02em}
+p.sub{text-align:center;color:var(--muted);font-size:15px;margin:6px 0 30px}
+.row{display:flex;flex-wrap:wrap;gap:40px 32px;justify-content:center}
+figure{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:410px}
+figcaption{text-align:center;max-width:360px}
+figcaption b{display:block;font-size:17px}
+figcaption span{font-size:14px;color:var(--muted)}
+.phone{width:410px;height:864px;border-radius:52px;overflow:hidden;border:10px solid #111;box-shadow:0 30px 60px -25px rgba(0,0,0,.45);background:#fff;max-width:calc(100vw - 32px)}
+iframe{width:390px;height:844px;border:0;display:block}
+</style></head><body>
+<h1>Category standard: four iterations</h1>
+<p class="sub">Scroll inside each phone. Tap the dock and the time slots. Grey photo frames are placeholders.</p>
+<div class="row">
+ <figure><div class="phone"><iframe src="a.html" title="A"></iframe></div><figcaption><b>A · Photo hero</b><span>Big clinic photo, Book + Find a branch. Dock: dark pill on the current page.</span></figcaption></figure>
+ <figure><div class="phone"><iframe src="b.html" title="B"></iframe></div><figcaption><b>B · Booking card first</b><span>Day and slot picker is the first thing you see. Dock: dot under the current page.</span></figcaption></figure>
+ <figure><div class="phone"><iframe src="c.html" title="C"></iframe></div><figcaption><b>C · Inset photo + next slots</b><span>Rounded photo card, then the next free times. Dock: red bar over the current page.</span></figcaption></figure>
+ <figure><div class="phone"><iframe src="d.html" title="D"></iframe></div><figcaption><b>D · Type-led</b><span>Big headline, branches as rows with their next free time. Dock: only the current page shows its label.</span></figcaption></figure>
+</div>
+</body></html>

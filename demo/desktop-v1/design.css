@@ -1,0 +1,236 @@
+/* Canvas-only additions on top of app.css: the still ticket and the desktop layouts. */
+
+/* ---------- ticket, drawn still (notches painted on the tear lines) ---------- */
+.tk{-webkit-mask:none;mask:none}
+.tk-perf{position:relative;overflow:visible}
+.tk-perf::before,.tk-perf::after{content:"";position:absolute;top:-12px;width:26px;height:26px;border-radius:50%;background:var(--tk-bg,#fff)}
+.tk-perf::before{left:-35px}
+.tk-perf::after{right:-35px}
+.tk-stamp{top:auto;bottom:58px}
+.tk-sheen{display:none}
+
+/* ---------- desktop pages ---------- */
+.dk{position:relative;min-height:100%;background:var(--canvas);color:var(--ink);font-family:Figtree,-apple-system,system-ui,sans-serif;padding-bottom:150px;font-size:17px}
+.dk .wrap{max-width:1200px;margin:0 auto;padding:0 32px}
+.dk-top{max-width:1200px;margin:0 auto;padding:20px 32px 10px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.dk-top .logo{height:76px;width:auto;margin:-10px 0 -10px -10px}
+.dk-top .calls{display:flex;gap:10px;flex-wrap:wrap}
+.dk-top .calls a{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 18px;border-radius:14px;background:var(--surface);font-weight:700;font-size:15px}
+.dk-top .calls svg{width:18px;height:18px}
+.dk h2{font-size:38px;letter-spacing:-.03em}
+.dk .lede{font-size:18px;color:var(--ink-2);margin-top:8px;max-width:60ch}
+.dk-sec{padding-top:96px}
+.dk-sec > h2,.dk-sec .head h2{margin-bottom:26px}
+.dk .head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+
+/* home hero: photo story on the left, live booking on the right */
+.dk-hero{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:24px;padding-top:6px}
+.dk-hero .heroimg{position:relative;min-height:600px;border-radius:34px;overflow:hidden}
+.dk-hero .heroimg .photo{position:absolute;inset:0}
+.dk-hero .heroimg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,22,41,0) 35%,rgba(20,22,41,.82))}
+.dk-hero .copy{position:absolute;left:36px;right:36px;bottom:34px;z-index:2;color:#fff}
+.dk-hero .copy h1{font-size:76px;letter-spacing:-.045em;line-height:.98}
+.dk-hero .copy p{font-size:19px;color:rgba(255,255,255,.88);margin:12px 0 22px;max-width:44ch}
+.dk-hero .copy .btn{height:58px;padding:0 28px;font-size:18px}
+.dk-hero .copy .btn svg{width:20px;height:20px}
+.dk-hero .dk-side{display:flex;flex-direction:column;gap:16px}
+.dk-hero .bk{padding:22px}
+.dk-hero .bk h3{font-size:22px;margin-bottom:14px}
+.mini-trust{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;padding:16px 18px;border-radius:22px;background:var(--surface)}
+.mini-trust .photo{width:64px;height:64px;border-radius:16px}
+.mini-trust .photo::after{display:none}
+.mini-trust b{font-size:16px}
+
+.steps-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;position:relative;list-style:none}
+.steps-row::before{content:"";position:absolute;left:28px;right:28px;top:27px;height:2px;background:var(--sky)}
+.steps-row li{position:relative;background:var(--canvas)}
+.steps-row .num{width:56px;height:56px;border-radius:50%;background:var(--canvas);border:2px solid var(--sky);color:var(--sky-ink);display:grid;place-items:center;font-weight:800;font-size:20px;position:relative}
+.steps-row b{display:block;font-size:21px;margin-top:16px}
+.steps-row span{display:block;color:var(--ink-2);margin-top:4px}
+
+.why-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:40px;align-items:start}
+.why-grid .ticks li{font-size:18px}
+.why-grid .ticks svg{width:24px;height:24px}
+.rev-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.rev-grid .review{flex:none}
+
+.gal{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;perspective:1100px}
+.gal .photo{height:300px;border-radius:24px;box-shadow:var(--shadow)}
+.gal .photo:nth-child(1){transform:rotateY(16deg)}
+.gal .photo:nth-child(2){transform:rotateY(8deg)}
+.gal .photo:nth-child(4){transform:rotateY(-8deg)}
+.gal .photo:nth-child(5){transform:rotateY(-16deg)}
+
+.close-band{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:30px;align-items:center;padding:40px;border-radius:32px;background:var(--surface)}
+.close-band h2{font-size:42px}
+.hours3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:20px}
+.hours3 div{padding:14px 16px;border-radius:16px;background:var(--canvas)}
+.hours3 b{display:block;font-size:16px}
+.hours3 span{font-size:14px;color:var(--ink-2)}
+.close-band .btn{height:60px;padding:0 34px;font-size:18px}
+
+/* booking on one screen */
+.dk-steps{display:flex;gap:10px;align-items:center;margin:4px 0 26px;flex-wrap:wrap}
+.dk-steps span{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:15px;color:var(--ink-3)}
+.dk-steps span i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:13px;background:var(--surface)}
+.dk-steps span.on{color:var(--ink)}
+.dk-steps span.on i{background:var(--act);color:#fff}
+.dk-steps em{width:40px;height:2px;background:var(--line)}
+.dk-book{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:24px;align-items:start}
+.panel{border-radius:28px;background:var(--canvas);box-shadow:var(--shadow);padding:26px}
+.panel h2{font-size:28px}
+.panel .sub{color:var(--ink-2);margin-top:4px;font-size:15px}
+.panel + .panel{margin-top:20px}
+.fig-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
+.fig-row figure{position:relative;display:grid;justify-items:center;padding:14px 0 10px;border-radius:20px;background:radial-gradient(closest-side,var(--sky-soft),rgba(230,246,253,0))}
+.fig-row figure.on{outline:2px solid var(--act);outline-offset:-2px}
+.fig-row svg{width:150px;height:300px;overflow:visible}
+.fig-row figcaption{font-size:13px;font-weight:700;color:var(--ink-2);margin-top:4px}
+.fig-row .spot{position:absolute;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--sky);opacity:.55}
+.fig-row .spot.on{opacity:1;width:16px;height:16px;margin:-8px 0 0 -8px;box-shadow:0 0 0 3px #fff,0 0 0 14px rgba(0,168,236,.25)}
+.chosen{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.chosen span{font-size:13px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--sky-soft);color:var(--sky-ink)}
+.docs4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.form2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.form2 .field{margin-top:0}
+.confirm-row{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:22px;flex-wrap:wrap}
+.confirm-row p{color:var(--ink-2);font-size:15px}
+.confirm-row .btn{height:58px;padding:0 30px;font-size:18px}
+
+/* booked: ticket beside next steps */
+.dk-booked{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:56px;align-items:start;padding-top:20px}
+.dk-booked .check{margin:0 0 18px}
+.dk-booked h1{font-size:64px;letter-spacing:-.045em;line-height:1}
+.dk-booked .lead{font-size:20px;margin-top:10px;color:var(--ink-2)}
+.dk-booked .acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:28px;max-width:520px}
+.dk-booked .acts .btn{height:54px}
+.dk-booked .acts .btn svg{width:18px;height:18px}
+.dk-booked .acts .wa{grid-column:1/-1;height:58px}
+.next{margin-top:40px;max-width:520px}
+.next h3{font-size:20px;margin-bottom:12px}
+.dk-booked .tk-wrap{margin:-6px -14px 0;transform:rotate(1.5deg)}
+
+/* services grid */
+.finder-band{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:22px;align-items:center;padding:22px 26px;border-radius:26px;background:var(--surface);margin-top:28px}
+.finder-band svg{width:56px;height:112px}
+.finder-band b{display:block;font-size:22px}
+.finder-band p{color:var(--ink-2);margin-top:2px}
+.finder-band .btn{height:54px;padding:0 24px}
+.dk .filters{padding:22px 0 4px;flex-wrap:wrap;overflow:visible}
+.svc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:16px}
+.svc-grid .svc{grid-template-columns:120px 1fr}
+.svc-grid .svc .photo{width:120px;height:140px}
+
+/* branches: list beside map */
+.dk-branches{display:grid;grid-template-columns:minmax(0,6fr) minmax(0,5fr);gap:24px;align-items:start;margin-top:28px}
+.dk-branches .blist{padding:0;gap:16px}
+.dk-branches .locate{margin:0 0 16px}
+.dk-branches .mapbig{position:sticky;top:20px;height:760px;border-radius:30px}
+.pinlbl{position:absolute;display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:12px;background:#fff;font-size:13px;font-weight:800;box-shadow:var(--shadow)}
+.pinlbl::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--act)}
+.pinlbl.near::before{background:var(--sky);box-shadow:0 0 0 5px rgba(0,168,236,.25)}
+
+/* team row */
+.team3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:28px}
+.team3 .member .photo{aspect-ratio:4/5}
+.team3 .member .body{padding:16px 18px 18px}
+.team3 .member b{font-size:19px}
+.team3 .member small{font-size:14px}
+.how3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.how3 div{padding:22px;border-radius:22px;background:var(--surface)}
+.how3 svg{width:26px;height:26px;color:var(--sky)}
+.how3 b{display:block;font-size:18px;margin-top:10px}
+.how3 span{display:block;color:var(--ink-2);margin-top:4px;font-size:15px}
+
+@media (max-width: 900px){
+  .dk-hero,.why-grid,.dk-book,.dk-booked,.dk-branches,.close-band,.finder-band{grid-template-columns:1fr}
+  .steps-row,.svc-grid,.team3,.how3,.hours3,.docs4,.form2,.rev-grid{grid-template-columns:1fr}
+  .steps-row::before{display:none}
+  .gal{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dk-hero .copy h1,.dk-booked h1{font-size:46px}
+  .dk-branches .mapbig{position:relative;height:320px}
+}
+
+/* demo-only: clickable spots and a centred details sheet on wide screens */
+.fig-row .spot{cursor:pointer}
+.fig-row .spot::after{content:"";position:absolute;inset:-10px;border-radius:50%}
+.fig-row .spot:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
+@media (min-width: 900px){
+  .sheet{left:50%;right:auto;width:560px;margin-left:-280px;bottom:24px;border-radius:28px;max-height:84vh}
+}
+
+/* =========================================================
+   Wide-screen layout: same elements, more of the screen used
+   ========================================================= */
+.dk .wrap,.dk-top{max-width:1520px;padding-left:clamp(24px,4vw,72px);padding-right:clamp(24px,4vw,72px)}
+
+/* home: the hero fills the first screen, booking card stays in view beside it */
+.dk-hero{grid-template-columns:minmax(0,8fr) minmax(380px,4fr);gap:28px}
+.dk-hero .heroimg{min-height:clamp(560px,calc(100vh - 170px),820px)}
+.dk-hero .copy{left:clamp(32px,4vw,64px);bottom:clamp(32px,4vw,56px)}
+.dk-hero .copy h1{font-size:clamp(64px,6.4vw,104px)}
+.dk-hero .copy p{font-size:20px}
+.dk-hero .dk-side{position:sticky;top:20px;align-self:start}
+.dk-duo{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:clamp(32px,4vw,72px);align-items:start}
+.duo-visit{position:sticky;top:24px;padding:32px;border-radius:30px;background:var(--surface)}
+.duo-visit .steps{gap:22px;margin-bottom:26px}
+.duo-visit .steps b{font-size:19px}
+.duo-visit .btn{height:56px;padding:0 26px}
+.why2{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 28px}
+.why2 li{font-size:17px}
+.rev-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.dk-duo .rating{margin-top:30px}
+.gal{grid-template-columns:repeat(5,minmax(0,1fr));gap:18px}
+.gal .photo{height:clamp(300px,26vw,420px)}
+
+/* booking: everything on one screen, three columns */
+.dk-book{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:20px}
+.dk-book > .panel{position:sticky;top:20px}
+.dk-col{display:flex;flex-direction:column;gap:20px}
+.dk-col .panel + .panel{margin-top:0}
+.fig-row svg{width:min(150px,100%);height:auto;aspect-ratio:1/2}
+.dk-book .slots{grid-template-columns:repeat(4,minmax(0,1fr)) !important}
+.dk-book .days{flex-wrap:wrap}
+.docs4{grid-template-columns:repeat(2,minmax(0,1fr))}
+.form2{grid-template-columns:1fr}
+.confirm-row{flex-direction:column;align-items:stretch}
+.confirm-row .btn{width:100%}
+
+/* booked: actions | the ticket | what happens next */
+.dk-booked{grid-template-columns:minmax(0,1fr) 460px minmax(0,1fr);gap:clamp(32px,4vw,64px);padding-top:32px}
+.dk-booked .acts{grid-template-columns:1fr}
+.dk-booked .next{margin-top:0;padding:30px;border-radius:28px;background:var(--canvas);box-shadow:var(--shadow)}
+.dk-booked h1{font-size:clamp(52px,4.6vw,76px)}
+
+/* services: finder and filters stay beside the grid */
+.dk-shop{display:grid;grid-template-columns:340px minmax(0,1fr);gap:28px;align-items:start;margin-top:28px}
+.shop-side{position:sticky;top:20px;display:flex;flex-direction:column;gap:6px}
+.shop-side .finder-band{margin-top:0;grid-template-columns:auto minmax(0,1fr);align-items:start}
+.shop-side .finder-band .btn{grid-column:1/-1;width:100%}
+.shop-side .filters{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:18px 0 0}
+.shop-side .filters .pill{text-align:left;padding:12px 16px}
+.dk-shop .svc-grid{margin-top:0;grid-template-columns:repeat(auto-fill,minmax(360px,1fr))}
+
+/* branches: the map takes the bigger half and stays in view */
+.dk-branches{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+.dk-branches .mapbig{height:calc(100vh - 60px);min-height:620px}
+
+/* team: shorter portraits so all three fit above the fold */
+.team3 .member .photo{aspect-ratio:4/3}
+
+@media (max-width: 1180px){
+  .dk-book{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .dk-book > .panel{grid-row:span 2}
+  .dk-booked{grid-template-columns:minmax(0,1fr) 440px}
+  .dk-booked .next{grid-column:1/-1}
+  .rev-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width: 900px){
+  .dk-hero,.dk-duo,.dk-book,.dk-booked,.dk-shop,.dk-branches{grid-template-columns:1fr}
+  .dk-hero .dk-side,.duo-visit,.dk-book > .panel,.shop-side{position:static}
+  .why2,.rev-row{grid-template-columns:1fr}
+  .dk-branches .mapbig{height:320px;min-height:0}
+}
+
+/* the branch-card ".acts a" style must not grey out the main action */
+.dk-booked .acts a.btn--act{background:var(--act);color:#fff}

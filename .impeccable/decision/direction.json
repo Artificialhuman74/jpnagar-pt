@@ -1,0 +1,239 @@
+{
+ "title": "Choose the visual world",
+ "question": "The roll assigned Jacaranda Glass. Keep it, take an alternate, or re-roll.",
+ "options": [
+  {
+   "id": "assigned",
+   "label": "Jacaranda Glass",
+   "kicker": "THE ROLL",
+   "lineage": "Bangalore's jacaranda and gulmohar avenues, seen through thick frosted clinic glass",
+   "thesis": "The whole site is morning light through clinic glass, and the booking card is the thickest pane.",
+   "palette": [
+    "#F4F1FB",
+    "#C9B8F0",
+    "#7D5AD6",
+    "#FF7A3D",
+    "#1B1530"
+   ],
+   "materials": [
+    "thick refracting glass slabs",
+    "jacaranda light field",
+    "etched type on glass edges"
+   ],
+   "viewport": "Logo top-left over a jacaranda light field; a thick glass booking slab holds the nearest branch, open-now status and the next three slots as tappable chips; rating and founder etched on its edge; glass dock below.",
+   "risk": "Glass over gradients is an AI-era cliché unless the light is specifically Bangalore's and the glass has real thickness and refraction.",
+   "raised": [
+    {
+     "from": "challenger-indoor-sun",
+     "raise": "One light grades every photo: clinic images are toned in the field's light so they never wash out on the bright ground."
+    },
+    {
+     "from": "challenger-cracktro",
+     "raise": "Every element declares a depth (0-3) that sets its blur, shadow, tilt and parallax from one shared clock."
+    },
+    {
+     "from": "challenger-cutting-bench",
+     "raise": "Slot states are marks, not colours: taken slots are struck through, your pick carries a flag, and an unfinished booking is re-flagged when you return."
+    },
+    {
+     "from": "challenger-character-sheet",
+     "raise": "The body map links both ways: a service lights every region it treats, a region lights its services."
+    },
+    {
+     "from": "challenger-neon-sign",
+     "raise": "Motion runs as one numbered sequence (field, slab, slots, dock), never scattered effects."
+    },
+    {
+     "from": "challenger-clay-tower",
+     "raise": "Text sits in fixed-measure courses: each band's line length is set once and every block obeys it."
+    }
+   ],
+   "html": ".impeccable/mocks/decision/assigned.html",
+   "htmlFrame": "390x844"
+  },
+  {
+   "id": "model-pick",
+   "label": "Bannerghatta Line",
+   "kicker": "IMPECCABLE’S PICK",
+   "lineage": "Namma Metro and BMTC wayfinding along the Bannerghatta Road corridor",
+   "thesis": "The three branches as stops on one line through South Bangalore, the next free slot shown like the next train.",
+   "palette": [
+    "#FFFFFF",
+    "#D6246E",
+    "#1E9E5A",
+    "#E7E7EA",
+    "#121214"
+   ],
+   "materials": [
+    "route line and station dots",
+    "departure-board slots",
+    "pictogram set"
+   ],
+   "viewport": "A bold route line across the top with the three branches as station dots, the nearest ringed with its distance; a departure-board card lists the next free slots there; glass dock below.",
+   "risk": "Wayfinding can read cold and transit-like, and signage grammar is a familiar, safe-feeling choice.",
+   "html": ".impeccable/mocks/decision/model-pick.html",
+   "htmlFrame": "390x844"
+  },
+  {
+   "id": "challenger-indoor-sun",
+   "label": "Indoor Weather Sun",
+   "verdict": "declined",
+   "lineage": "a mirrored-ceiling hall lit by one monofrequency sun",
+   "thesis": "The clinic as one amber hall where every colour flattens to a single light.",
+   "palette": [
+    "#F2A93B",
+    "#C9781F",
+    "#1A1410",
+    "#FFD27A"
+   ],
+   "materials": [
+    "sodium haze",
+    "mirrored ceiling",
+    "silhouette ink"
+   ],
+   "viewport": "A vast amber band with a half sun and the booking slots as lying silhouettes.",
+   "case": "Fuses poorly: a dark amber hall fights the pinned light healthcare feel, and patients do not identify with it.",
+   "kept": "Total light commitment: one light grades every photo.",
+   "risk": "Reads as an art installation, not a clinic.",
+   "hero": "https://impeccable.style/worlds/cards/light-shadow-caustics-indoor-weather-sun-hero.webp"
+  },
+  {
+   "id": "challenger-cracktro",
+   "label": "Cracktro Scroller",
+   "verdict": "declined",
+   "lineage": "demoscene title screens",
+   "thesis": "Rank is depth: the next slot is the brightest line in a drifting void.",
+   "palette": [
+    "#000000",
+    "#9A9A9A",
+    "#F4F1E8",
+    "#FFB000"
+   ],
+   "materials": [
+    "bitmap face",
+    "drifting dust fields"
+   ],
+   "viewport": "One ivory line of bitmap text over a black void with drifting grey stars.",
+   "case": "Fuses poorly: a black void and bitmap type contradict light, calm and readable for older patients.",
+   "kept": "One depth scale drives blur, shadow, tilt and drift.",
+   "risk": "Unreadable for the audience.",
+   "hero": "https://impeccable.style/worlds/cards/operate-c-cracktro-scroller-queue-hero.webp"
+  },
+  {
+   "id": "challenger-cutting-bench",
+   "label": "Cutting Bench Rail",
+   "verdict": "declined",
+   "lineage": "film editors' work prints on pins",
+   "thesis": "Booking steps as frames strung on a perforated rail.",
+   "palette": [
+    "#FF6A13",
+    "#000000",
+    "#FFFFFF"
+   ],
+   "materials": [
+    "film grain",
+    "tape flags",
+    "punched windows"
+   ],
+   "viewport": "An orange grain field crossed by a perforated rail of booking steps.",
+   "case": "Fuses poorly: orange-on-black is the opposite of the pinned light look; the metaphor means nothing to patients.",
+   "kept": "State is a mark, not a hue; where you stopped is flagged.",
+   "risk": "Feels like an editing tool.",
+   "hero": "https://impeccable.style/worlds/cards/operate-a-cutting-bench-select-rail-hero.webp"
+  },
+  {
+   "id": "challenger-neon-sign",
+   "label": "Desert Neon Sign",
+   "verdict": "declined",
+   "lineage": "roadside sign-shop elevations",
+   "thesis": "The three branches billed on one towering lit sign.",
+   "palette": [
+    "#F3E9D2",
+    "#2FB7B0",
+    "#FF3D7F",
+    "#14161F"
+   ],
+   "materials": [
+    "porcelain enamel",
+    "chase lamps",
+    "neon script"
+   ],
+   "viewport": "A night-ground sign stack with a chasing arrow pointing to Book.",
+   "case": "Fuses poorly: a night ground and motel kitsch undercut medical trust.",
+   "kept": "Motion is one numbered sequence.",
+   "risk": "Kitsch.",
+   "hero": "https://impeccable.style/worlds/cards/vernacular-ephemera-desert-neon-sign-program-hero.webp"
+  },
+  {
+   "id": "challenger-character-sheet",
+   "label": "Character Reference Sheet",
+   "verdict": "declined",
+   "lineage": "amateur art-community reference sheets",
+   "thesis": "The body map as a four-view reference sheet with named swatches.",
+   "palette": [
+    "#FF2E88",
+    "#22D3EE",
+    "#FACC15",
+    "#111111"
+   ],
+   "materials": [
+    "hard black outline",
+    "named swatches",
+    "hand lettering"
+   ],
+   "viewport": "Four views of a figure with a swatch row under it.",
+   "case": "Fuses poorly: clashing fills and hand lettering read amateur for a clinic; it only helps the body map.",
+   "kept": "Two-way linking between swatch and region.",
+   "risk": "Looks unprofessional.",
+   "hero": "https://impeccable.style/worlds/cards/pop-culture-shelf-devianart-character-sheet-hero.webp"
+  },
+  {
+   "id": "challenger-clay-tower",
+   "label": "Coiled Earth Tower",
+   "verdict": "declined",
+   "lineage": "hand-coiled clay towers",
+   "thesis": "Recovery built course by course, like a coiled clay wall.",
+   "palette": [
+    "#B5532E",
+    "#6B3A22",
+    "#F1E6D6",
+    "#2A1A12"
+   ],
+   "materials": [
+    "terracotta coils",
+    "slip-white seams"
+   ],
+   "viewport": "Stacked terracotta bands with the slots set as courses.",
+   "case": "Fuses poorly: an earthen terracotta world contradicts light and clinical, and lands in the cream-terracotta default.",
+   "kept": "Fixed-measure courses for text.",
+   "risk": "Heavy and rustic.",
+   "hero": "https://impeccable.style/worlds/cards/clay-ceramics-fracture-coiled-earth-tower-hero.webp"
+  }
+ ],
+ "reroll": {
+  "registers": [
+   "safer",
+   "bolder"
+  ]
+ },
+ "canon": true,
+ "canonCard": {
+  "label": "The category standard",
+  "thesis": "A clean clinic website, executed impeccably.",
+  "palette": [
+   "#FFFFFF",
+   "#0F2A3D",
+   "#0FA3A3",
+   "#F2F7F8"
+  ],
+  "materials": [
+   "clean grid",
+   "clinic photography"
+  ],
+  "viewport": "Photo hero with a headline and a Book button, service cards below, reviews carousel.",
+  "risk": "Indistinguishable from every other clinic by design.",
+  "html": ".impeccable/mocks/decision/canon.html",
+  "htmlFrame": "390x844"
+ },
+ "steer": true
+}

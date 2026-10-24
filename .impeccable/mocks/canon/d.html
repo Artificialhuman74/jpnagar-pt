@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D · Type-Led</title>
+<link rel="stylesheet" href="base.css">
+<style>
+.intro{padding:18px 18px 0}
+.intro h1{font-size:46px;letter-spacing:-.04em}
+.intro .ticks{margin-top:18px}
+.intro .ticks li{font-size:16px;font-weight:500}
+.list{margin-top:8px}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;padding:16px 0;border-bottom:1px solid var(--line)}
+.row:first-child{border-top:1px solid var(--line)}
+.row b{font-size:19px;font-weight:750;letter-spacing:-.01em}
+.row small{grid-column:1;font-size:14px;color:var(--ink-2)}
+.row .when{grid-row:1/3;grid-column:2;text-align:right}
+.row .when b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
+.row .when small{font-size:12px}
+.row.near > b::after{content:"Nearest";margin-left:8px;font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;background:var(--surface);vertical-align:3px}
+.cta{padding:18px 18px 0}
+.media{margin:30px 18px 0;display:grid;grid-template-columns:1.2fr 1fr;gap:10px}
+.media .photo{border-radius:20px}
+.media .photo:first-child{grid-row:1/3;height:300px}
+.media .photo:not(:first-child){height:145px}
+.media .photo::after{font-size:10px}
+.svc{display:grid;grid-template-columns:1fr auto;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);font-size:17px;font-weight:600}
+.svc i svg{width:18px;height:18px;color:var(--ink-3)}
+</style></head><body>
+<header class="top"><img class="logo" src="logo.png" alt="J.P. Nagar Medical & Physiotherapy Centre"></header>
+<section class="intro">
+  <h1>Physiotherapy, close to home.</h1>
+  <ul class="ticks">
+    <li><i data-icon="tick"></i>Three branches in South Bangalore</li>
+    <li><i data-icon="tick"></i>Open mornings and evenings, Mon–Sat</li>
+    <li><i data-icon="tick"></i>Book in a minute, no sign-up</li>
+  </ul>
+</section>
+<section class="sec">
+  <h2>Book at a branch</h2>
+  <div class="list">
+    <a class="row near" href="#"><b>Arekere</b><small><span class="open">Open now</span> · 1.2 km</small><span class="when"><b>5:30 pm</b><small>next free</small></span></a>
+    <a class="row" href="#"><b>Bannerghatta Road</b><small>2.8 km · opens 4 pm</small><span class="when"><b>4:00 pm</b><small>next free</small></span></a>
+    <a class="row" href="#"><b>JP Nagar</b><small>4.1 km · opens 5 pm</small><span class="when"><b>5:00 pm</b><small>next free</small></span></a>
+  </div>
+</section>
+<div class="cta"><a class="btn btn--act btn--block" href="#">Book 5:30 pm at Arekere</a></div>
+<div class="media"><div class="photo tilt" data-label="Clinic photo"></div><div class="photo tilt" data-label="Team"></div><div class="photo tilt" data-label="Equipment"></div></div>
+<section class="sec">
+  <h2>What hurts?</h2>
+  <a class="svc" href="#">Back &amp; neck pain<i data-icon="chevron"></i></a>
+  <a class="svc" href="#">Knee &amp; joint pain<i data-icon="chevron"></i></a>
+  <a class="svc" href="#">Recovering from surgery<i data-icon="chevron"></i></a>
+  <a class="svc" href="#">Sports injury<i data-icon="chevron"></i></a>
+</section>
+<div class="fab"></div>
+<nav class="dock dock--label" data-active="home"></nav>
+<script src="ui.js"></script>
+</body></html>

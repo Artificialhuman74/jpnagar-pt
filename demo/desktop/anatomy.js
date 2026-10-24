@@ -44,11 +44,13 @@ function nearestOn(p, poly) {
 let SID = 0;
 const uid = p => `${p}${++SID}`;
 
-/* ---------- phones ---------- */
-// Labels grow on phones, where the stage is drawn at about 70% size, so their text stays readable. Phones also play
-// the scenes calmly: once the camera arrives it holds still and the patient doesn't breathe, so between moves only
-// the small part that is moving has to be redrawn, not the whole shaded body.
-const UI = matchMedia('(max-width: 600px)').matches ? 1.25 : 1, CALM = UI !== 1;
+/* ---------- phones, and calm scenes ---------- */
+// Labels grow on phones, where the stage is drawn at about 70% size, so their text stays readable.
+// Every screen plays the scenes calmly: once the camera arrives it holds still and the patient doesn't breathe, so
+// between moves only the small part that is moving is redrawn, not the whole shaded body. A slow drift or a breath
+// moves the whole scene, and Safari then recomputes every blur and shading filter on every frame, which stutters
+// even on a fast Mac (Chrome hides it by doing the same work on the graphics card).
+const UI = matchMedia('(max-width: 600px)').matches ? 1.25 : 1, CALM = true;
 // setting an SVG attribute to the value it already has still makes the browser redraw, so skip those
 const svgSet = Element.prototype.setAttribute;
 SVGElement.prototype.setAttribute = function (k, v) { v = String(v); if (this.getAttribute(k) !== v) svgSet.call(this, k, v); };

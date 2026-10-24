@@ -308,7 +308,12 @@ function jpn_rest_status( WP_REST_Request $req ) {
 	if ( ! in_array( $status, array( 'booked', 'arrived', 'cancelled' ), true ) ) {
 		return new WP_Error( 'jpn_status', 'Unknown status.', array( 'status' => 400 ) );
 	}
-	return jpn_set_status( (int) $req['id'], $status );
+	$id = (int) $req['id'];
+	return jpn_locked(
+		function () use ( $id, $status ) {
+			return jpn_set_status( $id, $status );
+		}
+	);
 }
 
 /** "Publish to all doctors": the branch's timings, and nobody keeps their own. */
@@ -318,15 +323,17 @@ function jpn_rest_branch_timings( WP_REST_Request $req ) {
 	if ( ! $branch || ! $t ) {
 		return new WP_Error( 'jpn_bad', 'Bad branch or timings.', array( 'status' => 400 ) );
 	}
-	$s            = jpn_schedule();
-	$s[ $branch ] = array_merge( $t, array( 'own' => array() ) );
-	update_option( 'jpn_schedule', $s, false );
-	// opening hours on the website follow the timings; the timings are saved either way, so bookings use them
-	$snap = jpn_write_snapshot();
-	if ( is_wp_error( $snap ) ) {
-		return $snap;
-	}
-	return $s[ $branch ];
+	// the website file is rebuilt under the same lock, so it can't race a Publish and bring back old content
+	return jpn_locked(
+		function () use ( $branch, $t ) {
+			$s            = jpn_schedule();
+			$s[ $branch ] = array_merge( $t, array( 'own' => array() ) );
+			update_option( 'jpn_schedule', $s, false );
+			// opening hours on the website follow the timings; the timings are saved either way, so bookings use them
+			$snap = jpn_write_snapshot();
+			return is_wp_error( $snap ) ? $snap : $s[ $branch ];
+		}
+	);
 }
 
 /** One doctor's own timings at a branch, or back to the branch's (timings: null). */
@@ -336,18 +343,25 @@ function jpn_rest_own_timings( WP_REST_Request $req ) {
 	if ( ! $branch || ! jpn_doctor( $doctor ) ) {
 		return new WP_Error( 'jpn_bad', 'Bad branch or doctor.', array( 'status' => 400 ) );
 	}
-	$s = jpn_schedule();
-	if ( null === $req->get_param( 'timings' ) ) {
-		unset( $s[ $branch ]['own'][ $doctor ] );
-	} else {
+	$t = null;
+	if ( null !== $req->get_param( 'timings' ) ) {
 		$t = jpn_clean_timings( $req->get_param( 'timings' ) );
 		if ( ! $t ) {
 			return new WP_Error( 'jpn_bad', 'Bad timings.', array( 'status' => 400 ) );
 		}
-		$s[ $branch ]['own'][ $doctor ] = $t;
 	}
-	update_option( 'jpn_schedule', $s, false );
-	return $s[ $branch ];
+	return jpn_locked(
+		function () use ( $branch, $doctor, $t ) {
+			$s = jpn_schedule();
+			if ( null === $t ) {
+				unset( $s[ $branch ]['own'][ $doctor ] );
+			} else {
+				$s[ $branch ]['own'][ $doctor ] = $t;
+			}
+			update_option( 'jpn_schedule', $s, false );
+			return $s[ $branch ];
+		}
+	);
 }
 
 /** Cancels the standing bookings that match, remembering them so the change can be undone. */
@@ -505,12 +519,20 @@ function jpn_rest_content( WP_REST_Request $req ) {
 /** The draft becomes live, and the website's file is rebuilt. */
 function jpn_rest_publish() {
 	// the file is written from the draft first; only if that works does the draft become the live copy
-	$draft = jpn_content( 'draft' );
-	$url   = jpn_write_snapshot( $draft );
+	// under the booking lock, since publishing can change which doctors work where
+	$url = jpn_locked(
+		function () {
+			$draft = jpn_content( 'draft' );
+			$url   = jpn_write_snapshot( $draft );
+			if ( ! is_wp_error( $url ) ) {
+				update_option( 'jpn_content_live', $draft, false );
+			}
+			return $url;
+		}
+	);
 	if ( is_wp_error( $url ) ) {
 		return $url;
 	}
-	update_option( 'jpn_content_live', $draft, false );
 	return array(
 		'url'       => $url,
 		'published' => (int) get_option( 'jpn_snapshot_version', 0 ),

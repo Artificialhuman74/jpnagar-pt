@@ -2,7 +2,7 @@
 /** Meta Cloud API booking notifications. Disabled until explicitly configured in wp-config.php. */
 defined( 'ABSPATH' ) || exit;
 
-const JPN_WA_DB_VERSION = '1';
+const JPN_WA_DB_VERSION = '2';
 const JPN_WA_CONSENT_TEXT = 'Send my booking confirmation on WhatsApp (optional).';
 
 function jpn_wa_table() {
@@ -70,7 +70,11 @@ function jpn_wa_install() {
 		KEY due (status,available_at)
 	) {$charset};" );
 	if ( $wpdb->get_var( $wpdb->prepare( 'SHOW INDEX FROM ' . $table . ' WHERE Key_name = %s', 'booking_recipient' ) ) ) {
-		update_option( 'jpn_wa_db_version', JPN_WA_DB_VERSION, false );
+		// This tiny version marker is checked on every request, so keep it in alloptions.
+		if ( update_option( 'jpn_wa_db_version', JPN_WA_DB_VERSION, true ) ) {
+			// WordPress 6.1 otherwise retains the option's old autoload cache membership.
+			wp_cache_delete( 'alloptions', 'options' );
+		}
 	}
 }
 
@@ -226,6 +230,7 @@ function jpn_wa_process() {
 }
 
 function jpn_wa_routes() {
+	// Meta has no WordPress session: callbacks authenticate with the verify token (GET) or raw-body HMAC (POST).
 	register_rest_route( JPN_NS, '/whatsapp/webhook', array(
 		array( 'methods' => 'GET', 'permission_callback' => '__return_true', 'callback' => 'jpn_wa_verify' ),
 		array( 'methods' => 'POST', 'permission_callback' => '__return_true', 'callback' => 'jpn_wa_webhook' ),

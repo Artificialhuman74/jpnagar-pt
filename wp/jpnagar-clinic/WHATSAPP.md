@@ -129,3 +129,10 @@ bash wp/tests/run-whatsapp.sh
 ```
 
 This creates the dedicated `jpn-whatsapp-tests` Docker project on port 8901, runs the existing booking/API regression suite, then tests WhatsApp against real WordPress/MySQL with intercepted Meta HTTP responses. It tears down only that test project and its volumes. It does not change `jpn-dev`, send emails externally or send real WhatsApp messages. Override `JPN_TEST_PORT` if needed. Credentials in the test process are deliberately fictitious.
+
+## CodeRabbit review follow-ups
+
+Noted 25 October 2026 for [PR #3](https://github.com/Artificialhuman74/jpnagar-pt/pull/3), reviewed commit `ec2ec38`. The review completed with two actionable comments and no critical findings. Both follow-ups have been implemented.
+
+- [x] **Consent wording consistency (trivial):** the test runner now checks the exact consent label on both booking pages against `JPN_WA_CONSENT_TEXT`, alongside the existing consent-value test. [Review comment](https://github.com/Artificialhuman74/jpnagar-pt/pull/3#discussion_r4368063280)
+- [x] **Schema-version lookup (minor):** the small `jpn_wa_db_version` option is autoloaded, and `JPN_WA_DB_VERSION` is bumped to `2` so existing installations update the setting. Integration checks cover fresh installs and migration from version `1`. [Review comment](https://github.com/Artificialhuman74/jpnagar-pt/pull/3#discussion_r4368063285)

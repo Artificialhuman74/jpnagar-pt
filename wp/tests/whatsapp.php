@@ -39,6 +39,12 @@ function wa_event( array $job, $state, $valid = true, $phone_id = '123456', $mes
 }
 
 // This test process has no credentials until the explicit test-only configuration below.
+wa_check( 'fresh schema version is autoloaded', isset( wp_load_alloptions()['jpn_wa_db_version'] ) );
+delete_option( 'jpn_wa_db_version' );
+add_option( 'jpn_wa_db_version', '1', '', false );
+wa_check( 'legacy schema version is not autoloaded before upgrade', ! isset( wp_load_alloptions()['jpn_wa_db_version'] ) );
+jpn_wa_install();
+wa_check( 'upgrade preserves the queue and autoloads the current schema version', JPN_WA_DB_VERSION === get_option( 'jpn_wa_db_version' ) && JPN_WA_DB_VERSION === ( wp_load_alloptions()['jpn_wa_db_version'] ?? null ) && null !== wa_rows() );
 wa_check( 'sending is disabled by default', ! jpn_wa_ready() );
 wa_check( 'missing credentials are reported without values', in_array( 'ACCESS_TOKEN', jpn_wa_missing(), true ) );
 $wpdb->query( 'DELETE FROM ' . jpn_wa_table() );

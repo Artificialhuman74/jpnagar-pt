@@ -2,6 +2,7 @@
 # Isolated from the shared demo and the ordinary API test project's database.
 set -euo pipefail
 cd "$(dirname "$0")"
+python3 check-whatsapp-consent.py
 export COMPOSE_PROJECT_NAME=jpn-whatsapp-tests
 export JPN_TEST_PORT="${JPN_TEST_PORT:-8901}"
 trap 'docker compose down -v --remove-orphans >/dev/null 2>&1' EXIT

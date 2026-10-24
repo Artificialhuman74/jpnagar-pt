@@ -374,12 +374,17 @@ function jpn_cancel_matching( $branch, $date, $doctor, $reason ) {
 	return $done;
 }
 
-/** Puts cancelled bookings back, except where the slot is taken or the day is still off for another reason. */
+/**
+ * Puts cancelled bookings back, except where the slot is taken or no longer one the doctor works: the day is still
+ * closed or on leave, the doctor has left the branch, or their timings have changed since.
+ */
 function jpn_restore( array $ids ) {
 	$clashes = array();
 	foreach ( $ids as $id ) {
 		$row = jpn_get_booking( (int) $id );
-		if ( ! $row || jpn_is_closed( $row['branch'], $row['slot_date'] ) || jpn_on_leave( $row['doctor'], $row['branch'], $row['slot_date'] ) ) {
+		$day = $row ? DateTimeImmutable::createFromFormat( '!Y-m-d', $row['slot_date'], wp_timezone() ) : false;
+		if ( ! $day || ! jpn_doctor_at( $row['doctor'], $row['branch'] )
+			|| ! in_array( (int) $row['slot_time'], jpn_doctor_times( $row['branch'], $row['doctor'], $day ), true ) ) {
 			$clashes[] = (int) $id;
 			continue;
 		}

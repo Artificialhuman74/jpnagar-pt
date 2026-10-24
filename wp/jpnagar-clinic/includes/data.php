@@ -17,6 +17,15 @@ function jpn_strlen( $s ) {
 	return function_exists( 'mb_strlen' ) ? mb_strlen( $s, 'UTF-8' ) : count( jpn_chars( $s ) );
 }
 
+/**
+ * A Google plus code (Open Location Code), the exact spot Maps opens for a branch: a full code such as 7J4VVHQR+7X, or
+ * a short one with its place (VHQR+7X Bengaluru). Anything else is dropped, and the address is used instead.
+ */
+function jpn_clean_plus( $code ) {
+	$code = strtoupper( trim( sanitize_text_field( (string) $code ) ) );
+	return preg_match( '/^[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2,3}( [A-Z ,.-]{2,60})?$/', $code ) ? $code : '';
+}
+
 /** An attachment id only if it is a photo this plugin made (images.php), else 0. */
 function jpn_own_photo( $id ) {
 	$id = absint( $id );
@@ -272,6 +281,7 @@ function jpn_clean_content( $c ) {
 			'phone'    => jpn_substr( preg_replace( '/[^0-9+ ]/', '', (string) ( $in['phone'] ?? $b['phone'] ) ), 0, 20 ),
 			'addr'     => jpn_substr( sanitize_textarea_field( (string) ( $in['addr'] ?? $b['addr'] ) ), 0, 240 ),
 			'landmark' => jpn_substr( sanitize_text_field( (string) ( $in['landmark'] ?? $b['landmark'] ) ), 0, 60 ),
+			'plus'     => jpn_clean_plus( $in['plus'] ?? ( $b['plus'] ?? '' ) ),
 		);
 	}
 	$seen = array();

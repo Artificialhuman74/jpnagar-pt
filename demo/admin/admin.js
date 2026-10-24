@@ -882,8 +882,11 @@ function openBranches() {
 }
 function openBranch(b) {
   const c = S.content.branches[b.id], ph = fieldIn('Phone', c.phone, { max: 20 }), lm = fieldIn('Landmark', c.landmark, { max: 60 }), ad = fieldIn('Address', c.addr, { area: true, max: 240 });
-  openSheet(b.name, ph.node, lm.node, ad.node, el('p', { class: 'note', style: 'margin:12px 0 0' }, 'Opening hours come from the Schedule tab.'),
-    btn('Save', 'btn--act btn--block', () => { Object.assign(c, { phone: ph.inp.value.trim(), landmark: lm.inp.value.trim(), addr: ad.inp.value.trim() }); save(); renderContent(); closeSheet(); toast('Saved. Publish when you’re ready.'); }));
+  // the exact spot "Directions" and the maps open: Google Maps shows it under the branch's address (e.g. VHQR+7X)
+  const pl = fieldIn('Google Maps plus code', c.plus || b.plus || '', { max: 40, placeholder: 'e.g. 7J4VVHQR+7X' });
+  openSheet(b.name, ph.node, lm.node, ad.node, pl.node,
+    el('p', { class: 'note', style: 'margin:12px 0 0' }, 'The plus code is shown in Google Maps under the branch’s address. Opening hours come from the Schedule tab.'),
+    btn('Save', 'btn--act btn--block', () => { Object.assign(c, { phone: ph.inp.value.trim(), landmark: lm.inp.value.trim(), addr: ad.inp.value.trim(), plus: pl.inp.value.trim().toUpperCase() }); save(); renderContent(); closeSheet(); toast('Saved. Publish when you’re ready.'); }));
 }
 function openServices() {
   openSheet('Services', el('div', { class: 'card', role: 'list', style: 'margin:16px 0 0' }, ...PAGES.map(([id, name]) => {

@@ -50,6 +50,7 @@ function jpn_build_snapshot( $content = null ) {
 			'phone'    => $info['phone'] ?? $b['phone'],
 			'addr'     => $info['addr'] ?? $b['addr'],
 			'landmark' => $info['landmark'] ?? $b['landmark'],
+			'plus'     => $info['plus'] ?? ( $b['plus'] ?? '' ),
 			'sessions' => $hours( $sc['sessions'] ),
 			'days'     => array_keys( $week ),
 			// each weekday's own hours, so the website shows a day's real times

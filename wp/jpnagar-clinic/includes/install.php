@@ -108,6 +108,8 @@ function jpn_default_branches() {
 			'phone'    => '+918026656988',
 			'addr'     => 'No. 2/8, 1st Floor, Puttenahalli Rd, opp. Govt. Primary School, JP Nagar 7th Phase, Bengaluru 560078',
 			'landmark' => 'Opposite Govt. Primary School',
+			// the branch's own Google Maps listing, as a plus code (worked out from Google's coordinates for it)
+			'plus'     => '7J4VVHXJ+2X',
 			'email'    => 'jpnagarmedicalandphysio@gmail.com',
 			'sessions' => array( array( 540, 780 ), array( 1020, 1260 ) ),
 		),
@@ -117,6 +119,8 @@ function jpn_default_branches() {
 			'phone'    => '+918026489922',
 			'addr'     => 'No. 129, 1st Floor, Lakshmi Nivas, 3rd Cross, near L&T South City, Bannerghatta Main Rd, Arekere MICO Layout 2nd Stage, Bengaluru 560076',
 			'landmark' => 'Near L&T South City',
+			// the branch's own Google Maps listing, as a plus code (worked out from Google's coordinates for it)
+			'plus'     => '7J4VVHQR+7X',
 			'email'    => 'jpnagarmedicalandphysio@gmail.com',
 			'sessions' => array( array( 540, 780 ), array( 960, 1260 ) ),
 		),
@@ -126,6 +130,8 @@ function jpn_default_branches() {
 			'phone'    => '+919916116625',
 			'addr'     => 'No. 22, 1st Floor, above Greens Vegetable Shop, behind Meenakshi Temple, Classic Orchards Layout, Kalena Agrahara, Bengaluru 560076',
 			'landmark' => 'Behind Meenakshi Temple',
+			// the branch's own Google Maps listing, as a plus code (worked out from Google's coordinates for it)
+			'plus'     => '7J4VVHFV+W6',
 			'email'    => 'jpnagarmedicalandphysio@gmail.com',
 			'sessions' => array( array( 480, 720 ), array( 960, 1200 ) ),
 		),

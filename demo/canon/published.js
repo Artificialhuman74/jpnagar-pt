@@ -21,7 +21,7 @@ const pubFirst = d => { const s = pubShort(d).replace(/^Dr\.?\s*/, ''), w = s.sp
 if (PUBLISHED) {
   if (typeof BRANCHES !== 'undefined' && PUBLISHED.branches) BRANCHES.forEach(b => {
     const x = PUBLISHED.branches[b.id]; if (!x) return;
-    ['phone', 'addr', 'landmark'].forEach(k => { if (x[k]) b[k] = x[k]; });
+    ['phone', 'addr', 'landmark', 'plus'].forEach(k => { if (x[k]) b[k] = x[k]; });
     if (x.sessions && x.sessions.length) b.sessions = x.sessions.map(s => [...s]);
     if (Array.isArray(x.days)) b.days = [...x.days];
     if (x.slot) b.slot = x.slot;

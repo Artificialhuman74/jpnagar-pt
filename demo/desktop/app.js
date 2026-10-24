@@ -56,13 +56,13 @@ function paintIcons(root = document) { $$('[data-icon]', root).forEach(n => n.re
 /* ---------- clinic data (same sample set as the mobile demo) ---------- */
 // Coordinates are approximate locality pins until the clinic confirms exact ones.
 const BRANCHES = [
-  { id: 'arekere', code: 'ARK', name: 'Arekere MICO Layout', short: 'Arekere', sessions: [[9, 13], [16, 21]], lat: 12.8886, lng: 77.6022,
+  { id: 'arekere', plus: '7J4VVHQR+7X', code: 'ARK', name: 'Arekere MICO Layout', short: 'Arekere', sessions: [[9, 13], [16, 21]], lat: 12.8886, lng: 77.6022,
     addr: 'No. 129, 1st Floor, Lakshmi Nivas, 3rd Cross, near L&T South City, Bannerghatta Main Rd, Arekere MICO Layout 2nd Stage, Bengaluru 560076',
     phone: '+918026489922', phoneText: '080 2648 9922', landmark: 'Near L&T South City' },
-  { id: 'bannerghatta', code: 'BGR', name: 'Bannerghatta Road', short: 'Bannerghatta', sessions: [[8, 12], [16, 20]], lat: 12.8775, lng: 77.5975,
+  { id: 'bannerghatta', plus: '7J4VVHFV+W6', code: 'BGR', name: 'Bannerghatta Road', short: 'Bannerghatta', sessions: [[8, 12], [16, 20]], lat: 12.8775, lng: 77.5975,
     addr: 'No. 22, 1st Floor, above Greens Vegetable Shop, behind Meenakshi Temple, Classic Orchards Layout, Kalena Agrahara, Bengaluru 560076',
     phone: '+919916116625', phoneText: '+91 99161 16625', landmark: 'Behind Meenakshi Temple' },
-  { id: 'jpnagar', code: 'JPN', name: 'JP Nagar 7th Phase', short: 'JP Nagar', sessions: [[9, 13], [17, 21]], lat: 12.8937, lng: 77.5855,
+  { id: 'jpnagar', plus: '7J4VVHXJ+2X', code: 'JPN', name: 'JP Nagar 7th Phase', short: 'JP Nagar', sessions: [[9, 13], [17, 21]], lat: 12.8937, lng: 77.5855,
     addr: 'No. 2/8, 1st Floor, Puttenahalli Rd, opp. Govt. Primary School, JP Nagar 7th Phase, Bengaluru 560078',
     phone: '+918026656988', phoneText: '080 2665 6988', landmark: 'Opposite Govt. Primary School' }
 ];
@@ -225,12 +225,12 @@ function kmBetween(a, b, c, d) {
   const r = x => x * Math.PI / 180, h = Math.sin(r(c - a) / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(r(d - b) / 2) ** 2;
   return 12742 * Math.asin(Math.sqrt(h));
 }
-// one branch on Google Maps: the clinic's name with that branch's street address picks out that branch alone (the
-// name by itself matches all three)
-function mapsLink(b) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`J.P. Nagar Medical and Physiotherapy Centre, ${b.addr || b.name}`)}`; }
-// A real Google map in the page (Google's own embed, no key needed), loaded only once it scrolls near. The query is the
-// clinic's name and the branch's street address, which picks out that branch; with no branch it lists all three.
-const mapQuery = b => `J.P. Nagar Medical and Physiotherapy Centre, ${b ? b.addr || b.name : 'Bengaluru'}`;
+// What Google Maps searches for a branch: its plus code, an exact spot (the clinic's name alone matches all three
+// branches, and some addresses still match several); without a code, the clinic's name and the branch's address.
+const mapQuery = b => b && b.plus ? b.plus : `J.P. Nagar Medical and Physiotherapy Centre, ${b ? b.addr || b.name : 'Bengaluru'}`;
+function mapsLink(b) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery(b))}`; }
+// A real Google map in the page (Google's own embed, no key needed), loaded only once it scrolls near: one branch, or
+// with none, the clinic's branches.
 function mapEmbed(b, title) {
   return el('iframe', { class: 'gmap', src: `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery(b))}&z=${b ? 16 : 13}&output=embed`,
     title: title || (b ? `Map: ${b.name}` : 'Map of our three branches'), loading: 'lazy', referrerpolicy: 'no-referrer-when-downgrade' });

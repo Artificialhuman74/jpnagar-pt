@@ -6,12 +6,15 @@
 
 defined( 'ABSPATH' ) || exit;
 
-/* mbstring isn't guaranteed on shared hosting; without it, cut by bytes rather than fail */
+/* mbstring isn't guaranteed on shared hosting; without it, PCRE's UTF-8 mode counts characters so none is cut in half */
+function jpn_chars( $s ) {
+	return preg_match_all( '/./us', (string) $s, $m ) ? $m[0] : array();
+}
 function jpn_substr( $s, $start, $len ) {
-	return function_exists( 'mb_substr' ) ? mb_substr( $s, $start, $len ) : substr( $s, $start, $len );
+	return function_exists( 'mb_substr' ) ? mb_substr( $s, $start, $len, 'UTF-8' ) : implode( '', array_slice( jpn_chars( $s ), $start, $len ) );
 }
 function jpn_strlen( $s ) {
-	return function_exists( 'mb_strlen' ) ? mb_strlen( $s ) : strlen( $s );
+	return function_exists( 'mb_strlen' ) ? mb_strlen( $s, 'UTF-8' ) : count( jpn_chars( $s ) );
 }
 
 function jpn_branches() {

@@ -143,15 +143,24 @@ function jpn_rest_book( WP_REST_Request $req ) {
 	if ( is_wp_error( $b ) ) {
 		return $b;
 	}
-	if ( jpn_rate_limited( $b['phone'] ) ) {
-		return new WP_Error( 'jpn_slow', __( 'Too many bookings from here just now. Please call the clinic.', 'jpnagar-clinic' ), array( 'status' => 429 ) );
+	// online bookings take turns (a MySQL named lock), so two at once can't both slip under the limit
+	global $wpdb;
+	if ( '1' !== (string) $wpdb->get_var( "SELECT GET_LOCK('jpn_book', 5)" ) ) {
+		return new WP_Error( 'jpn_busy', __( 'The booking desk is busy. Please try again in a moment.', 'jpnagar-clinic' ), array( 'status' => 503 ) );
 	}
-	$b['source'] = 'online';
-	$row         = jpn_create_booking( $b );
+	if ( jpn_rate_limited( $b['phone'] ) ) {
+		$row = new WP_Error( 'jpn_slow', __( 'Too many bookings from here just now. Please call the clinic.', 'jpnagar-clinic' ), array( 'status' => 429 ) );
+	} else {
+		$b['source'] = 'online';
+		$row         = jpn_create_booking( $b );
+		if ( ! is_wp_error( $row ) ) {
+			jpn_count_booking( $b['phone'] );
+		}
+	}
+	$wpdb->query( "SELECT RELEASE_LOCK('jpn_book')" );
 	if ( is_wp_error( $row ) ) {
 		return $row;
 	}
-	jpn_count_booking( $b['phone'] );
 	jpn_notify_branch( $row );
 	// the patient only gets back what they need for their ticket
 	return rest_ensure_response(

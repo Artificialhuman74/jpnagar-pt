@@ -110,19 +110,27 @@ function jpn_write_snapshot( $content = null ) {
 		}
 		return $fail;
 	}
-	if ( ! rename( $tmp_js, $file ) ) {
+	$drop = function () use ( $tmp_js, $tmp_gz ) {
 		wp_delete_file( $tmp_js );
 		if ( $tmp_gz ) {
 			wp_delete_file( $tmp_gz );
 		}
+	};
+	// the old .gz goes first and must really be gone: from here on the worst case is no gzip, never a stale one
+	$gz_file = $file . '.gz';
+	if ( file_exists( $gz_file ) ) {
+		wp_delete_file( $gz_file );
+		if ( file_exists( $gz_file ) ) {
+			$drop();
+			return $fail;
+		}
+	}
+	if ( ! rename( $tmp_js, $file ) ) {
+		$drop();
 		return $fail;
 	}
-	if ( null === $tmp_gz || ! rename( $tmp_gz, $file . '.gz' ) ) {
-		// no gzip this time (no zlib, or the swap failed): remove the old .gz so the server can't serve stale content
-		if ( $tmp_gz ) {
-			wp_delete_file( $tmp_gz );
-		}
-		wp_delete_file( $file . '.gz' );
+	if ( $tmp_gz && ! rename( $tmp_gz, $gz_file ) ) {
+		wp_delete_file( $tmp_gz ); // the server serves the plain .js until the next write
 	}
 	// a fresh version for every write, even two in the same second; autoloaded, so no extra query on page views
 	update_option( 'jpn_snapshot_version', sprintf( '%d-%s', time(), wp_generate_password( 6, false ) ), true );

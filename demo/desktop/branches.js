@@ -19,7 +19,7 @@ function card({ b, km }, near) {
   const week = el('div', { class: 'week' }, ...[1, 2, 3, 4, 5, 6, 0].map(d => el('div', { class: [d === today && 'today', d === 0 && 'off'].filter(Boolean).join(' ') || null },
     el('span', {}, DAYS[d] + (d === today ? ' · today' : '')), el('span', {}, hoursText(b, d)))));
   const c = el('article', { class: 'bcard', 'data-id': b.id },
-    el('div', { class: 'photo', role: 'img', 'aria-label': `Photo: ${b.short} entrance (to be shot)` }),
+    el('div', { class: 'photo', role: 'img', 'aria-label': `Photo: ${b.short} entrance (to be shot)`, 'data-branch-photo': b.id }),
     el('div', { class: 'bcard-in' },
       el('div', { class: 'bcard-h' }, el('h2', {}, b.name), near && km != null ? el('span', { class: 'near-tag' }, 'Nearest') : null),
       el('div', { class: 'bcard-meta' }, el('span', { class: 'live' + (st.open ? '' : ' closed') }, el('i'), el('span', {}, st.text)), km != null ? el('span', { class: 'km' }, `${km.toFixed(1)} km`) : null, el('span', {}, b.landmark)),

@@ -77,9 +77,17 @@ function jpn_build_snapshot( $content = null ) {
 		$url = jpn_photo_url( $p['id'] );
 		if ( $url ) {
 			$photos[] = array(
-				'src'   => $url,
-				'label' => $p['label'],
+				'src'    => $url,
+				'label'  => $p['label'],
+				'branch' => $p['branch'] ?? null,
 			);
+		}
+	}
+	$service_photos = array();
+	foreach ( (array) ( $c['service_photos'] ?? array() ) as $sid => $pid ) {
+		$url = jpn_photo_url( $pid );
+		if ( $url ) {
+			$service_photos[ $sid ] = $url;
 		}
 	}
 	return array(
@@ -88,6 +96,7 @@ function jpn_build_snapshot( $content = null ) {
 		'home'     => $c['home'] ?? new stdClass(),
 		'services' => (object) ( $c['services'] ?? array() ),
 		'photos'   => $photos,
+		'service_photos' => (object) $service_photos,
 		'branches' => $branches,
 		'doctors'  => $doctors,
 	);

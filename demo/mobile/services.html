@@ -58,7 +58,7 @@ const FILTERS = [['all', 'All'], ['back', 'Back & neck'], ['joints', 'Joints'], 
 const list = document.querySelector('[data-svcs]');
 const cards = SERVICES.map(s => {
   const a = el('a', { class: 'svc', href: s.href || '#' },
-    el('div', { class: 'photo tilt' }),
+    el('div', { class: 'photo tilt', 'data-service-photo': (s.href || '').replace('.html', '') }),
     el('div', {}, el('h2', {}, s.name), el('ul', {}, ...s.helps.map(h => el('li', {}, h))),
       el('span', { class: 'go' }, 'See how we treat it', icon('chevron'))));
   list.append(a); return a;

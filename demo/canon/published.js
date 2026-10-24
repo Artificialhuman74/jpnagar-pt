@@ -41,7 +41,51 @@ function paintPhoto(node, src) {
   const lab = node.getAttribute('aria-label'); if (lab && src) node.setAttribute('aria-label', lab.replace(/,? \(?to be shot\)?$/, ''));
   node.style.backgroundImage = src ? `url("${src}")` : ''; node.style.backgroundSize = src ? 'cover' : ''; node.style.backgroundPosition = src ? 'center' : '';
 }
-const clinicPhoto = i => { const ph = PUBLISHED && PUBLISHED.photos; return ph && ph.length ? ph[i % ph.length].src : null; };
+// the gallery's photos in branch order (JP Nagar, then Bannerghatta, then Arekere), each branch's main photo first
+const GALLERY_ORDER = ['jpnagar', 'bannerghatta', 'arekere'];
+// a branch with no photos yet keeps one placeholder card, so every branch has its tab and its place in the circle
+const galleryPhotos = () => {
+  const ph = (PUBLISHED && PUBLISHED.photos) || [];
+  if (!ph.length) return [];
+  return GALLERY_ORDER.flatMap(id => { const mine = ph.filter(p => p.branch === id); return mine.length ? mine : [{ branch: id, src: null, label: 'photos coming soon' }]; });
+};
+const clinicPhoto = i => { const ph = galleryPhotos(); return ph.length ? ph[i % ph.length].src : null; };
+// a branch's photos in order; the first is its main photo
+const branchPhotos = id => ((PUBLISHED && PUBLISHED.photos) || []).filter(p => p.branch === id);
+const servicePhoto = id => (PUBLISHED && PUBLISHED.service_photos && PUBLISHED.service_photos[id]) || null;
+// The days the clinic is open, in words, from the branches' schedules: "Monday to Saturday", "every day", or the days
+// every branch shares plus who opens on more ("Monday to Saturday (Arekere on Sundays too)").
+function openDaysText() {
+  const NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], WEEK = [1, 2, 3, 4, 5, 6, 0];
+  const per = BRANCHES.map(b => ({ b, days: WEEK.filter(n => worksOn(b, n)) }));
+  const shared = WEEK.filter(n => per.every(x => x.days.includes(n)));
+  const words = list => {
+    if (list.length === 7) return 'every day';
+    const runs = []; list.forEach(n => { const r = runs[runs.length - 1]; if (r && WEEK.indexOf(n) === WEEK.indexOf(r[r.length - 1]) + 1) r.push(n); else runs.push([n]); });
+    const parts = runs.map(r => r.length > 2 ? `${NAMES[r[0]]} to ${NAMES[r[r.length - 1]]}` : r.map(n => NAMES[n]).join(' and '));
+    return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}` : parts[0] || 'by appointment';
+  };
+  const extra = per.map(x => ({ b: x.b, more: x.days.filter(n => !shared.includes(n)) })).filter(x => x.more.length);
+  if (!extra.length) return words(shared);
+  return `${words(shared)} (${extra.map(x => `${x.b.short} on ${x.more.map(n => NAMES[n] + 's').join(' and ')} too`).join('; ')})`;
+}
+// "Inside our clinics": every published photo, labelled with its branch; the page's own labels until there are any
+function galleryLabels(fallback) {
+  const ph = galleryPhotos();
+  if (!ph.length) return fallback;
+  const name = id => { const b = typeof BRANCHES !== 'undefined' && BRANCHES.find(x => x.id === id); return b ? b.short : 'Our clinics'; };
+  return ph.map(p => name(p.branch) + (p.label ? ` · ${p.label}` : ''));
+}
+// the gallery's branch tabs: consecutive photos of one branch make a group ([{ label, start, count }])
+function galleryGroups(labels) {
+  const out = [];
+  labels.forEach((l, i) => {
+    const b = typeof BRANCHES !== 'undefined' && BRANCHES.find(x => l.startsWith(x.short)); if (!b) return;
+    const g = out[out.length - 1];
+    if (g && g.label === b.short && g.start + g.count === i) g.count++; else out.push({ label: b.short, start: i, count: 1 });
+  });
+  return out;
+}
 const doctorPhoto = name => { const d = PUBLISHED && (PUBLISHED.doctors || []).find(x => name && (x.name === name || pubShort(x) === name || name.includes(pubShort(x)))); return d && d.photo || null; };
 // the phone site's team page and booking list call these with what they ship as the fallback
 function publishedTeam(fallback) {
@@ -59,6 +103,14 @@ if (PUBLISHED) document.addEventListener('DOMContentLoaded', () => {
   const svc = document.body.dataset.service || document.body.dataset.page, id = svc === 'home' ? 'homecare' : svc;
   if (id && PUBLISHED.services && PUBLISHED.services[id]) set('.phead > p, .svc-hero .lead', PUBLISHED.services[id]);
   document.querySelectorAll('.gcar-card .photo').forEach((p, i) => { if (clinicPhoto(i)) paintPhoto(p, clinicPhoto(i)); });
+  // a branch's main photo wherever a branch photo goes; "start" is the branch the site starts at (nearest, else JP Nagar)
+  document.querySelectorAll('[data-branch-photo]').forEach(n => {
+    const id = n.dataset.branchPhoto === 'start' && typeof nearestIndex === 'function' ? BRANCHES[nearestIndex()].id : n.dataset.branchPhoto;
+    const p = branchPhotos(id)[0], b = typeof BRANCHES !== 'undefined' && BRANCHES.find(x => x.id === id);
+    if (p) { paintPhoto(n, p.src); if (b) { n.setAttribute('aria-label', `${b.name} clinic`); n.setAttribute('role', 'img'); n.dataset.label = ''; } }
+  });
+  if (typeof worksOn === 'function' && typeof BRANCHES !== 'undefined') document.querySelectorAll('[data-open-days]').forEach(n => { n.textContent = openDaysText(); });
+  document.querySelectorAll('[data-service-photo]').forEach(n => { const src = servicePhoto(n.dataset.servicePhoto); if (src) paintPhoto(n, src); });
   // the desktop Team page's cards are written into the page, so they are matched by name
   document.querySelectorAll('.tilted-card__img[aria-label^="Portrait of "]').forEach(n => { const src = doctorPhoto(n.getAttribute('aria-label').replace(/^Portrait of /, '').replace(/, to be shot$/, '')); if (src) paintPhoto(n, src); });
 });

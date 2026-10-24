@@ -11,7 +11,7 @@
 <p class="hello"><span data-greet>Hello</span> · <span data-near>3 branches in South Bangalore</span></p>
 
 <section class="hero" data-inview>
-  <div class="photo" data-label="Photo: Arekere clinic (to be shot)"></div>
+  <div class="photo" data-label="Photo: Arekere clinic (to be shot)" data-branch-photo="start"></div>
   <div class="copy">
     <div class="live" data-live><i></i><span>Checking hours…</span></div>
     <h1>Feel better, sooner.</h1>
@@ -62,7 +62,7 @@
 
 <section class="close-cta" data-reveal>
   <h2>Ready when you are.</h2>
-  <p>Three branches, open Monday to Saturday.</p>
+  <p>Three branches, open <span data-open-days>Monday to Saturday</span>.</p>
   <ul data-hours></ul>
   <a class="btn btn--act btn--block" href="book.html">Book a visit</a>
 </section>
@@ -95,7 +95,7 @@ live.querySelector('span').textContent = st.open && nf && nf.today
 // branch hours in the closing section
 const ul = document.querySelector('[data-hours]');
 BRANCHES.forEach(b => ul.append(el('li', {}, el('span', {}, b.short),
-  el('span', {}, weekText(b)))));
+  el('span', {}, ...weekText(b).split('; ').map(g => el('span', { class: 'wk' }, g))))));
 
 // reviews: dots follow the swipe
 const rv = document.querySelector('[data-reviews]'), dots = [...document.querySelectorAll('.dots span')];
@@ -105,7 +105,7 @@ rv.addEventListener('scroll', () => {
 }, { passive: true });
 
 // gallery: photos on a convex arc with a glow in the front photo's colour (../desktop/carousel.js); tap to open full screen
-const LABELS = ['Arekere · treatment room', 'JP Nagar · reception', 'Bannerghatta · exercise area', 'Equipment · traction', 'Team at work', 'Arekere · waiting area'];
+const LABELS = galleryLabels(['JP Nagar · reception', 'JP Nagar · treatment room', 'Bannerghatta · exercise area', 'Bannerghatta · traction', 'Arekere · treatment room', 'Arekere · waiting area']);
 const vw = document.querySelector('[data-viewer]'), frame = vw.querySelector('.frame'), count = vw.querySelector('.count');
 let cur = 0, lastFocus;
 function show(i) { cur = (i + LABELS.length) % LABELS.length; frame.dataset.label = LABELS[cur]; count.textContent = `${cur + 1} / ${LABELS.length}`; paintPhoto(frame, clinicPhoto(cur)); }
@@ -115,7 +115,7 @@ vw.querySelector('.close').onclick = closeViewer;
 vw.querySelector('.prev').onclick = () => show(cur - 1);
 vw.querySelector('.next').onclick = () => show(cur + 1);
 vw.addEventListener('click', e => { if (e.target === vw) closeViewer(); });
-gradientCarousel(document.querySelector('[data-gcar]'), { labels: LABELS, step: [178, 128], dragPx: 200, onOpen: i => openViewer(i) });
+gradientCarousel(document.querySelector('[data-gcar]'), { labels: LABELS, groups: galleryGroups(LABELS), step: [178, 128], dragPx: 200, onOpen: i => openViewer(i) });
 addEventListener('keydown', e => { if (!vw.classList.contains('is-open')) return; if (e.key === 'Escape') closeViewer(); if (e.key === 'ArrowRight') show(cur + 1); if (e.key === 'ArrowLeft') show(cur - 1); });
 let sx = null;
 frame.addEventListener('pointerdown', e => { sx = e.clientX; });

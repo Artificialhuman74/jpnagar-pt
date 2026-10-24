@@ -7,7 +7,7 @@ With JPN_WP set (bash start.sh --wp), the demo talks to a real WordPress running
 own paths are passed through on this same address (so the browser sees one site and its login cookie just works), the
 pages load the plugin's published file in place of canon/published-data.js, and the demo's own publish endpoint is off.
 usage: python3 tools/serve.py [port]"""
-import http.client, http.server, json, os, sys, urllib.parse
+import http.client, http.server, json, os, re, sys, urllib.parse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, 'canon', 'published-data.js')
@@ -73,11 +73,36 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def versioned_page(self):
+        """A page with ?v=<last change> on each of its own scripts and stylesheets, the way WordPress adds ?ver=, so a
+        browser holding an older copy of a file can never keep using it after the file changes."""
+        path = self.translate_path(self.path.split('?')[0])
+        if os.path.isdir(path):
+            path = os.path.join(path, 'index.html')
+        if not path.endswith('.html') or not os.path.isfile(path):
+            return False
+        here = os.path.dirname(path)
+        def stamp(m):
+            ref = m.group(2)
+            if '://' in ref or ref.startswith(('//', 'data:', '#')) or '?' in ref:
+                return m.group(0)
+            f = os.path.normpath(os.path.join(here, ref))
+            return m.group(0) if not os.path.isfile(f) else f'{m.group(1)}{ref}?v={int(os.path.getmtime(f))}"'
+        body = re.sub(r'((?:src|href)=")([^"]+\.(?:js|css))"', stamp, open(path, encoding='utf-8').read()).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+        return True
+
     def do_GET(self):
         if self.to_wordpress():
             return self.proxy()
         if WP and self.path.split('?')[0].endswith('/canon/published-data.js'):
             return self.published_from_wordpress()
+        if self.versioned_page():
+            return
         return super().do_GET()
 
     def do_HEAD(self):

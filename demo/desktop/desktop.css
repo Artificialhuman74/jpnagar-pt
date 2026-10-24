@@ -231,7 +231,7 @@ button.link{border:0;background:none;padding:0;font-size:var(--fs-body)}
 .viewer{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:rgba(10,11,22,.9);opacity:0;pointer-events:none;transition:opacity .35s var(--ease)}
 .viewer.is-open{opacity:1;pointer-events:auto}
 /* the photo fits the window both ways, leaving room above for the count and below for the hint */
-.viewer .frame{width:min(76vw,1080px,calc((100vh - 180px) * 1.5));width:min(76vw,1080px,calc((100dvh - 180px) * 1.5));aspect-ratio:3/2;border-radius:28px;transform:scale(.94);transition:transform .5s var(--ease)}
+.viewer .frame{width:min(76vw,720px,calc((100vh - 180px) * .7895));width:min(76vw,720px,calc((100dvh - 180px) * .7895));aspect-ratio:15/19;border-radius:28px;transform:scale(.94);transition:transform .5s var(--ease)}
 .viewer.is-open .frame{transform:none}
 .viewer .count{position:absolute;top:30px;left:0;right:0;text-align:center;color:rgba(255,255,255,.75);font-size:var(--fs-small);font-weight:600;font-variant-numeric:tabular-nums}
 .viewer .keys{position:absolute;bottom:30px;left:0;right:0;text-align:center;color:rgba(255,255,255,.6);font-size:var(--fs-meta)}
@@ -1049,3 +1049,10 @@ a.tchip,a.pill{display:inline-flex;align-items:center}
 .near-btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;margin-top:6px;padding:0 4px;border:0;background:none;font:inherit;font-size:15px;font-weight:700;color:var(--act);cursor:pointer}
 .near-btn svg{width:18px;height:18px;flex:none}
 .near-btn:disabled{color:var(--ink-3);cursor:progress}
+
+/* the gallery's branch tabs: three equal tabs; the white marker slides under the branch in front (transform only) */
+.gcar-tabs{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;max-width:460px;margin:22px auto 0;padding:4px;border-radius:16px;background:var(--surface)}
+.gcar-tabs [role="tab"]{position:relative;z-index:1;min-height:44px;padding:0 8px;border:0;background:none;font:inherit;font-size:16px;font-weight:700;color:var(--ink-2);cursor:pointer;transition:color .35s}
+.gcar-tabs [role="tab"][aria-selected="true"]{color:var(--ink)}
+.gcar-tabs .gt-ind{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / var(--n));border-radius:12px;background:var(--canvas);box-shadow:0 1px 3px rgba(20,22,41,.12);transition:transform .55s var(--ease)}
+@media (prefers-reduced-motion:reduce){.gcar-tabs .gt-ind{transition:none}}

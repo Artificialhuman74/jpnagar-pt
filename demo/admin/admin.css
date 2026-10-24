@@ -168,7 +168,20 @@ body.admin:has(.bigact.pinned)::after{content:"";position:fixed;left:0;right:0;b
 .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
 .gallery label{position:relative;aspect-ratio:3/4;border-radius:14px;overflow:hidden;background:var(--surface);display:grid;place-items:center;cursor:pointer;font-size:13px;font-weight:700;color:var(--ink-2);text-align:center;padding:6px}
 .gallery img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.gallery input{position:absolute;width:1px;height:1px;opacity:0}
+.gallery input,.svc-photo input{position:absolute;width:1px;height:1px;opacity:0}
+.gallery .ph,.gallery .ph-add{position:relative;aspect-ratio:3/4;border-radius:14px;overflow:hidden;background:var(--surface)}
+.gallery .ph.is-main{box-shadow:0 0 0 3px var(--act)}
+.gallery .ph-add,.svc-photo .ph-add{display:grid;place-items:center;cursor:pointer;font-size:13px;font-weight:700;color:var(--ink-2);text-align:center;padding:6px;border:1.5px dashed var(--line)}
+.ph-act{position:absolute;left:6px;bottom:6px;min-height:32px;padding:0 10px;border:0;border-radius:10px;background:rgba(255,255,255,.92);font:inherit;font-size:12px;font-weight:800;color:var(--act);cursor:pointer}
+.ph-act::before,.ph-x::before{content:'';position:absolute;inset:-6px}
+.ph-act:disabled{background:var(--act);color:#fff;cursor:default}
+.ph-x{position:absolute;right:6px;top:6px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(20,22,41,.72);color:#fff;display:grid;place-items:center;cursor:pointer;padding:0}
+.ph-x svg{width:14px;height:14px}
+.svc-photo{display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center}
+.svc-photo .ph-add{position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;background:var(--surface);padding:0}
+.svc-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.svc-photo small{display:block;font-size:13px;color:var(--ink-3);margin-bottom:8px}
+.asheet .picks + .gallery{margin-top:14px}
 
 /* ---------- publish bar: unpublished website changes ---------- */
 .pubbar{position:fixed;left:12px;right:12px;bottom:calc(98px + env(safe-area-inset-bottom));z-index:29;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;

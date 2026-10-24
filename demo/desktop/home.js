@@ -84,8 +84,8 @@ H.slot = freeSlots(BRANCHES[H.b], H.day)[0] || null;
 renderBar();
 
 /* ---------- gallery: photos on a gentle convex arc (carousel.js); the glow takes the colour of the photo in front ---------- */
-const LABELS = ['Arekere · treatment room', 'JP Nagar · reception', 'Bannerghatta · exercise area', 'Equipment · traction', 'Team at work', 'Arekere · waiting area'];
-gradientCarousel($('[data-gcar]'), { labels: LABELS, onOpen: i => openViewer(i) });
+const LABELS = galleryLabels(['JP Nagar · reception', 'JP Nagar · treatment room', 'Bannerghatta · exercise area', 'Bannerghatta · traction', 'Arekere · treatment room', 'Arekere · waiting area']);
+gradientCarousel($('[data-gcar]'), { labels: LABELS, groups: galleryGroups(LABELS), onOpen: i => openViewer(i) });
 const frame = el('div', { class: 'frame photo' }), count = el('p', { class: 'count' });
 const mk = (cls, label, ic) => el('button', { class: cls, type: 'button', 'aria-label': label }, icon(ic));
 const bClose = mk('close', 'Close', 'close'), bPrev = mk('prev', 'Previous photo', 'chevron'), bNext = mk('next', 'Next photo', 'chevron');

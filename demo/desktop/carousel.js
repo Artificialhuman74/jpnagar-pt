@@ -2,6 +2,8 @@
 // turn outward and fade. Arrows (in front of the cards), swipe, drag and arrow keys move it; each move slides the
 // arc round and fades the next photo into the centre. A soft glow behind takes the front photo's colour, blending
 // smoothly from one to the next. Shared by the desktop and mobile home pages; markup is .gcar (see the CSS).
+// With o.groups ([{ label, start, count }], e.g. one per branch) a row of tabs sits under it: a tab rolls the arc round
+// to that group's first photo, and the tab follows whichever group's photo is in front.
 function gradientCarousel(root, o) {
   const LABELS = o.labels, N = LABELS.length, [S1, S2] = o.step || [360, 300], DRAG = o.dragPx || 340;
   // each photo's glow is one colour from the logo's own blues: cyan, deep sky, periwinkle, navy and light sky
@@ -44,16 +46,51 @@ function gradientCarousel(root, o) {
       lastD[i] = d;
     });
   }
+  const groups = o.groups && o.groups.length > 1 ? o.groups : null, groupOf = i => groups ? groups.findIndex(g => i >= g.start && i < g.start + g.count) : -1;
   function caption() {
-    const cap = q('.gcar-cap');
-    q('[data-gcar-label]').textContent = LABELS[at]; q('[data-gcar-count]').textContent = `${at + 1} / ${N}`;
+    const cap = q('.gcar-cap'), g = groups && groups[groupOf(at)];
+    q('[data-gcar-label]').textContent = LABELS[at]; q('[data-gcar-count]').textContent = g ? `${at - g.start + 1} / ${g.count}` : `${at + 1} / ${N}`;
     cap.classList.remove('swap'); void cap.offsetWidth; cap.classList.add('swap');
   }
   // two glow layers trade places: the new colour fades in over the old one, then the old one lets go. Only opacity
   // changes, which the browser can do without repainting, so the cards keep moving smoothly
   let layer = 0;
   const glow = first => { if (!first) { glows[layer].classList.remove('on'); layer ^= 1; } glows[layer].style.setProperty('--a', TINTS[at % TINTS.length]); glows[layer].classList.add('on'); };
-  function go(i) { at = ((i % N) + N) % N; place(); caption(); glow(); }
+  function go(i) { at = ((i % N) + N) % N; place(); caption(); glow(); paintTabs(); }
+  // the tabs: built once; only the selected state and the sliding marker (a transform) change
+  let tabs = null, mark = null, rolling = 0;
+  if (groups) {
+    mark = document.createElement('span'); mark.className = 'gt-ind'; mark.setAttribute('aria-hidden', 'true');
+    tabs = document.createElement('div'); tabs.className = 'gcar-tabs'; tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', o.groupsLabel || 'Branch');
+    tabs.style.setProperty('--n', groups.length); tabs.append(mark);
+    groups.forEach((g, k) => {
+      const t = document.createElement('button'); t.type = 'button'; t.setAttribute('role', 'tab'); t.textContent = g.label;
+      t.addEventListener('click', () => rollTo(g.start));
+      t.addEventListener('keydown', e => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        e.preventDefault(); const n = (k + (e.key === 'ArrowRight' ? 1 : -1) + groups.length) % groups.length;
+        tabs.querySelectorAll('[role="tab"]')[n].focus(); rollTo(groups[n].start);
+      });
+      tabs.append(t);
+    });
+    root.after(tabs);
+  }
+  function paintTabs() {
+    if (!tabs) return;
+    const k = groupOf(at);
+    tabs.querySelectorAll('[role="tab"]').forEach((t, j) => { t.setAttribute('aria-selected', String(j === k)); t.tabIndex = j === k ? 0 : -1; });
+    if (k >= 0) mark.style.transform = `translateX(${k * 100}%)`;
+  }
+  // rolls round one photo at a time, the short way, to photo i (straight there when motion is reduced); the
+  // automatic turning carries on from there
+  function rollTo(i) {
+    clearInterval(rolling); clearInterval(timer);
+    let d = ((i - at) % N + N) % N; if (d > N / 2) d -= N;
+    if (!d) { startAuto(); return; }
+    if (reduced) { go(i); startAuto(); return; }
+    const step = Math.sign(d);
+    rolling = setInterval(() => { go(at + step); d -= step; if (!d) { clearInterval(rolling); startAuto(); } }, 190);
+  }
   function stopAuto() { auto = false; clearInterval(timer); }
   function startAuto() { clearInterval(timer); if (auto && shown) timer = setInterval(() => go(at + 1), 5200); }
   q('[data-gcar-prev]').addEventListener('click', () => { stopAuto(); go(at - 1); });
@@ -77,7 +114,7 @@ function gradientCarousel(root, o) {
   };
   stage.addEventListener('pointerup', release); stage.addEventListener('pointercancel', release);
   glow(true);
-  place(); caption();
+  place(); caption(); paintTabs();
   // the photos rise and fade in from the centre outward the first time the carousel comes into view
   if (!shown) new IntersectionObserver(([e], io) => { if (!e.isIntersecting) return; io.disconnect(); shown = true; place(true); setTimeout(() => cards.forEach(b => { b.style.transitionDelay = ''; }), 1200); startAuto(); }, { threshold: .35 }).observe(root);
   else startAuto();

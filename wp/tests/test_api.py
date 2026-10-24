@@ -215,8 +215,8 @@ check('email: sent to the branch address', s == 200 and 'TO: jpnagarmedicalandph
 check('email: date reads like "' + nice + '"', ('When: ' + nice) in mail and nice in mail.split('\n')[1], mail)
 
 # ---- photos
-def upload(path, mime):
-    out = subprocess.run(['curl','-s','-u','admin:' + APP_PASS,'-F','kind=portrait','-F','photo=@' + path + ';type=' + mime, BASE + '/admin/photos'], capture_output=True, text=True).stdout
+def upload(path, mime, kind='portrait'):
+    out = subprocess.run(['curl','-s','-u','admin:' + APP_PASS,'-F','kind=' + kind,'-F','photo=@' + path + ';type=' + mime, BASE + '/admin/photos'], capture_output=True, text=True).stdout
     try: return json.loads(out)
     except Exception: return out
 tmp = subprocess.run(['mktemp','-d'], capture_output=True, text=True).stdout.strip()
@@ -244,6 +244,24 @@ r = upload(tmp + '/bad.jpg', 'image/jpeg')
 check('photo: a PHP file pretending to be a jpeg is refused', 'jpn_file' in str(r), r)
 s, r = call('POST', '/admin/photos', {'kind':'portrait'})
 check('photo: no login refused', s in (401, 403), (s, r))
+
+# ---- clinic photos by branch (more than the old six), and a photo per service
+ids = [upload(tmp + '/small.webp', 'image/webp', 'clinic').get('id') for _ in range(8)]
+svc = upload(tmp + '/small.webp', 'image/webp', 'service')
+check('photos: clinic and service photos upload', all(ids) and isinstance(svc, dict) and svc.get('id'), (ids, svc))
+s, st8 = call('GET', '/admin/state', owner=True)
+draft = st8['draft']
+draft['photos'] = [{'id': ids[i], 'label': '', 'branch': ['jpnagar', 'arekere', 'bannerghatta', 'nowhere'][i % 4]} for i in range(8)]
+draft['service_photos'] = {'spine': svc['id'], 'ortho': 999999}
+s, r = call('PUT', '/admin/content', draft, owner=True)
+check('photos: all eight kept (no six-photo cap), each with its branch', s == 200 and len(r['photos']) == 8 and r['photos'][0]['branch'] == 'jpnagar', (s, r.get('photos')))
+check('photos: an unknown branch is dropped to none', s == 200 and r['photos'][3]['branch'] is None, r.get('photos'))
+check('photos: a service photo is kept, a made-up id is not', s == 200 and r['service_photos'] == {'spine': svc['id']}, r.get('service_photos'))
+s, r = call('POST', '/admin/publish', {}, owner=True)
+js = subprocess.run(['curl','-s', SITE + '/wp-content/uploads/jpnagar/site-data.js'], capture_output=True, text=True).stdout
+check('photos: website file has branch photos and the service photo', s == 200 and js.count('"branch":"jpnagar"') == 2 and '"service_photos":{"spine":"' in js, js[js.find('"photos"'):js.find('"photos"') + 200])
+s, st8 = call('GET', '/admin/state', owner=True)
+check('photos: the admin gets every photo\'s address back', str(svc['id']) in st8['photo_urls'] and all(str(i) in st8['photo_urls'] for i in ids), list(st8['photo_urls'])[:12])
 
 # ---- no PHP warnings or notices anywhere in the run
 log = subprocess.run(['docker','compose','exec','-T','wp','sh','-c','grep -v -E "J.P. Nagar Clinic: (booking email for|photo upload failed)" /var/www/html/wp-content/debug.log 2>/dev/null || true'], cwd=D, capture_output=True, text=True).stdout.strip()

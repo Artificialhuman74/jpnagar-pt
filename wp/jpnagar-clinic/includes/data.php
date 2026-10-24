@@ -231,19 +231,30 @@ function jpn_clean_content( $c ) {
 		),
 		'services' => array(),
 		'photos'   => array(),
+		// one photo per service page, shown on its card on the Services page
+		'service_photos' => array(),
 		'branches' => array(),
 		'doctors'  => array(),
 	);
 	foreach ( (array) ( $c['services'] ?? array() ) as $id => $text ) {
 		$out['services'][ sanitize_key( $id ) ] = jpn_substr( sanitize_textarea_field( (string) $text ), 0, 220 );
 	}
-	foreach ( array_slice( (array) ( $c['photos'] ?? array() ), 0, 6 ) as $p ) {
+	// clinic photos, as many as the owner likes (a high cap keeps the website file small), each at one branch; a
+	// branch's first photo is its main one
+	foreach ( array_slice( (array) ( $c['photos'] ?? array() ), 0, 200 ) as $p ) {
 		$id = absint( is_array( $p ) ? ( $p['id'] ?? 0 ) : $p );
 		if ( $id && get_post_meta( $id, '_jpn_photo', true ) ) {
 			$out['photos'][] = array(
-				'id'    => $id,
-				'label' => jpn_substr( sanitize_text_field( (string) ( $p['label'] ?? '' ) ), 0, 60 ),
+				'id'     => $id,
+				'label'  => jpn_substr( sanitize_text_field( (string) ( $p['label'] ?? '' ) ), 0, 60 ),
+				'branch' => jpn_clean_branch( $p['branch'] ?? '' ),
 			);
+		}
+	}
+	foreach ( (array) ( $c['service_photos'] ?? array() ) as $sid => $pid ) {
+		$pid = absint( $pid );
+		if ( $pid && get_post_meta( $pid, '_jpn_photo', true ) ) {
+			$out['service_photos'][ sanitize_key( $sid ) ] = $pid;
 		}
 	}
 	foreach ( jpn_branches() as $id => $b ) {

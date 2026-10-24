@@ -270,7 +270,7 @@ function jpn_rest_state() {
 	// content stores photos by attachment id; the admin also needs to show them
 	$photos = array();
 	foreach ( array( $draft, $live ) as $c ) {
-		$ids = array_merge( wp_list_pluck( (array) ( $c['doctors'] ?? array() ), 'photo' ), wp_list_pluck( (array) ( $c['photos'] ?? array() ), 'id' ) );
+		$ids = array_merge( wp_list_pluck( (array) ( $c['doctors'] ?? array() ), 'photo' ), wp_list_pluck( (array) ( $c['photos'] ?? array() ), 'id' ), array_values( (array) ( $c['service_photos'] ?? array() ) ) );
 		foreach ( array_filter( array_map( 'absint', $ids ) ) as $id ) {
 			$photos[ $id ] = jpn_photo_url( $id );
 		}

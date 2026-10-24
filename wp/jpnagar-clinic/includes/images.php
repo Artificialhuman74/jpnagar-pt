@@ -10,6 +10,7 @@ defined( 'ABSPATH' ) || exit;
 const JPN_PHOTO_KINDS = array(
 	'portrait' => array( 'w' => 800, 'h' => 1000 ),
 	'clinic'   => array( 'w' => 1050, 'h' => 1330 ),
+	'service'  => array( 'w' => 800, 'h' => 1000 ),
 );
 
 /** The largest upload this server takes, in bytes: the smaller of PHP's two limits (what WordPress reports). */
@@ -19,7 +20,7 @@ function jpn_upload_limit() {
 
 /**
  * Takes one uploaded file from $_FILES['photo'] and returns the new attachment id, or WP_Error.
- * @param string $kind 'portrait' or 'clinic'.
+ * @param string $kind 'portrait', 'clinic' or 'service'.
  */
 function jpn_save_photo( $kind ) {
 	if ( ! isset( JPN_PHOTO_KINDS[ $kind ] ) ) {
@@ -96,7 +97,7 @@ function jpn_save_photo( $kind ) {
 	$id = wp_insert_attachment(
 		array(
 			'post_mime_type' => $saved['mime-type'],
-			'post_title'     => 'portrait' === $kind ? 'Doctor photo' : 'Clinic photo',
+			'post_title'     => array( 'portrait' => 'Doctor photo', 'clinic' => 'Clinic photo', 'service' => 'Service photo' )[ $kind ],
 			'post_status'    => 'inherit',
 		),
 		$saved['path'],

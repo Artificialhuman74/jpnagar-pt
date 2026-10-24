@@ -56,7 +56,7 @@ function seed() {
     doctors, branches: info,
     home: { headline: 'Feel better, sooner.', intro: 'Expert physiotherapy at 3 branches in South Bangalore.' },
     // each service page's text as the website shows it today
-    services: {"ortho": "For joints and muscles that hurt, stiffen, or haven’t been the same since an injury.", "sports": "For sprains, strains and injuries from running, the gym or the field, and getting you back to it safely.", "postop": "Getting moving again after surgery, at a pace that suits your operation.", "neuro": "Rebuilding movement, balance and independence after a stroke and other nerve conditions.", "women": "Care for the back, pelvis and pelvic floor through pregnancy, after delivery, and beyond.", "paeds": "Helping children move, play and grow with confidence.", "geri": "Staying strong, steady and independent as you get older.", "therapies": "Hands-on treatment, exercise and gentle machines. See how each one works.", "spine": "For back and neck pain that won’t go away, or keeps coming back.", "homecare": "The same care, at home, when getting to the clinic is hard."}, photos: []
+    services: {"ortho": "For joints and muscles that hurt, stiffen, or haven’t been the same since an injury.", "sports": "For sprains, strains and injuries from running, the gym or the field, and getting you back to it safely.", "postop": "Getting moving again after surgery, at a pace that suits your operation.", "neuro": "Rebuilding movement, balance and independence after a stroke and other nerve conditions.", "women": "Care for the back, pelvis and pelvic floor through pregnancy, after delivery, and beyond.", "paeds": "Helping children move, play and grow with confidence.", "geri": "Staying strong, steady and independent as you get older.", "therapies": "Hands-on treatment, exercise and gentle machines. See how each one works.", "spine": "For back and neck pain that won’t go away, or keeps coming back.", "homecare": "The same care, at home, when getting to the clinic is hard."}, photos: [], servicePhotos: {}
   };
   return { v: 4, content, live: null, schedule, leave: [], closed: [], bookings: sampleBookings(doctors, schedule), publishedAt: null };
 }
@@ -637,7 +637,7 @@ function renderDoctors() {
     el('p', { class: 'note' }, 'Changes here show on the website after you publish.'));
 }
 // the shape of the cards each kind of photo sits in, so a crop here is exactly what the site shows
-const CROP = { portrait: { aspect: 4 / 5, out: 800, label: 'Doctor photo' }, clinic: { aspect: 15 / 19, out: 1050, label: 'Clinic photo' } };
+const CROP = { portrait: { aspect: 4 / 5, out: 800, label: 'Doctor photo' }, clinic: { aspect: 15 / 19, out: 1050, label: 'Clinic photo' }, service: { aspect: 4 / 5, out: 800, label: 'Service photo' } };
 // A phone-first cropper. The frame is the card's shape and starts filled and centred; drag to move, pinch (or the
 // slider, or a mouse wheel) to zoom. The chosen part is saved as a compressed WebP at the card's size.
 function cropPhoto(file, kind) {
@@ -799,6 +799,7 @@ function changes() {
   if (JSON.stringify(a.branches) !== JSON.stringify(b.branches)) n.push('branch details');
   if (JSON.stringify(a.services) !== JSON.stringify(b.services)) n.push('service text');
   if (JSON.stringify(a.photos) !== JSON.stringify(b.photos)) n.push('clinic photos');
+  if (JSON.stringify(a.servicePhotos || {}) !== JSON.stringify(b.servicePhotos || {})) n.push('service photos');
   return n;
 }
 function paintPub() {
@@ -810,6 +811,7 @@ function paintPub() {
 function writeSnapshot() {
   const c = S.live;
   const snap = { v: 1, at: S.publishedAt, home: c.home, services: c.services, photos: c.photos,
+    service_photos: Object.fromEntries(Object.entries(c.servicePhotos || {}).map(([k, v]) => [k, v.src])),
     branches: Object.fromEntries(BRANCHES.map(b => [b.id, { ...c.branches[b.id], sessions: S.schedule[b.id].sessions, days: pack({ week: weekOf(S.schedule[b.id]), slot: 30 }).days, week: weekOf(S.schedule[b.id]) }])),
     doctors: c.doctors.map(d => ({ id: d.id, name: d.name, role: d.role, years: d.years, deg: d.deg, treats: d.treats, bg: d.bg, branches: d.branches, photo: d.photo })) };
   try { localStorage.setItem(PUB, JSON.stringify(snap)); } catch (_) {}
@@ -828,6 +830,10 @@ $('[data-publish]').addEventListener('click', async e => {
   if ((location.hash || '#today') === '#content') renderContent();
   toast(ok ? 'Published. The website now shows your changes.' : 'Published on this phone only: start the demo with start.sh so other devices see it.');
 });
+const photosLine = () => {
+  const n = S.content.photos.length, b = new Set(S.content.photos.map(p => p.branch)).size;
+  return n ? `${n} photo${n === 1 ? '' : 's'} at ${b} branch${b === 1 ? '' : 'es'}` : 'None yet: add photos for each branch';
+};
 function renderContent() {
   const when = S.publishedAt ? new Date(S.publishedAt) : null;
   const row = (title, sub, on, ic = 'edit') => { const r = el('button', { class: 'row doc', type: 'button', role: 'listitem' }, el('span', { class: 'av' }, icon(ic)), el('span', {}, el('b', {}, title), el('span', { class: 'sub' }, sub)), el('span', { class: 'go' }, icon('chevron'))); r.addEventListener('click', on); return r; };
@@ -838,8 +844,8 @@ function renderContent() {
       row('Home page', S.content.home.headline, openHome),
       row('Doctors', `${S.content.doctors.length} on the Team page`, () => { location.hash = '#doctors'; }, 'team'),
       row('Branches', 'Addresses, phone numbers, landmarks', openBranches, 'pin'),
-      row('Services', '10 pages, the short text at the top', openServices, 'services'),
-      row('Clinic photos', `${S.content.photos.length} of 6 photos`, openPhotos, 'photo')),
+      row('Services', `10 pages: the text at the top, and a photo for each (${Object.keys(S.content.servicePhotos || {}).length} of 10)`, openServices, 'services'),
+      row('Clinic photos', photosLine(), () => openPhotos(), 'photo')),
     el('p', { class: 'note' }, 'Edits wait here until you tap Publish to website. Opening hours come from the Schedule tab.'));
   paintPub();
 }
@@ -869,25 +875,79 @@ function openServices() {
     r.addEventListener('click', () => openService(id, name)); return r;
   })));
 }
+// Clinic photos: as many as he likes, each at a branch. A branch's first photo is its main one (on the Branches page,
+// its branch page and the home page); all of them show in "Inside our clinics". Picking several photos crops and
+// uploads them one after another.
+async function addPhotos(files, kind, onEach) {
+  const list = [...files];
+  for (let i = 0; i < list.length; i++) {
+    const f = list[i];
+    let r;
+    try { r = await cropPhoto(f, kind); } catch (_) { toast(unreadable(f)); continue; }
+    if (!r) continue; // skipped in the cropper
+    if (WP) {
+      toast(list.length > 1 ? `Uploading ${i + 1} of ${list.length}…` : 'Uploading…');
+      const up = await WP.photo(r.data, kind);
+      if (up.error) { toast(up.error); continue; }
+      onEach({ id: up.id, src: up.url });
+    } else onEach({ src: r.data });
+  }
+}
+// the branch the site starts at when the visitor hasn't shared where they are
+const PREFERRED_BRANCH = () => ['jpnagar', 'bannerghatta', 'arekere'].find(id => BRANCHES.some(b => b.id === id)) || BRANCHES[0].id;
+function openPhotos(branch = V.pBranch || PREFERRED_BRANCH()) {
+  V.pBranch = branch;
+  const mine = () => S.content.photos.filter(p => p.branch === branch);
+  const grid = el('div', { class: 'gallery' }), tabs = el('div', { class: 'picks' });
+  const inp = el('input', { type: 'file', accept: 'image/*', multiple: '', id: 'ph-add' });
+  inp.addEventListener('change', async () => {
+    const files = inp.files; if (!files.length) return;
+    await addPhotos(files, 'clinic', p => { S.content.photos.push({ ...p, label: '', branch }); save(); paint(); });
+    inp.value = ''; renderContent();
+  });
+  function paint() {
+    tabs.replaceChildren(...BRANCHES.map(b => {
+      const n = S.content.photos.filter(p => p.branch === b.id).length;
+      const t = el('button', { class: 'pill', type: 'button', 'aria-pressed': String(b.id === branch) }, b.short + (n ? ` · ${n}` : ''));
+      t.addEventListener('click', () => { branch = V.pBranch = b.id; paint(); }); return t;
+    }));
+    const list = mine();
+    grid.replaceChildren(...list.map((p, i) => {
+      const main = i === 0;
+      const star = el('button', { class: 'ph-act', type: 'button', 'aria-label': main ? 'Main photo' : `Make photo ${i + 1} the main photo` }, main ? 'Main' : 'Make main');
+      if (main) star.disabled = true;
+      // the main photo is simply the branch's first: moving a photo to just before the current first makes it main
+      star.addEventListener('click', () => { const all = S.content.photos; all.splice(all.indexOf(p), 1); all.splice(all.indexOf(list[0]), 0, p); save(); paint(); });
+      const rm = el('button', { class: 'ph-x', type: 'button', 'aria-label': `Remove photo ${i + 1}` }, icon('close'));
+      rm.addEventListener('click', () => { S.content.photos.splice(S.content.photos.indexOf(p), 1); save(); paint(); renderContent(); });
+      return el('div', { class: 'ph' + (main ? ' is-main' : '') }, el('img', { src: p.src, alt: `${BR(branch).short} photo ${i + 1}` }), star, rm);
+    }), el('label', { for: 'ph-add', class: 'ph-add' }, el('span', {}, icon('plus'), el('br'), list.length ? 'Add photos' : 'Add the first photo'), inp));
+  }
+  paint();
+  openSheet('Clinic photos', el('p', { class: 'lead2' }, 'Pick a branch, then add as many photos as you like. The first one is the branch’s main photo. They’re shrunk and saved as WebP so the site stays fast.'), tabs, grid);
+}
+// a service's short text, and its photo (on its card on the Services page)
 function openService(id, name) {
   const t = fieldIn('Short text at the top of the page', S.content.services[id], { area: true, rows: 4, max: 220 });
-  openSheet(name, t.node, btn('Save', 'btn--act btn--block', () => { S.content.services[id] = t.inp.value.trim(); save(); renderContent(); closeSheet(); toast('Saved. Publish when you’re ready.'); }));
-}
-function openPhotos() {
-  const grid = el('div', { class: 'gallery' });
-  const paint = () => grid.replaceChildren(...[...Array(6)].map((_, i) => {
-    const p = S.content.photos[i], inp = el('input', { type: 'file', accept: 'image/*', id: `ph${i}` });
-    inp.addEventListener('change', async () => {
-      const f = inp.files[0]; if (!f) return;
-      try {
-        const r = await cropPhoto(f, 'clinic'); inp.value = ''; if (!r) return;
-        if (WP) { toast('Uploading…'); const up = await WP.photo(r.data, 'clinic'); if (up.error) { toast(up.error); return; } S.content.photos[i] = { id: up.id, src: up.url, label: '' }; }
-        else S.content.photos[i] = { src: r.data, label: '' }; S.content.photos = S.content.photos.filter(Boolean); save(); paint(); renderContent(); toast(`Photo saved as WebP · ${r.kb} KB`); } catch (_) { toast(unreadable(f)); }
-    });
-    return el('label', { for: `ph${i}` }, p ? el('img', { src: p.src, alt: `Clinic photo ${i + 1}` }) : el('span', {}, icon('plus'), el('br'), 'Add photo'), inp);
-  }));
+  S.content.servicePhotos = S.content.servicePhotos || {};
+  const box = el('div', { class: 'svc-photo' }), inp = el('input', { type: 'file', accept: 'image/*', id: 'svc-ph' });
+  const paint = () => {
+    const p = S.content.servicePhotos[id];
+    const kids = [el('label', { for: 'svc-ph', class: 'ph-add' }, p ? el('img', { src: p.src, alt: `${name} photo` }) : el('span', {}, icon('plus'), el('br'), 'Add a photo'), inp)];
+    if (p) {
+      const rm = btn('Remove photo', 'btn--line', () => { delete S.content.servicePhotos[id]; save(); paint(); renderContent(); });
+      kids.push(el('div', {}, el('small', {}, 'Tap the photo to change it'), rm));
+    }
+    box.replaceChildren(...kids);
+  };
+  inp.addEventListener('change', async () => {
+    const f = inp.files; if (!f.length) return;
+    await addPhotos([f[0]], 'service', p => { S.content.servicePhotos[id] = p; save(); paint(); renderContent(); });
+    inp.value = '';
+  });
   paint();
-  openSheet('Clinic photos', el('p', { class: 'lead2' }, 'Shown in “Inside our clinics” on the home page. Photos are shrunk and saved as WebP so the site stays fast.'), grid);
+  openSheet(name, el('div', { class: 'field' }, el('label', {}, 'Photo on the Services page'), box), t.node,
+    btn('Save', 'btn--act btn--block', () => { S.content.services[id] = t.inp.value.trim(); save(); renderContent(); closeSheet(); toast('Saved. Publish when you’re ready.'); }));
 }
 
 // on WordPress nothing is drawn until his data has arrived (or he has been sent to sign in)

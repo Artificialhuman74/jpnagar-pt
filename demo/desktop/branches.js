@@ -1,16 +1,16 @@
 // Branches: nearest first (from an area, a pincode or the visitor's location), live open/closed, the week's hours,
-// and a map beside the list. Hovering a card lifts its pin; hovering a pin outlines its card.
+// and a real Google map beside the list showing one branch: the nearest (else JP Nagar), or the one picked.
 const known = savedKm(), BR = BRANCHES.map(b => ({ b, km: known ? known[b.id] : null }));
 const map = $('[data-map]'), list = $('[data-bcards]'), found = $('[data-found]'), inp = $('#area-in');
-let from = null;
-// the map preview spans lat 12.844–12.914 and lng 77.567–77.621, with the branches a little above the middle
-const proj = (lat, lng) => [(lng - 77.567) / .054 * 600, (12.9136 - lat) / .07 * 800];
-function place(node, lat, lng, keepInside) {
-  const W = map.clientWidth, H = map.clientHeight, k = Math.max(W / 600, H / 800), [x, y] = proj(lat, lng);
-  let px = (W - 600 * k) / 2 + x * k, py = (H - 800 * k) / 2 + y * k;
-  if (keepInside) { px = Math.min(Math.max(px, 28), W - 28); py = Math.min(Math.max(py, 28), H - 48); }
-  node.style.left = px.toFixed(1) + 'px';
-  node.style.top = py.toFixed(1) + 'px';
+/* ---------- the map: one branch at a time ---------- */
+let shown = null;
+function showOnMap(b) {
+  if (shown === b.id) return;
+  shown = b.id;
+  const old = map.querySelector('iframe'), f = mapEmbed(b);
+  old ? old.replaceWith(f) : map.prepend(f);
+  $('[data-map-note]').textContent = `Showing ${b.name}`;
+  $$('.bcard', list).forEach(c => c.classList.toggle('on-map', c.dataset.id === b.id));
 }
 
 /* ---------- cards ---------- */
@@ -28,9 +28,8 @@ function card({ b, km }, near) {
       el('div', { class: 'bcard-acts' },
         el('a', { class: 'btn btn--act btn--sm', href: `book.html?branch=${b.id}` }, 'Book here'),
         el('a', { class: 'btn btn--line btn--sm', href: mapsLink(b), target: '_blank', rel: 'noopener' }, icon('pin'), 'Directions'),
+        (() => { const m = el('button', { class: 'btn btn--line btn--sm', type: 'button' }, 'Show on map'); m.addEventListener('click', () => showOnMap(b)); return m; })(),
         el('a', { class: 'btn btn--line btn--sm', href: `tel:${b.phone}` }, icon('phone'), b.phoneText))));
-  c.addEventListener('mouseenter', () => hl(b.id, true));
-  c.addEventListener('mouseleave', () => hl(b.id, false));
   return c;
 }
 function render() {
@@ -42,38 +41,13 @@ function render() {
     const dy = t - c.getBoundingClientRect().top;
     if (dy) c.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 650, easing: 'cubic-bezier(.16,1,.3,1)' });
   });
-  pins.forEach(({ b, p }) => { const km = BR.find(r => r.b === b).km; p.classList.toggle('near', km != null && b === order[0].b); p.querySelector('small').textContent = km != null ? `${km.toFixed(1)} km` : ''; });
-  layout();
+  // the map follows the nearest branch once the visitor has said where they are; until then the starting one
+  const start = BR[0].km == null ? BRANCHES[nearestIndex()] : order[0].b;
+  shown = null; showOnMap(start);
 }
-
-/* ---------- map pins ---------- */
-const pins = BRANCHES.map(b => {
-  const p = el('button', { class: 'pin', type: 'button', 'aria-label': `${b.name} on the map` }, el('span', { class: 'pin-l' }, b.short, el('small')), el('i', { class: 'pin-d' }));
-  p.addEventListener('mouseenter', () => hl(b.id, true));
-  p.addEventListener('mouseleave', () => hl(b.id, false));
-  p.addEventListener('click', () => {
-    const c = $(`.bcard[data-id="${b.id}"]`);
-    c.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
-    c.animate([{ boxShadow: '0 0 0 3px #00A8EC' }, { boxShadow: '0 0 0 1px #E2E4EA' }], { duration: 1400, easing: 'ease-out' });
-  });
-  map.append(p);
-  return { b, p };
-});
-const you = el('span', { class: 'you', hidden: true }, el('span', {}, 'You'));
-map.append(you);
-function hl(id, on) {
-  pins.forEach(({ b, p }) => p.classList.toggle('hl', on && b.id === id));
-  $$('.bcard', list).forEach(c => c.classList.toggle('hl', on && c.dataset.id === id));
-}
-function layout() {
-  pins.forEach(({ b, p }) => place(p, b.lat, b.lng));
-  if (from) { place(you, from.lat, from.lng, true); you.hidden = false; }
-}
-addEventListener('resize', layout);
 
 /* ---------- nearest first ---------- */
 function sortFrom(lat, lng, label) {
-  from = { lat, lng };
   BR.forEach(r => { r.km = kmBetween(lat, lng, r.b.lat, r.b.lng); });
   saveKm(Object.fromEntries(BR.map(r => [r.b.id, r.km])));
   render();

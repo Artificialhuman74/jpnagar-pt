@@ -35,7 +35,7 @@
     <a href="tel:+918026489922"><i data-icon="phone"></i>Call branch</a>
   </div>
 </section>
-<div class="mapbox photo" data-label="Google Maps embed · Arekere"></div>
+<div class="mapbox" data-mapbox></div>
 
 <section class="sec">
   <h2 data-reveal>Opening hours</h2>
@@ -65,6 +65,7 @@ const b = BRANCHES.find(x => x.id === 'arekere'), st = branchStatus(b);
 const live = document.querySelector('[data-live]');
 live.classList.toggle('closed', !st.open); live.querySelector('span').textContent = st.text;
 document.querySelector('[data-dir]').href = mapsLink(b);
+document.querySelector('[data-mapbox]').append(mapEmbed(b));
 // next three free slots, straight into booking
 const quick = document.querySelector('[data-quick]'), d0 = nowIST(), found = [];
 for (let i = 0; i < 7 && found.length < 3; i++) {

@@ -151,6 +151,13 @@ function kmBetween(a, b, c, d) {
 // one branch on Google Maps: the clinic's name with that branch's street address picks out that branch alone (the
 // name by itself matches all three)
 function mapsLink(b) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`J.P. Nagar Medical and Physiotherapy Centre, ${b.addr || b.name}`)}`; }
+// A real Google map in the page (Google's own embed, no key needed), loaded only once it scrolls near. The query is the
+// clinic's name and the branch's street address, which picks out that branch; with no branch it lists all three.
+const mapQuery = b => `J.P. Nagar Medical and Physiotherapy Centre, ${b ? b.addr || b.name : 'Bengaluru'}`;
+function mapEmbed(b, title) {
+  return el('iframe', { class: 'gmap', src: `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery(b))}&z=${b ? 16 : 13}&output=embed`,
+    title: title || (b ? `Map: ${b.name}` : 'Map of our three branches'), loading: 'lazy', referrerpolicy: 'no-referrer-when-downgrade' });
+}
 const DEGREES = {
   MPT: 'Master of Physiotherapy', BPT: 'Bachelor of Physiotherapy', COMT: 'Certified Orthopaedic Manual Therapist',
   MIAP: 'Member, Indian Association of Physiotherapists', 'MD(A.M)': 'MD in Alternative Medicine', 'D.ACU': 'Diploma in Acupuncture'

@@ -22,7 +22,7 @@
 </section>
 
 <div class="blist" data-blist></div>
-<div class="mapbox photo" data-label="Map of all 3 branches (Google Maps embed)"></div>
+<div class="mapbox" data-mapbox></div>
 
 <div class="fab"></div>
 <nav class="dock" data-active="branches"></nav>
@@ -30,6 +30,7 @@
 <script src="../canon/published-data.js"></script>
 <script src="../canon/published.js"></script>
 <script>
+document.querySelector('[data-mapbox]').append(mapEmbed(null)); // all three branches
 const list = document.querySelector('[data-blist]'), now = nowIST();
 const cards = BRANCHES.map((b, i) => {
   const st = branchStatus(b), today = sessText(sessionsOn(b, now));

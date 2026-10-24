@@ -481,6 +481,7 @@ function renderTime() {
   const on = tabs.querySelectorAll('.tab')[S.b];
   tind.style.width = on.offsetWidth + 'px'; tind.style.transform = `translateX(${on.offsetLeft - 4}px)`;
   const st = branchStatus(b); const so = $('[data-status]'); so.textContent = st.text; so.classList.toggle('closed', !st.open);
+  $('[data-dir]').href = mapsLink(b); // directions to the branch on screen, not the clinic in general
   if (!dayBtns) {
     const today = nowIST().toDateString();
     dayBtns = days().map(d => {

@@ -148,7 +148,9 @@ function kmBetween(a, b, c, d) {
   const h = Math.sin(dl / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(dg / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
-function mapsLink(b) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('J.P. Nagar Medical and Physiotherapy Centre ' + b.name)}`; }
+// one branch on Google Maps: the clinic's name with that branch's street address picks out that branch alone (the
+// name by itself matches all three)
+function mapsLink(b) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`J.P. Nagar Medical and Physiotherapy Centre, ${b.addr || b.name}`)}`; }
 const DEGREES = {
   MPT: 'Master of Physiotherapy', BPT: 'Bachelor of Physiotherapy', COMT: 'Certified Orthopaedic Manual Therapist',
   MIAP: 'Member, Indian Association of Physiotherapists', 'MD(A.M)': 'MD in Alternative Medicine', 'D.ACU': 'Diploma in Acupuncture'

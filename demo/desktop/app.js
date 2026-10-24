@@ -225,7 +225,9 @@ function kmBetween(a, b, c, d) {
   const r = x => x * Math.PI / 180, h = Math.sin(r(c - a) / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(r(d - b) / 2) ** 2;
   return 12742 * Math.asin(Math.sqrt(h));
 }
-function mapsLink(b) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('J.P. Nagar Medical and Physiotherapy Centre ' + b.name)}`; }
+// one branch on Google Maps: the clinic's name with that branch's street address picks out that branch alone (the
+// name by itself matches all three)
+function mapsLink(b) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`J.P. Nagar Medical and Physiotherapy Centre, ${b.addr || b.name}`)}`; }
 
 // keep the pinned demo clock when moving between pages
 function withT(href) {

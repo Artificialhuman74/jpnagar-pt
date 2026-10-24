@@ -130,8 +130,13 @@ function timeText(t) { const h = Math.floor(t), m = Math.round((t - h) * 60); re
 // a day's hours (today unless given)
 function hoursText(b, d = nowIST()) { return sessText(sessionsOn(b, d)) || 'Closed'; }
 // the same hours, but each session stays on one line when it wraps
-// the week, each group of days kept on one line when it wraps
-function hoursNodes(b) { return weekText(b).split('; ').flatMap((g, i, all) => [i ? ' ' : null, el('span', { class: 'nw' }, g + (i < all.length - 1 ? ';' : ''))]); }
+// the week, one line per group of days; a narrow column wraps between sessions, never inside a time
+function hoursNodes(b) {
+  return weekText(b).split('; ').map(g => {
+    const [days, hours] = g.split(' · ');
+    return el('span', { class: 'wk' }, el('span', { class: 'nw' }, `${days} · `), ...(hours || '').split(', ').flatMap((h, i) => [i ? ', ' : null, el('span', { class: 'nw' }, h)]));
+  });
+}
 // A branch's hours on a day (Sunday is 0), as [[from, to], ...] in hours: that weekday's own hours when the clinic has
 // set them (b.week, copied in by published.js), else its usual sessions on the days it works (Mon–Sat until told).
 // Takes a date or a day number.

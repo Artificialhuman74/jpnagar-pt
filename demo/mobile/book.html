@@ -590,10 +590,27 @@ $('[data-skip]').addEventListener('click', () => {
   go(FLOW[pos(S.step) + 1]);
 });
 $('[data-next]').addEventListener('click', () => {
-  if (S.step === 3) { if (validate()) go(4); return; }
+  if (S.step === 3) { if (validate()) confirmBooking(); return; }
   go(FLOW[pos(S.step) + 1]);
 });
 addEventListener('scroll', () => $('.bhead').classList.toggle('scrolled', scrollY > 4), { passive: true });
+
+// on WordPress the slot is reserved for real before the ticket prints; offline (the plain demo) it prints at once
+function confirmBooking() {
+  if (!LIVE) return go(4);
+  const next = $('[data-next]'); if (next.classList.contains('is-busy')) return;
+  next.classList.add('is-busy'); next.disabled = true; next.textContent = 'Booking…';
+  const b = BRANCHES[S.b], doc = DOCS.find(d => d.name === S.ther && !d.any);
+  LIVE.book({ branch: b.id, date: LIVE.isoOf(S.day), time: Math.round(S.slot.t * 60), doctor: doc ? doc.id : null,
+    name: S.name, phone: S.phone, email: S.email, problem: whatText(), note: S.story }).then(r => {
+    next.classList.remove('is-busy'); next.disabled = false;
+    if (r.ok) { S.bookingNo = `JP-${CODES[b.id]}-${String(r.data.id).padStart(5, '0')}`; const got = DOCS.find(d => d.id === r.data.doctor); if (got) S.ther = got.name; return go(4); }
+    toast((r.data && r.data.message) || 'That didn’t go through. Please try again, or call the clinic.');
+    if (r.status === 409) { LIVE.refresh(b.id, S.day); S.slot = null; go(2, true); }
+    setBar();
+  });
+}
+if (LIVE) document.addEventListener('jpn:slots', () => { timesKey = ''; if (S.step === 2) renderTime(); });
 
 /* ---------- details ---------- */
 function validate() {
@@ -654,7 +671,7 @@ function miniFigure(face) {
 function confirmScreen() {
   const b = BRANCHES[S.b], d = S.day, t = S.slot;
   const hh = Math.floor(t.t), mm = t.t % 1 ? 30 : 0, pad = n => String(n).padStart(2, '0');
-  const id = `JP-${CODES[b.id]}-${pad(d.getDate())}${pad(d.getMonth() + 1)}-${pad(hh)}${pad(mm)}`;
+  const id = S.bookingNo || `JP-${CODES[b.id]}-${pad(d.getDate())}${pad(d.getMonth() + 1)}-${pad(hh)}${pad(mm)}`;
   const today = d.toDateString() === nowIST().toDateString();
   $('[data-see]').textContent = `See you ${whenText().replace(/^Today/, 'today')} at ${b.short}.`;
   $('[data-sent]').textContent = `Your booking is saved and already with the ${b.short} team. WhatsApp is optional, for anything you'd like to add.`;

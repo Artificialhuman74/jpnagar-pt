@@ -9,3 +9,5 @@ demo/canon/published-data.js
 # impeccable runtime state
 .impeccable/live/
 .impeccable/config.local.json
+# local WordPress owner password (wp/dev/up.sh)
+wp/dev/owner-login.txt

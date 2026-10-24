@@ -258,11 +258,25 @@ $('[data-confirm]').addEventListener('click', e => {
   const bad = ['name', 'phone', 'email'].find(k => !check(k));
   if (bad) { attn('#step-you'); F[bad].focus({ preventScroll: true }); return; }
   const btn = e.currentTarget, b = BRANCHES[S.b];
+  if (btn.classList.contains('is-busy')) return;
   btn.classList.add('is-busy'); btn.firstElementChild.textContent = 'Booking';
-  saveBooking({ id: bookingId(b, S.day, S.slot.t), b: b.id, day: dayISO(S.day), t: S.slot.t, ther: S.ther, gender: S.gender, areas: [...S.areas], reasons: [...S.reasons],
-    service: S.service ? S.service.id : null, story: S.story, name: S.name, phone: S.phone, email: S.email });
-  setTimeout(() => { location.href = withT('booked.html'); }, reduceMotion ? 0 : 700);
+  const booking = { id: bookingId(b, S.day, S.slot.t), b: b.id, day: dayISO(S.day), t: S.slot.t, ther: S.ther, gender: S.gender, areas: [...S.areas], reasons: [...S.reasons],
+    service: S.service ? S.service.id : null, story: S.story, name: S.name, phone: S.phone, email: S.email };
+  const done = () => { saveBooking(booking); setTimeout(() => { location.href = withT('booked.html'); }, reduceMotion ? 0 : 700); };
+  if (!LIVE) return done();
+  // on WordPress the slot is reserved for real: the clinic's number for it goes on the ticket, and "Any available"
+  // shows whoever the diary gave the patient
+  const problem = [...S.areas].map(labelOf).concat([...S.reasons].map(r => REASON[r]), S.service ? [S.service.name] : []).join(', ');
+  LIVE.book({ branch: b.id, date: dayISO(S.day), time: Math.round(S.slot.t * 60), doctor: S.ther >= 0 ? TEAM[S.ther].id : null,
+    name: S.name, phone: S.phone, email: S.email, problem, note: S.story }).then(r => {
+    if (r.ok) { booking.id = `JP-${b.code}-${String(r.data.id).padStart(5, '0')}`; booking.ther = TEAM.findIndex(t => t.id === r.data.doctor); return done(); }
+    btn.classList.remove('is-busy'); btn.firstElementChild.textContent = 'Confirm booking';
+    toast((r.data && r.data.message) || 'That didn’t go through. Please try again, or call the clinic.');
+    if (r.status === 409) { LIVE.refresh(b.id, S.day); S.slot = null; update(); attn('#step-when'); }
+  });
 });
+// the real diary arrives a day at a time; redraw the times when one comes in
+if (LIVE) document.addEventListener('jpn:slots', () => { timesKey = ''; if (S.slot && slotsFor(BRANCHES[S.b], S.day, S.sess).some(x => x.t === S.slot.t && x.taken)) S.slot = null; renderWhen(); update(); });
 
 placeSpots(); paintPicked(); renderWhen(); renderDocs(); paintIcons(); update();
 

@@ -1,0 +1,32 @@
+# The WordPress the demo talks to on this Mac (bash demo/start.sh --wp). It keeps its data between runs, unlike the
+# throwaway site wp/tests builds. Same versions as the host: PHP 7.4, WordPress 6.1. Emails really go out over SMTP,
+# as on the live site, but to Mailpit on this Mac (inbox at http://localhost:8025), never to a real address.
+name: jpn-dev
+services:
+  db:
+    image: mariadb:10.6
+    environment: { MARIADB_DATABASE: wp, MARIADB_USER: wp, MARIADB_PASSWORD: wp, MARIADB_ROOT_PASSWORD: root }
+    healthcheck: { test: ["CMD", "healthcheck.sh", "--connect"], interval: 3s, retries: 30 }
+    volumes: [db:/var/lib/mysql]
+  wp:
+    image: wordpress:6.1-php7.4-apache
+    depends_on: { db: { condition: service_healthy } }
+    ports: ["127.0.0.1:8898:80"]
+    environment: { WORDPRESS_DB_HOST: db, WORDPRESS_DB_USER: wp, WORDPRESS_DB_PASSWORD: wp, WORDPRESS_DB_NAME: wp, WORDPRESS_DEBUG: "1" }
+    volumes:
+      - wpdata:/var/www/html
+      - ../jpnagar-clinic:/var/www/html/wp-content/plugins/jpnagar-clinic:ro
+      - ./smtp-to-mailpit.php:/var/www/html/wp-content/mu-plugins/smtp-to-mailpit.php:ro
+  mail:
+    image: axllent/mailpit:v1.21
+    ports: ["127.0.0.1:8025:8025"]
+  cli:
+    image: wordpress:cli-php7.4
+    profiles: [cli]
+    user: "33:33"
+    depends_on: [wp]
+    environment: { WORDPRESS_DB_HOST: db, WORDPRESS_DB_USER: wp, WORDPRESS_DB_PASSWORD: wp, WORDPRESS_DB_NAME: wp }
+    volumes:
+      - wpdata:/var/www/html
+      - ../jpnagar-clinic:/var/www/html/wp-content/plugins/jpnagar-clinic:ro
+volumes: { wpdata: {}, db: {} }

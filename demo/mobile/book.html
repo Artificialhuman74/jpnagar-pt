@@ -339,11 +339,16 @@ const HS = { front: [], back: [] };
     layer.append(h); HS[face].push(h);
   });
 });
-function placeSpots() {
+// A spot jumps to its new place and glides there with a transform (moving left/top would lay the page out every frame)
+function placeSpots(animate) {
   const P = POS[S.gender];
   ['front', 'back'].forEach(face => HS[face].forEach(h => {
     let [x, y] = P[h.dataset.type]; if (h.dataset.pos === 'b') x = 240 - x;
+    const was = animate && !reduceMotion && h.getBoundingClientRect();
     h.style.left = (x / 240 * 100) + '%'; h.style.top = (y / 480 * 100) + '%';
+    if (!was || !was.width) return;
+    const now = h.getBoundingClientRect(), dx = was.left - now.left, dy = was.top - now.top;
+    if (dx || dy) h.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: 'none' }], { duration: 500, easing: 'cubic-bezier(.16,1,.3,1)' });
   }));
 }
 function paintMap() {
@@ -372,7 +377,7 @@ function setGender(g) {
   S.gender = g; turn.dataset.g = g;
   $$('[data-gender]').forEach(b => { b.classList.toggle('on', b.dataset.gender === g); b.setAttribute('aria-checked', b.dataset.gender === g); });
   turn.classList.remove('swapping'); void turn.offsetWidth; turn.classList.add('swapping');
-  placeSpots();
+  placeSpots(true);
 }
 $$('[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $$('[data-gender]').forEach(b => b.addEventListener('click', () => setGender(b.dataset.gender)));
@@ -535,6 +540,15 @@ function renderTime() {
     $('[data-slot-say]').textContent = open ? `${open} times free, ${S.day.toDateString() === nowIST().toDateString() ? 'today' : DOW[S.day.getDay()] + ' ' + S.day.getDate()}` : 'No times left in this session';
   }
   grid.querySelectorAll('.slot').forEach(n => n.classList.toggle('is-on', !!S.slot && S.slot.t === n._t));
+  // The branch, day and session switch the moment they're tapped; until that day's real times have arrived the grid
+  // shows them loading (not tappable), and the other days of the branch are asked for ahead so they open at once.
+  if (DIARY) {
+    const loading = !DIARY.ready(b.id, S.day);
+    grid.classList.toggle('is-loading', loading); grid.setAttribute('aria-busy', String(loading));
+    if (loading) $('[data-slot-say]').textContent = 'Checking free times';
+    else { const open = list.filter(x => !x.taken).length; $('[data-slot-say]').textContent = open ? `${open} times free, ${S.day.toDateString() === nowIST().toDateString() ? 'today' : DOW[S.day.getDay()] + ' ' + S.day.getDate()}` : 'No times left in this session'; }
+    DIARY.ahead(b.id, days().filter(d => worksOn(b, d)));
+  }
   // each branch lists its own doctors (those published for it), plus "Any available"
   const here = DOCS.filter(d => d.any || !d.branches || d.branches.includes(b.id));
   if (S.ther !== 'Any available' && !here.some(d => d.name === S.ther)) S.ther = 'Any available';
@@ -542,7 +556,8 @@ function renderTime() {
     docBtns = here.map(d => {
       const pic = d.any
         ? el('span', { class: 'ph any', 'aria-hidden': 'true' }, el('i', { class: 'photo' }), el('i', { class: 'photo' }), el('i', { class: 'photo' }))
-        : el('span', { class: 'ph photo' + (d.photo ? ' is-real' : ''), 'aria-hidden': 'true', ...(d.photo ? { style: `background:center/cover url("${d.photo}")` } : {}) });
+        : el('span', { class: 'ph photo', 'aria-hidden': 'true' });
+      if (!d.any && d.photo) paintPhoto(pic, d.photo); // pulses until the portrait has arrived
       const n = el('button', { class: 'doc tilt', role: 'radio' },
         pic, el('span', { class: 'tick', 'aria-hidden': 'true' }, icon('check')),
         el('b', {}, d.name), el('small', {}, d.role),
@@ -592,7 +607,12 @@ function go(n, back, fromHistory) {
   const p = pos(n);
   $$('.step').forEach(s => { s.classList.remove('on', 'back'); s.removeAttribute('id'); });
   const cur = $(`[data-step="${n}"]`); cur.classList.add('on'); cur.id = 'main-step'; if (back) cur.classList.add('back');
+  // the first step is simply there when the page opens; later steps slide in
+  cur.style.animation = first ? 'none' : '';
+  // the progress bar is simply filled to the first step when the page opens; it grows as the visitor moves on
+  const prog = $('.prog'); if (first) prog.classList.add('no-motion');
   $$('.prog span').forEach((s, i) => { s.classList.toggle('done', i < p); s.classList.toggle('on', i === p); });
+  if (first) requestAnimationFrame(() => requestAnimationFrame(() => prog.classList.remove('no-motion')));
   $$('.prog-labels span').forEach((s, i) => s.classList.toggle('on', i === p));
   const noteItem = () => S.story ? [doneItem('Note', S.story.length > 34 ? S.story.slice(0, 32) + '…' : S.story, 1)] : [];
   const when = () => doneItem('When', `${whenText()} · ${BRANCHES[S.b].short}`, 2);

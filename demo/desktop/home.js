@@ -11,7 +11,9 @@ function goHref() {
   return `book.html?branch=${b.id}&day=${dayISO(H.day)}${H.slot ? `&slot=${H.slot.t}` : ''}`;
 }
 function renderBar() {
-  const b = BRANCHES[H.b], free = freeSlots(b, H.day);
+  const b = BRANCHES[H.b], loading = !diaryReady(b, H.day), free = loading ? [] : freeSlots(b, H.day);
+  // a time picked before the day's real times arrived, and since taken, gives way to the first free one
+  if (!loading && H.slot && !free.some(s => s.t === H.slot.t)) H.slot = free[0] || null;
   $('[data-qb-blabel]').textContent = savedKm() && H.b === nearestIndex() ? 'Nearest branch' : 'Branch';
   $('[data-qb-branch]').textContent = b.short;
   $('[data-qb-day]').textContent = dayShort(H.day);
@@ -24,12 +26,13 @@ function renderBar() {
     c.addEventListener('click', () => { H.slot = s; renderBar(); });
     return c;
   });
-  $('[data-qb-chips]').replaceChildren(...(chips.length ? chips : [el('p', { class: 'qb-none' }, 'No free times left this day. ', (() => {
+  $('[data-qb-chips]').setAttribute('aria-busy', String(loading));
+  $('[data-qb-chips]').replaceChildren(...(loading ? skelChips(5) : chips.length ? chips : [el('p', { class: 'qb-none' }, 'No free times left this day. ', (() => {
     const n = el('button', { type: 'button' }, 'See the next open day'); n.addEventListener('click', () => { H.day = nextOpenAfter(b, H.day); H.slot = freeSlots(b, H.day)[0] || null; renderBar(); }); return n;
   })())]));
   const go = $('[data-qb-go]');
   go.href = goHref();
-  go.firstElementChild.textContent = H.slot ? `Book ${H.slot.label} ${H.slot.suffix}` : 'Book a visit';
+  go.firstElementChild.textContent = H.slot && !loading ? `Book ${H.slot.label} ${H.slot.suffix}` : 'Book a visit';
   $('[data-qb-all]').href = `book.html?branch=${b.id}&day=${dayISO(H.day)}`;
 }
 function nextOpenAfter(b, d) { for (let i = 1; i < 21; i++) { const x = addDays(d, i); if (freeSlots(b, x).length) return x; } return addDays(d, 1); }
@@ -81,6 +84,7 @@ addEventListener('keydown', e => {
 
 H.day = firstOpenDay(BRANCHES[H.b]);
 H.slot = freeSlots(BRANCHES[H.b], H.day)[0] || null;
+document.addEventListener('jpn:slots', () => renderBar());
 renderBar();
 
 /* ---------- gallery: photos on a gentle convex arc (carousel.js); the glow takes the colour of the photo in front ---------- */

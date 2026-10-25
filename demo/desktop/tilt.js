@@ -28,7 +28,8 @@
     // the card turns over from its own buttons (one on each face), so the links and buttons on the back stay usable
     const flips = [...figure.querySelectorAll('[data-flip]')];
     if (set.flippable) { figure.toggleAttribute('data-interactive', true); flips.forEach(b => b.setAttribute('aria-expanded', 'false')); }
-    if (set.intro && !reduced) { entered = false; opacity = 0; S.rx = 16; S.ty = 22; body.style.opacity = '0'; }
+    // the intro (fade and tilt in) only for a card that starts below the screen; one already on screen is just there
+    if (set.intro && !reduced && figure.getBoundingClientRect().top >= innerHeight) { entered = false; opacity = 0; S.rx = 16; S.ty = 22; body.style.opacity = '0'; }
 
     const frame = now => {
       raf = 0;

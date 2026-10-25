@@ -29,6 +29,15 @@ body{font-family:"Figtree",-apple-system,system-ui,sans-serif;color:var(--ink);b
 img{display:block;max-width:100%}
 button,input,textarea,select{font-family:inherit}
 a{color:inherit;text-decoration:none}
+/* no grey flash from the browser on tap (iOS Safari draws one over anything tappable before it switches); each
+   control gives its own feedback */
+a,button,[role="button"],[role="tab"],label,summary,input,select,textarea{-webkit-tap-highlight-color:transparent}
+/* something on its way from the server: a calm pulse on a grey block, opacity only, and only while it loads */
+.skel{background:var(--surface);border-radius:12px;animation:skel 1.1s ease-in-out infinite alternate}
+@keyframes skel{from{opacity:.5}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.skel{animation:none;opacity:.75}}
+/* on screen when the page opened: shown in its finished state, without the reveal's transition */
+.no-motion,.no-motion *,.no-motion *::before,.no-motion *::after{transition:none!important}
 :focus-visible{outline:2px solid var(--ink);outline-offset:3px;border-radius:8px}
 
 .top{display:flex;align-items:center;justify-content:space-between;padding:14px 18px}
@@ -62,6 +71,18 @@ h2{font-weight:750;letter-spacing:-.02em;line-height:1.1;font-size:24px;text-wra
 
 /* slots */
 .slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-content:start}
+/* the day's real times are still on their way: the same buttons, greyed and pulsing, and not tappable yet */
+.slots.is-loading .slot{color:transparent;text-decoration:none;background:var(--surface);border-color:transparent;pointer-events:none;
+  animation:skel 1.1s ease-in-out infinite alternate}
+@media (prefers-reduced-motion:reduce){.slots.is-loading .slot{animation:none}}
+/* a photo on its way: the grey block pulses until the picture has arrived */
+.photo.is-loading{animation:skel 1.1s ease-in-out infinite alternate}
+.photo.is-loading::after{visibility:hidden}
+@media (prefers-reduced-motion:reduce){.photo.is-loading{animation:none}}
+/* a map on its way from Google: its grey box holds the place (still, since a map further down only loads as it
+   scrolls near), then the map fades in */
+.gmap{transition:opacity .35s ease}
+.gmap.is-loading{opacity:0}
 .slot{height:48px;border-radius:14px;border:1.5px solid var(--line);background:var(--canvas);display:grid;place-items:center;
   font-weight:700;font-size:16px;font-variant-numeric:tabular-nums;cursor:pointer;transition:border-color .2s,background .2s}
 .slot:hover{border-color:var(--ink-3)}
@@ -69,8 +90,7 @@ h2{font-weight:750;letter-spacing:-.02em;line-height:1.1;font-size:24px;text-wra
 .slot.is-on{background:var(--act);border-color:var(--act);color:#fff}
 
 /* 3D tilt card */
-.tilt{transform-style:preserve-3d;transition:transform .5s cubic-bezier(.16,1,.3,1),box-shadow .5s;will-change:transform}
-.tilt:hover{box-shadow:0 2px 4px rgba(24,20,26,.08),0 28px 50px -18px rgba(24,20,26,.42)}
+.tilt{transform-style:preserve-3d;transition:transform .5s cubic-bezier(.16,1,.3,1);will-change:transform}
 @media (prefers-reduced-motion:reduce){.tilt{transition:none}}
 
 /* bullets */
@@ -103,8 +123,8 @@ h2{font-weight:750;letter-spacing:-.02em;line-height:1.1;font-size:24px;text-wra
 
 /* floating call + whatsapp */
 .fab{position:fixed;right:12px;bottom:100px;display:grid;gap:8px;z-index:20}
-.fab a{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.82);
-  border:1px solid var(--line);box-shadow:var(--shadow);backdrop-filter:blur(14px) saturate(1.4)}
+.fab a{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.96);
+  border:1px solid var(--line);box-shadow:var(--shadow)}
 .fab svg{width:22px;height:22px;color:var(--ink)}
 
 /* ---------- dock (five equal items) ---------- */

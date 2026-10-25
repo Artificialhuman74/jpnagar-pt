@@ -167,9 +167,16 @@ function branchTabs(cur, withAll, onPick) {
 const notice = (text, ic = 'info') => el('p', { class: 'notice' }, icon(ic), el('span', {}, text));
 
 /* ---------- Today: the day sheet ---------- */
+// a day's bookings still on their way: the same rows, greyed and pulsing, so the list never says "no bookings" first
+const skelRows = n => el('div', { class: 'card', 'aria-busy': 'true' }, ...[...Array(n)].map(() => el('div', { class: 'row row-skel', 'aria-hidden': 'true' },
+  el('span', { class: 'skel', style: 'width:44px;height:30px' }), el('span', {}, el('span', { class: 'skel', style: 'display:block;width:60%;height:15px' }), el('span', { class: 'skel', style: 'display:block;width:85%;height:12px;margin-top:7px' })), el('span'))));
+// the first screen while the admin signs in to WordPress and reads its state
+const skelView = () => view.replaceChildren(el('header', { class: 'ahead' }, el('span', { class: 'skel', style: 'display:block;width:40%;height:14px' }), el('span', { class: 'skel', style: 'display:block;width:70%;height:30px;margin-top:8px' })), skelRows(4));
 function renderToday() {
-  const d = addDays(today(), V.day), date = iso(d);
-  if (WP && !WP.hasDay(date)) WP.loadDay(date).then(() => { if ((location.hash || '#today') === '#today' && iso(addDays(today(), V.day)) === date) renderToday(); });
+  const d = addDays(today(), V.day), date = iso(d), ready = !WP || WP.hasDay(date);
+  if (!ready) WP.loadDay(date).then(() => { if ((location.hash || '#today') === '#today' && iso(addDays(today(), V.day)) === date) renderToday(); });
+  // the days either side are fetched ahead, so the arrows open them at once
+  if (WP) [-1, 1].forEach(k => { const o = iso(addDays(d, k)); if (!WP.hasDay(o)) WP.loadDay(o); });
   const list = S.bookings.filter(x => x.date === date && (V.branch === 'all' || x.branch === V.branch)).sort((a, b) => a.t - b.t || a.branch.localeCompare(b.branch));
   const n = list.filter(live).length;
   const nav = el('div', { class: 'daynav' }, ...[['prev', 'Previous day', -1], ['next', 'Next day', 1]].map(([c, label, step]) => {
@@ -197,10 +204,10 @@ function renderToday() {
   const add = el('button', { class: 'btn btn--act bigact pinned', type: 'button' }, icon('plus'), 'Add a booking');
   add.addEventListener('click', () => openAdd(d));
   view.replaceChildren(
-    head(longDate(d), `${dayLabel(d)} · ${n} booking${n === 1 ? '' : 's'}`, nav),
+    head(longDate(d), ready ? `${dayLabel(d)} · ${n} booking${n === 1 ? '' : 's'}` : dayLabel(d), nav),
     branchTabs(V.branch, true, id => { V.branch = id; renderToday(); }),
     ...notes,
-    list.length ? el('div', { class: 'card', role: 'list' }, ...rows) : el('div', { class: 'card' }, el('p', { class: 'empty' }, el('b', {}, 'No bookings'), 'Online and front-desk bookings for this day show up here.')),
+    !ready ? skelRows(3) : list.length ? el('div', { class: 'card', role: 'list' }, ...rows) : el('div', { class: 'card' }, el('p', { class: 'empty' }, el('b', {}, 'No bookings'), 'Online and front-desk bookings for this day show up here.')),
     add,
     WP ? '' : el('p', { class: 'note' }, 'Sample bookings for the demo. On the real site these come from patients booking online and from the front desk.'));
 }
@@ -248,17 +255,29 @@ function openBooking(x) {
   const facts = el('dl', { class: 'facts' }, ...[['Branch', b.name], ['Doctor', doc ? shortName(doc) : 'Any doctor'], ['Problem', x.problem || 'Not said'], ['Mobile', `+91 ${x.phone.slice(0, 5)} ${x.phone.slice(5)}`], ['Booked', x.source === 'desk' ? 'At the front desk' : 'Online']]
     .map(([k, v]) => el('div', {}, el('dt', {}, k), el('dd', {}, v))));
   const actions = [];
-  // on WordPress the change is saved there first; the sheet closes only once it has been
-  const setStatus = async (status, msg) => {
-    if (WP) { if (!await WP.setStatus(x, status)) return; } else { x.status = status; save(); }
+  // Marking someone arrived (or undoing it) only changes the front desk's view, so it shows at once and is put back
+  // if WordPress can't save it. Cancelling and restoring change a patient's appointment (a restored slot may have been
+  // taken), so those are saved first, with the button saying so, and the sheet closes once WordPress has agreed.
+  const setStatus = async (status, msg, button) => {
+    if (!WP) { x.status = status; save(); closeSheet(); renderToday(); if (msg) toast(msg); return; }
+    if (status === 'arrived' || (status === 'booked' && x.status === 'arrived')) {
+      const was = x.status; x.status = status; closeSheet(); renderToday(); if (msg) toast(msg);
+      if (!await WP.setStatus(x, status)) { x.status = was; renderToday(); toast(`Couldn't save that for ${x.name}. It's back as it was.`); }
+      return;
+    }
+    const label = button && button.textContent;
+    if (button) { button.disabled = true; button.textContent = 'Saving…'; }
+    const ok = await WP.setStatus(x, status);
+    if (button) { button.disabled = false; button.textContent = label; }
+    if (!ok) return;
     closeSheet(); renderToday(); if (msg) toast(msg);
   };
   if (x.status === 'booked') actions.push(btn('Mark as arrived', 'btn--act btn--block', () => setStatus('arrived', `${x.name} marked as arrived`), 'check'));
   if (x.status === 'arrived') actions.push(btn('Undo arrived', 'btn--line btn--block', () => setStatus('booked')));
   if (x.status !== 'cancelled') {
-    const c = btn('Cancel this booking', 'btn--danger btn--block', () => confirmInline(c, `Cancel ${x.name}'s ${timeText(x.t)} booking? Let them know by call or WhatsApp.`, 'Yes, cancel', () => setStatus('cancelled', 'Booking cancelled')));
+    const c = btn('Cancel this booking', 'btn--danger btn--block', () => confirmInline(c, `Cancel ${x.name}'s ${timeText(x.t)} booking? Let them know by call or WhatsApp.`, 'Yes, cancel', e => setStatus('cancelled', 'Booking cancelled', e.currentTarget)));
     actions.push(c);
-  } else actions.push(btn('Restore this booking', 'btn--line btn--block', () => setStatus('booked', 'Booking restored')));
+  } else actions.push(btn('Restore this booking', 'btn--line btn--block', e => setStatus('booked', 'Booking restored', e.currentTarget)));
   openSheet(x.name, el('p', { class: 'lead2' }, `${dayLabel(d)}, ${timeText(x.t)}${x.status === 'cancelled' ? ' · cancelled' : ''}`), facts,
     el('div', { class: 'two' }, telLink(x.phone), waLink(x.phone, `Hello ${x.name}, this is J.P. Nagar Physio about your visit on ${dayLabel(d)} at ${timeText(x.t)}.`)), ...actions);
 }
@@ -970,5 +989,5 @@ function openService(id, name) {
 }
 
 // on WordPress nothing is drawn until his data has arrived (or he has been sent to sign in)
-if (WP) WP.boot().then(ok => { if (ok) { route(true); paintPub(); } });
+if (WP) { skelView(); WP.boot().then(ok => { if (ok) { route(true); paintPub(); } }); }
 else { route(true); paintPub(); }

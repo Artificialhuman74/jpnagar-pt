@@ -54,29 +54,51 @@ document.querySelectorAll('nav.dock').forEach(nav => {
   const links = DOCK.map(([k, label, href]) => {
     const a = el('a', { href: href || '#' }, icon(k), el('span', {}, label));
     if (k === active) a.setAttribute('aria-current', 'page');
+    // optimistic: the highlight moves to the tapped item straight away and the page changes a beat later, so the
+    // dock answers the tap before the next page has loaded (it was fetched ahead, see preload below)
     a.addEventListener('click', e => {
       a.classList.remove('pop'); void a.offsetWidth; a.classList.add('pop');
       if (!href) { e.preventDefault(); toast(`${label} comes in the next round of mockups`); return; }
-      try { sessionStorage.setItem('dockFrom', String(DOCK.findIndex(d => d[0] === active))); } catch (_) {}
+      const i = links.indexOf(a);
+      if (i === idx || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+      e.preventDefault();
+      mark(i); place(i, !reduceMotion);
+      setTimeout(() => location.assign(a.href), reduceMotion ? 0 : 140);
     });
     return a;
   });
   nav.replaceChildren(ind, ...links);
   const idx = DOCK.findIndex(d => d[0] === active);
+  const mark = i => links.forEach((l, j) => { if (j === i) l.setAttribute('aria-current', 'page'); else l.removeAttribute('aria-current'); });
+  // the items are equal, so only the first placing sets the width; after that the highlight just slides
   const place = (i, animate) => {
     const a = links[i];
     ind.style.transition = animate ? '' : 'none';
-    ind.style.width = a.offsetWidth + 'px';
+    if (!ind.style.width || !animate) ind.style.width = a.offsetWidth + 'px';
     ind.style.transform = `translateX(${a.offsetLeft - 6}px)`;
   };
-  let from = idx;
-  try { const f = sessionStorage.getItem('dockFrom'); if (f !== null) from = +f; sessionStorage.removeItem('dockFrom'); } catch (_) {}
-  requestAnimationFrame(() => {
-    place(from, false);
-    requestAnimationFrame(() => requestAnimationFrame(() => place(idx, !reduceMotion)));
-  });
+  requestAnimationFrame(() => place(idx, false));
   addEventListener('resize', () => place(idx, false));
+  // back to this page from the browser's memory (the back button): the highlight returns to this page's item
+  addEventListener('pageshow', e => { if (e.persisted) { mark(idx); place(idx, false); } });
 });
+
+/* ---------- preload: the dock's pages are fetched once this page has settled, and any page as a finger lands on its
+   link, so moving around the site doesn't wait on the network ---------- */
+(() => {
+  const got = new Set([location.pathname]);
+  const fetchPage = href => {
+    let u; try { u = new URL(href, location.href); } catch (_) { return; }
+    if (u.origin !== location.origin || !u.pathname.endsWith('.html') || got.has(u.pathname)) return;
+    got.add(u.pathname);
+    fetch(u.pathname, { credentials: 'same-origin', priority: 'low' }).catch(() => {});
+  };
+  const ahead = () => DOCK.forEach(d => fetchPage(d[2]));
+  // only on the patient pages (the admin shares this file but has its own dock), and never on a data-saver connection
+  if (!document.querySelector('nav.dock') || (navigator.connection && navigator.connection.saveData)) return;
+  addEventListener('load', () => ('requestIdleCallback' in window ? requestIdleCallback(ahead, { timeout: 3000 }) : setTimeout(ahead, 1200)), { once: true });
+  addEventListener('pointerdown', e => { const a = e.target.closest && e.target.closest('a[href]'); if (a) fetchPage(a.getAttribute('href')); }, { passive: true, capture: true });
+})();
 
 document.querySelectorAll('.fab').forEach(f => f.replaceChildren(
   el('a', { href: 'tel:+919916116625', 'aria-label': 'Call the clinic' }, icon('phone')),
@@ -90,15 +112,23 @@ document.querySelectorAll('.fab').forEach(f => f.replaceChildren(
     es.forEach(e => e.isIntersecting ? under.add(e.target) : under.delete(e.target));
     fab.classList.toggle('is-away', under.size > 0);
   }, { rootMargin: '-60% 0px -8% 0px' });
-  // after the page's own script has built its cards
-  addEventListener('DOMContentLoaded', () => document.querySelectorAll('.btn--act, .close-cta, .bcard .acts, .tx-link').forEach(n => { if (!n.closest('.dock, .fab')) io.observe(n); }));
+  // after the page's own script has built its cards. A button on the hidden back of a team card doesn't count. The
+  // first state is set before the page is drawn (no fade on arrival); after that they fade aside and back.
+  addEventListener('DOMContentLoaded', () => {
+    const targets = [...document.querySelectorAll('.btn--act, .close-cta, .bcard .acts, .tx-link')].filter(n => !n.closest('.dock, .fab, .tilted-card__back'));
+    const inBand = n => { const r = n.getBoundingClientRect(); return r.height > 0 && r.bottom > innerHeight * .6 && r.top < innerHeight * .92; };
+    if (targets.some(inBand)) { fab.style.transition = 'none'; fab.classList.add('is-away'); requestAnimationFrame(() => requestAnimationFrame(() => { fab.style.transition = ''; })); }
+    targets.forEach(n => io.observe(n));
+  });
 })();
 
-/* ---------- reveal on scroll ---------- */
+/* ---------- reveal on scroll: only what starts below the screen. What is on screen when the page opens is simply
+   there (its finished state, no entrance motion), so arriving on a page never looks like it changed a moment later ---------- */
 const io = new IntersectionObserver(es => es.forEach(e => {
   if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
 }), { threshold: .2 });
-document.querySelectorAll('[data-reveal],[data-inview]').forEach(n => io.observe(n));
+const showSettled = n => { n.classList.add('in', 'no-motion'); requestAnimationFrame(() => requestAnimationFrame(() => n.classList.remove('no-motion'))); };
+document.querySelectorAll('[data-reveal],[data-inview]').forEach(n => (n.getBoundingClientRect().top < innerHeight ? showSettled(n) : io.observe(n)));
 
 /* ---------- 3D tilt ---------- */
 if (!reduceMotion && matchMedia('(hover: hover)').matches) {
@@ -166,8 +196,11 @@ function mapsLink(b) { return `https://www.google.com/maps/search/?api=1&query=$
 // A real Google map in the page (Google's own embed, no key needed), loaded only once it scrolls near: one branch, or
 // with none, the clinic's branches.
 function mapEmbed(b, title) {
-  return el('iframe', { class: 'gmap', src: `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery(b))}&z=${b ? 16 : 13}&output=embed`,
+  const f = el('iframe', { class: 'gmap is-loading', src: `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery(b))}&z=${b ? 16 : 13}&output=embed`,
     title: title || (b ? `Map: ${b.name}` : 'Map of our three branches'), loading: 'lazy', referrerpolicy: 'no-referrer-when-downgrade' });
+  // the box pulses until Google's map has arrived, then the map fades in (see .gmap in base.css)
+  f.addEventListener('load', () => f.classList.remove('is-loading'), { once: true });
+  return f;
 }
 const DEGREES = {
   MPT: 'Master of Physiotherapy', BPT: 'Bachelor of Physiotherapy', COMT: 'Certified Orthopaedic Manual Therapist',

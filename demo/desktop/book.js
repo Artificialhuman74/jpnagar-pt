@@ -43,8 +43,15 @@ const HS = [];
     stage.append(h); HS.push({ h, type, pos });
   });
 });
-function placeSpots() {
-  HS.forEach(({ h, type, pos }) => { const [x, y] = spotXY(S.gender, type, pos); h.style.left = (x / 240 * 100) + '%'; h.style.top = (y / 480 * 100) + '%'; });
+// a spot jumps to its new place and glides there with a transform (moving left/top would lay the page out every frame)
+function placeSpots(animate) {
+  HS.forEach(({ h, type, pos }) => {
+    const [x, y] = spotXY(S.gender, type, pos), was = animate && !reduceMotion && h.getBoundingClientRect();
+    h.style.left = (x / 240 * 100) + '%'; h.style.top = (y / 480 * 100) + '%';
+    if (!was || !was.width) return;
+    const now = h.getBoundingClientRect(), dx = was.left - now.left, dy = was.top - now.top;
+    if (dx || dy) h.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: 'none' }], { duration: 500, easing: 'cubic-bezier(.16,1,.3,1)' });
+  });
 }
 function toggleArea(key, h) {
   S.areas.has(key) ? S.areas.delete(key) : S.areas.add(key);
@@ -92,7 +99,7 @@ function setGender(g) {
       stage.classList.remove('swap');
     }, reduceMotion ? 0 : 220);
   });
-  placeSpots(); update();
+  placeSpots(true); update();
 }
 $$('[data-gender]').forEach(b => b.addEventListener('click', () => setGender(b.dataset.gender)));
 $$('[data-reason]').forEach(p => p.addEventListener('click', () => toggleReason(p.dataset.reason)));
@@ -160,6 +167,13 @@ function renderWhen() {
   // The grid is rebuilt (and animates in) only when its times change: a new branch, day or session. Fresh news from
   // the diary, or a different physiotherapist, only changes which times are taken, so the buttons update in place.
   const list = slotsFor(b, S.day, S.sess), grid = $('[data-slots]'), key = `${S.b}|${dayISO(S.day)}|${S.sess}|${list.map(x => x.t).join(',')}`;
+  // The branch, day and session switch the moment they're picked; until that day's real times have arrived the grid
+  // shows them loading (not clickable), and the branch's coming week is asked for ahead so other days open at once.
+  if (DIARY) {
+    const loading = !DIARY.ready(b.id, S.day);
+    grid.classList.toggle('is-loading', loading); grid.setAttribute('aria-busy', String(loading));
+    DIARY.ahead(b.id, [...Array(7)].map((_, i) => { const d = nowIST(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + i); return d; }).filter(d => worksOn(b, d)));
+  }
   if (key === timesKey) {
     grid.querySelectorAll('.slot').forEach((n, i) => {
       const x = list[i]; if (!x) return;

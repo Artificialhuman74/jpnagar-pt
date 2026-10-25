@@ -33,6 +33,7 @@ body.admin{background:var(--surface);padding-bottom:calc(120px + env(safe-area-i
 .card > .row:first-child{border-radius:22px 22px 0 0}.card > .row:last-child{border-radius:0 0 22px 22px}
 .row + .row{border-top:1px solid var(--line)}
 .row:active{background:var(--surface)}
+.row-skel{pointer-events:none}
 .row .t{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
 .row .t small{display:block;font-size:12px;font-weight:700;color:var(--ink-3)}
 .row b{display:block;font-size:17px;line-height:1.25}

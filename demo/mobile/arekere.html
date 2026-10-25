@@ -65,15 +65,24 @@ const live = document.querySelector('[data-live]');
 live.classList.toggle('closed', !st.open); live.querySelector('span').textContent = st.text;
 document.querySelector('[data-dir]').href = mapsLink(b);
 document.querySelector('[data-mapbox]').append(mapEmbed(b));
-// next three free slots, straight into booking
-const quick = document.querySelector('[data-quick]'), d0 = nowIST(), found = [];
-for (let i = 0; i < 7 && found.length < 3; i++) {
-  const day = new Date(d0); day.setDate(d0.getDate() + i); if (!worksOn(b, day)) continue;
-  sessionsOn(b, day).forEach((_, si) => slotsFor(b, day, si).filter(s => !s.taken).forEach(s => found.length < 3 && found.push({ day, s, i })));
+// next three free slots, straight into booking. The row is drawn whole: while any day it needs is still on its way
+// from the live diary, all three tiles show loading, and they are drawn again when the times arrive.
+const quick = document.querySelector('[data-quick]'), d0 = nowIST(), DOWN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const isoOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function paintQuick() {
+  const found = []; let waiting = false;
+  for (let i = 0; i < 7 && found.length < 3 && !waiting; i++) {
+    const day = new Date(d0); day.setDate(d0.getDate() + i); if (!worksOn(b, day)) continue;
+    if (DIARY && !DIARY.ready(b.id, day)) { waiting = true; break; }
+    sessionsOn(b, day).forEach((_, si) => slotsFor(b, day, si).filter(s => !s.taken).forEach(s => found.length < 3 && found.push({ day, s, i })));
+  }
+  quick.setAttribute('aria-busy', String(waiting));
+  quick.replaceChildren(...(waiting ? [0, 1, 2].map(() => el('span', { class: 'skel', 'aria-hidden': 'true' }))
+    : found.map(({ day, s, i }) => el('a', { href: `book.html?branch=arekere&day=${isoOf(day)}&slot=${s.t}` },
+      el('small', {}, i === 0 ? 'Today' : `${DOWN[day.getDay()]} ${day.getDate()}`), `${s.label} ${s.suffix}`))));
 }
-const DOWN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-found.forEach(({ day, s, i }) => quick.append(el('a', { href: 'book.html?branch=arekere' },
-  el('small', {}, i === 0 ? 'Today' : `${DOWN[day.getDay()]} ${day.getDate()}`), `${s.label} ${s.suffix}`)));
+paintQuick();
+if (DIARY) document.addEventListener('jpn:slots', paintQuick);
 // the week, with days that keep the same hours on one line (Monday to Saturday), and today's line highlighted
 const week = document.querySelector('[data-week]'), groups = [], DAY_NAME = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 [1, 2, 3, 4, 5, 6, 0].forEach(dow => {

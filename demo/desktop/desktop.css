@@ -102,13 +102,11 @@ button.link{border:0;background:none;padding:0;font-size:var(--fs-body)}
 .live.closed i{background:var(--line-2)}
 /* only the status people read first beats; the rest stay still. The beat is a ring that grows and fades on its
    own layer, so it never makes the page repaint */
-.hd .live:not(.closed) i,.qb-status .live:not(.closed) i,.pin.near .pin-d{position:relative}
-.hd .live:not(.closed) i::after,.qb-status .live:not(.closed) i::after,.pin.near .pin-d::after{content:"";position:absolute;inset:0;border-radius:50%;
-  background:rgba(0,168,236,.55);animation:beat 2.4s infinite;will-change:transform,opacity;pointer-events:none}
-.pin.near .pin-d::after{inset:-3px;z-index:-1}
+.hd .live:not(.closed) i,.qb-status .live:not(.closed) i{position:relative}
+/* a few beats, then still: nothing keeps running once the header has scrolled away */
+.hd .live:not(.closed) i::after,.qb-status .live:not(.closed) i::after{content:"";position:absolute;inset:0;border-radius:50%;
+  background:rgba(0,168,236,.55);animation:beat 2.4s 4;opacity:0;pointer-events:none}
 @keyframes beat{0%{transform:scale(1);opacity:1}70%,100%{transform:scale(3);opacity:0}}
-.pin.near .pin-d::after{animation-name:beat-pin}
-@keyframes beat-pin{0%{transform:scale(1);opacity:1}70%,100%{transform:scale(1.8);opacity:0}}
 .deg{display:flex;flex-wrap:wrap;gap:6px}
 .deg em{font-style:normal;font-size:var(--fs-meta);font-weight:750;letter-spacing:.01em;padding:5px 9px;border-radius:8px;background:var(--sky-soft);color:var(--sky-ink);cursor:help}
 .stars{display:flex;gap:1px;color:var(--ink)}
@@ -172,19 +170,20 @@ button.link{border:0;background:none;padding:0;font-size:var(--fs-body)}
 .dock a[aria-current="page"]{color:var(--act)}
 .dock svg{width:24px;height:24px;transform-origin:50% 90%;transition:transform .2s var(--ease)}
 .dock a:active svg{transform:scale(.88)!important}
-.dock .ind{position:absolute;z-index:-1;top:6px;left:6px;height:62px;border-radius:22px;background:rgba(43,49,146,.07);transition:transform .55s var(--ease),width .55s var(--ease)}
+.dock .ind{position:absolute;z-index:-1;top:6px;left:6px;height:62px;border-radius:22px;background:rgba(43,49,146,.07);transition:transform .45s var(--ease)}
 .dock .ind::before{content:"";position:absolute;top:-6px;left:50%;width:28px;height:3px;margin-left:-14px;border-radius:0 0 3px 3px;background:var(--sky)}
 
 /* call and WhatsApp: appear once the header scrolls away, and show the number on hover */
 .fab{position:fixed;right:24px;bottom:24px;z-index:39;display:grid;gap:10px;justify-items:end;opacity:0;transform:translateY(14px);pointer-events:none;transition:opacity .4s var(--ease),transform .4s var(--ease)}
 .fab.show{opacity:1;transform:none;pointer-events:auto}
-.fab a{display:flex;align-items:center;height:52px;padding:0 14px;border-radius:26px;background:rgba(255,255,255,.84);border:1px solid var(--line);box-shadow:var(--shadow);
-  backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);font-weight:700;font-size:var(--fs-small);white-space:nowrap;overflow:hidden;
-  transition:padding .35s var(--ease),background .2s}
+/* round buttons; the label slides out beside them on hover (transform and opacity only). No frosted backdrop: under
+   a parent that fades in and out, Safari re-renders it and the buttons glitch */
+.fab a{position:relative;display:grid;place-items:center;width:52px;height:52px;border-radius:26px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);
+  font-weight:700;font-size:var(--fs-small);white-space:nowrap}
 .fab a svg{width:22px;height:22px;flex:none}
-.fab a span{display:block;max-width:0;opacity:0;transition:max-width .4s var(--ease),opacity .25s,margin .4s var(--ease)}
-.fab a:hover,.fab a:focus-visible{padding:0 18px 0 15px;background:#fff}
-.fab a:hover span,.fab a:focus-visible span{max-width:220px;opacity:1;margin-left:10px}
+.fab a span{position:absolute;right:calc(100% + 10px);top:50%;padding:9px 14px;border-radius:999px;background:#fff;box-shadow:var(--shadow);
+  opacity:0;transform:translate(10px,-50%);pointer-events:none;transition:opacity .25s,transform .35s var(--ease)}
+.fab a:hover span,.fab a:focus-visible span{opacity:1;transform:translate(0,-50%)}
 
 .toast{position:fixed;left:50%;bottom:112px;z-index:80;transform:translate(-50%,12px);opacity:0;pointer-events:none;background:var(--ink);color:#fff;
   font-size:var(--fs-small);font-weight:600;padding:12px 16px;border-radius:12px;box-shadow:0 12px 30px -12px rgba(20,22,41,.5);transition:opacity .35s var(--ease),transform .35s var(--ease)}
@@ -267,7 +266,6 @@ button.link{border:0;background:none;padding:0;font-size:var(--fs-body)}
   background:radial-gradient(42% 60% at 14% 6%,rgba(0,168,236,.12),rgba(0,168,236,0) 100%),var(--surface)}
 .hero-copy{display:flex;flex-direction:column;justify-content:center;min-width:0}
 .hero .lead{margin-top:22px;max-width:560px}
-.motion .hero [data-seq]{animation:rise .9s var(--ease) both;animation-delay:calc(var(--d,0) * 90ms)}
 @keyframes rise{from{opacity:0;transform:translateY(16px)}}
 /* short laptop screens: the hero tightens so the booking bar and its times clear the dock */
 @media (min-width:1025px) and (max-height:820px){
@@ -458,7 +456,7 @@ button.link{border:0;background:none;padding:0;font-size:var(--fs-body)}
 .fig figcaption{text-align:center;font-weight:750}
 .fig figcaption small{display:block;font-size:var(--fs-meta);font-weight:600;color:var(--ink-2)}
 .hs{position:absolute;z-index:1;width:42px;height:42px;margin:-21px 0 0 -21px;padding:0;border:0;border-radius:50%;background:none;
-  transition:left .5s var(--ease),top .5s var(--ease);-webkit-tap-highlight-color:transparent}
+  -webkit-tap-highlight-color:transparent}
 .hs::before{content:"";position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--sky);opacity:.5;transition:transform .3s var(--ease),opacity .3s,box-shadow .3s}
 .hs::after{content:"";position:absolute;z-index:-1;left:50%;top:50%;width:80px;height:80px;margin:-40px 0 0 -40px;border-radius:50%;
   background:radial-gradient(closest-side,rgba(0,168,236,.5),rgba(0,168,236,0));transform:scale(0);transition:transform .45s var(--ease);pointer-events:none}
@@ -775,21 +773,10 @@ button.link{border:0;background:none;padding:0;font-size:var(--fs-body)}
 .week .off{color:var(--ink-3)}
 .bcard-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
 .bcard-acts .btn--sm{padding:0 15px}
-.map{position:sticky;top:20px;height:calc(100vh - 40px);min-height:560px;max-height:920px;border-radius:30px;overflow:hidden;background:#E9EDF3}
+.map{position:sticky;top:20px;height:calc(100vh - 40px);height:calc(100dvh - 40px);min-height:560px;max-height:920px;border-radius:30px;overflow:hidden;background:#E9EDF3}
 .map .gmap{position:absolute;inset:0;width:100%;height:100%;border:0}
 .bcard.on-map{box-shadow:0 0 0 2px var(--act)}
 .map-note{position:absolute;left:16px;bottom:16px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:var(--fs-meta);font-weight:600;color:var(--ink-2)}
-.pin-l small:empty{display:none}
-.pin{position:absolute;z-index:1;display:grid;justify-items:center;gap:6px;padding:0;border:0;background:none;transform:translate(-50%,calc(-100% + 8px));border-radius:12px}
-.pin-l{padding:8px 12px;border-radius:12px;background:var(--canvas);box-shadow:0 8px 20px -10px rgba(20,22,41,.45),0 0 0 1px rgba(20,22,41,.06);font-weight:750;font-size:var(--fs-small);white-space:nowrap;
-  transition:background .2s,color .2s,transform .3s var(--ease)}
-.pin-l small{font-weight:600;color:var(--ink-2);margin-left:6px;font-variant-numeric:tabular-nums}
-.pin-d{width:16px;height:16px;border-radius:50%;background:var(--sky);border:3px solid #fff;box-shadow:0 2px 6px rgba(20,22,41,.4)}
-.pin:hover,.pin.hl{z-index:3}
-.pin:hover .pin-l,.pin.hl .pin-l{background:var(--ink);color:#fff;transform:translateY(-3px)}
-.pin:hover .pin-l small,.pin.hl .pin-l small{color:rgba(255,255,255,.75)}
-.you{position:absolute;z-index:2;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:var(--ink);border:3px solid #fff;box-shadow:0 0 0 8px rgba(20,22,41,.12);transition:left .6s var(--ease),top .6s var(--ease)}
-.you span{position:absolute;left:50%;top:22px;transform:translateX(-50%);font-size:var(--fs-meta);font-weight:750;white-space:nowrap}
 
 /* ======================================================================
    TEAM
@@ -1062,3 +1049,21 @@ a.tchip,a.pill{display:inline-flex;align-items:center}
 .gcar-tabs [role="tab"][aria-selected="true"]{color:var(--ink)}
 .gcar-tabs .gt-ind{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / var(--n));border-radius:12px;background:var(--canvas);box-shadow:0 1px 3px rgba(20,22,41,.12);transition:transform .55s var(--ease)}
 @media (prefers-reduced-motion:reduce){.gcar-tabs .gt-ind{transition:none}}
+
+/* a time chip still on its way from the live diary */
+.tchip-skel{display:inline-block;width:92px;height:44px;border-radius:12px}
+/* taps and clicks answer at once: small controls press in slightly (transform only) */
+.pill,.chip,.slot,.gcar-tabs [role="tab"]{transition:transform .15s var(--ease)}
+.pill:active,.chip:active,.slot:active,.gcar-tabs [role="tab"]:active{transform:scale(.96)}
+/* moving between pages: a short crossfade instead of a blank flash, where the browser supports it */
+@view-transition{navigation:auto}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.2s}
+@media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}
+
+/* a portrait on its way, inside a 3D card: a light band sweeps across it (transform only; an opacity pulse here would
+   let Safari show the card's back face through the front) */
+.tilted-card__img.photo.is-loading{animation:none}
+.tilted-card__img.photo.is-loading::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.5) 50%,rgba(255,255,255,0) 70%);
+  transform:translateX(-100%);animation:tc-sweep 1.3s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes tc-sweep{to{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){.tilted-card__img.photo.is-loading::before{animation:none;transform:none;background:rgba(255,255,255,.25)}}

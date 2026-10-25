@@ -195,6 +195,34 @@ function slotsFor(b, day, si) {
   return out;
 }
 function freeSlots(b, day) { return sessionsOn(b, day).flatMap((_, si) => slotsFor(b, day, si)).filter(s => !s.taken); }
+// false while the live diary is still reading that day (always true without it), so a component can show loading
+const diaryReady = (b, day) => typeof DIARY === 'undefined' || !DIARY || DIARY.ready(b.id, day);
+// A placeholder line or chip row while live times are on their way: the component keeps its shape, then fills in whole.
+const skelLine = w => el('span', { class: 'skel', 'aria-hidden': 'true', style: `display:inline-block;vertical-align:middle;width:${w};height:1em` });
+const skelChips = n => [...Array(n)].map(() => el('span', { class: 'skel tchip-skel', 'aria-hidden': 'true' }));
+/* "Next free at …" on a service page: the line under the title and the box beside the story, at the starting branch
+   (the nearest once the visitor has shared where they are, else JP Nagar). While that day's real times are on their
+   way both show loading, and they are drawn again when the times arrive (moving on a day if it has filled up). */
+function nextFreeBlock(hrefFor) {
+  const near = BRANCHES[nearestIndex()], next = $('[data-next]'), title = $('[data-go-title]'), times = $('[data-go-times]');
+  const paint = () => {
+    const day = firstOpenDay(near), loading = !diaryReady(near, day), free = loading ? [] : freeSlots(near, day);
+    [next, title, times].forEach(n => n && n.setAttribute('aria-busy', String(loading)));
+    if (loading) {
+      if (next) next.replaceChildren(skelLine('16em'));
+      if (title) title.replaceChildren(skelLine('12em'));
+      if (times) times.replaceChildren(...skelChips(5));
+      return;
+    }
+    if (!free.length) { if (next) next.replaceChildren(); if (title) title.textContent = 'Next free times'; if (times) times.replaceChildren(); return; }
+    const href = s => hrefFor(near, day, s);
+    if (next) next.replaceChildren(`Next free at ${near.short}`, el('a', { href: href(free[0]) }, `${dayShort(day)} · ${free[0].label} ${free[0].suffix}`));
+    if (title) title.textContent = `Next free at ${near.short}, ${dayShort(day).toLowerCase().startsWith('today') ? 'today' : dayShort(day)}`;
+    if (times) times.replaceChildren(...free.slice(0, 5).map(s => el('a', { class: 'tchip', href: href(s) }, `${s.label} ${s.suffix}`)));
+  };
+  paint();
+  document.addEventListener('jpn:slots', paint);
+}
 function firstOpenDay(b) { const d0 = startOfDay(nowIST()); for (let i = 0; i < 14; i++) { const d = addDays(d0, i); if (freeSlots(b, d).length) return d; } return addDays(d0, 1); }
 /* ---------- distances: never guessed. They appear only once the visitor has said where they are (on Branches),
    and are kept for the rest of the visit ---------- */
@@ -232,8 +260,11 @@ function mapsLink(b) { return `https://www.google.com/maps/search/?api=1&query=$
 // A real Google map in the page (Google's own embed, no key needed), loaded only once it scrolls near: one branch, or
 // with none, the clinic's branches.
 function mapEmbed(b, title) {
-  return el('iframe', { class: 'gmap', src: `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery(b))}&z=${b ? 16 : 13}&output=embed`,
+  const f = el('iframe', { class: 'gmap is-loading', src: `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery(b))}&z=${b ? 16 : 13}&output=embed`,
     title: title || (b ? `Map: ${b.name}` : 'Map of our three branches'), loading: 'lazy', referrerpolicy: 'no-referrer-when-downgrade' });
+  // the box pulses until Google's map has arrived, then the map fades in (see .gmap in base.css)
+  f.addEventListener('load', () => f.classList.remove('is-loading'), { once: true });
+  return f;
 }
 
 // keep the pinned demo clock when moving between pages
@@ -267,20 +298,29 @@ $$('nav.dock').forEach(nav => {
   const idx = DOCK.findIndex(d => d[0] === nav.dataset.active);
   const ind = el('span', { class: 'ind', 'aria-hidden': 'true' });
   nav.setAttribute('aria-label', 'Main');
+  // optimistic: the highlight moves to the clicked item straight away and the page changes a beat later
   const links = DOCK.map(([k, label, href], i) => {
     const a = el('a', { href, 'aria-current': i === idx ? 'page' : null }, icon(k), el('span', {}, label));
-    a.addEventListener('click', () => { try { sessionStorage.setItem('dockFrom', String(idx)); } catch (_) {} });
+    a.addEventListener('click', e => {
+      if (i === idx || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+      e.preventDefault();
+      mark(i); place(i, !reduceMotion);
+      setTimeout(() => location.assign(a.href), reduceMotion ? 0 : 140);
+    });
     return a;
   });
   nav.replaceChildren(ind, ...links);
+  const mark = i => links.forEach((l, j) => { if (j === i) l.setAttribute('aria-current', 'page'); else l.removeAttribute('aria-current'); });
+  // the items are equal (86px), so the width is set once and the highlight only slides
   const place = (i, animate) => {
     const a = links[i]; ind.style.transition = animate ? '' : 'none';
-    ind.style.width = a.offsetWidth + 'px'; ind.style.transform = `translateX(${a.offsetLeft - 6}px)`;
+    if (!ind.style.width || !animate) ind.style.width = a.offsetWidth + 'px';
+    ind.style.transform = `translateX(${a.offsetLeft - 6}px)`;
   };
-  let from = idx;
-  try { const f = sessionStorage.getItem('dockFrom'); if (f !== null && +f >= 0) from = +f; sessionStorage.removeItem('dockFrom'); } catch (_) {}
-  requestAnimationFrame(() => { place(from, false); requestAnimationFrame(() => requestAnimationFrame(() => place(idx, !reduceMotion))); });
-  addEventListener('resize', () => place(idx, false));
+  if (idx >= 0) requestAnimationFrame(() => place(idx, false));
+  addEventListener('resize', () => idx >= 0 && place(idx, false));
+  // back to this page from the browser's memory: the highlight returns to this page's item
+  addEventListener('pageshow', e => { if (e.persisted && idx >= 0) { mark(idx); place(idx, false); } });
   // the icons swell toward the pointer, like a desktop dock
   if (!reduceMotion && canHover) {
     const svgs = links.map(a => a.querySelector('svg'));
@@ -291,6 +331,24 @@ $$('nav.dock').forEach(nav => {
     nav.addEventListener('pointerleave', () => svgs.forEach(s => { s.style.transform = ''; }));
   }
 });
+
+/* ---------- preload: the dock's pages are fetched once this page has settled, and any page as the pointer reaches its
+   link, so moving around the site doesn't wait on the network ---------- */
+(() => {
+  if (!$('nav.dock') || (navigator.connection && navigator.connection.saveData)) return;
+  const got = new Set([location.pathname]);
+  const fetchPage = href => {
+    let u; try { u = new URL(href, location.href); } catch (_) { return; }
+    if (u.origin !== location.origin || !u.pathname.endsWith('.html') || got.has(u.pathname)) return;
+    got.add(u.pathname);
+    fetch(u.pathname, { credentials: 'same-origin', priority: 'low' }).catch(() => {});
+  };
+  const ahead = () => DOCK.forEach(d => fetchPage(d[2]));
+  addEventListener('load', () => ('requestIdleCallback' in window ? requestIdleCallback(ahead, { timeout: 3000 }) : setTimeout(ahead, 1200)), { once: true });
+  const near = e => { const a = e.target.closest && e.target.closest('a[href]'); if (a) fetchPage(a.getAttribute('href')); };
+  addEventListener('pointerover', near, { passive: true });
+  addEventListener('pointerdown', near, { passive: true, capture: true });
+})();
 
 /* ---------- call and WhatsApp float in once the header's own links scroll away ---------- */
 $$('.fab').forEach(f => {
@@ -322,8 +380,11 @@ $$('[data-footer]').forEach(ft => {
 paintIcons();
 
 /* ---------- small behaviours ---------- */
+// only what starts below the screen reveals as it scrolls in; what is on screen when the page opens is simply there,
+// so arriving on a page never looks like it changed a moment later
 const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .25 });
-$$('[data-inview]').forEach(n => io.observe(n));
+const showSettled = n => { n.classList.add('in', 'no-motion'); requestAnimationFrame(() => requestAnimationFrame(() => n.classList.remove('no-motion'))); };
+$$('[data-inview]').forEach(n => (n.getBoundingClientRect().top < innerHeight ? showSettled(n) : io.observe(n)));
 function tilt(c, max = 8) {
   if (reduceMotion || !canHover) return;
   c.addEventListener('pointermove', e => {

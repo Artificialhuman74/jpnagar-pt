@@ -44,13 +44,8 @@ const mapSeen = onView(mapStage);
 if (!reduceMotion) condTimer = setInterval(() => mapSeen() && setCond(conds[(conds.indexOf(cond) + 1) % conds.length]), mapStage.dataset.mode === 'scene' ? 7000 : 3400);
 
 /* ---------- the next free time, straight into booking ---------- */
-const near = BRANCHES[0], day = firstOpenDay(near), free = freeSlots(near, day), area = document.body.dataset.area || '';
-const slotHref = s => `book.html?branch=${near.id}&day=${dayISO(day)}&slot=${s.t}&service=${svcId}${area ? `&area=${area}` : ''}`;
-if (free.length) {
-  $('[data-next]').replaceChildren(`Next free at ${near.short}`, el('a', { href: slotHref(free[0]) }, `${dayShort(day)} · ${free[0].label} ${free[0].suffix}`));
-  $('[data-go-title]').textContent = `Next free at ${near.short}, ${dayShort(day).toLowerCase().startsWith('today') ? 'today' : dayShort(day)}`;
-  $('[data-go-times]').replaceChildren(...free.slice(0, 5).map(s => el('a', { class: 'tchip', href: slotHref(s) }, `${s.label} ${s.suffix}`)));
-}
+const area = document.body.dataset.area || '';
+nextFreeBlock((b, day, s) => `book.html?branch=${b.id}&day=${dayISO(day)}&slot=${s.t}&service=${svcId}${area ? `&area=${area}` : ''}`);
 
 /* ---------- how we treat it: the stage follows the chapter you're reading ---------- */
 const host = $('[data-story-host]'), chapters = $$('.chapter'), stepBtns = $$('[data-goto]'), storySeen = onView(host);

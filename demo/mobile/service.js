@@ -30,10 +30,14 @@ if (mapStage.dataset.mode === 'scene') {
   };
 }
 let cond = null, condTimer;
+// runs fn once the browser has drawn the current change (two frames), so a tap shows before heavy work starts
+const afterPaint = fn => requestAnimationFrame(() => requestAnimationFrame(fn));
 function setCond(b, fromUser) {
   if (cond === b) return;
-  cond = b; setStageFor(b);
+  cond = b;
   conds.forEach(c => c.setAttribute('aria-pressed', String(c === b)));
+  // the chip answers the tap first; a treatment scene (heavier drawing) follows on the next frame
+  if (mapStage.dataset.mode === 'scene') afterPaint(() => cond === b && setStageFor(b)); else setStageFor(b);
   $('[data-cond-name]').textContent = b.textContent;
   $('[data-cond-text]').textContent = b.dataset.text;
   // keep the chosen chip in view without moving the page
@@ -63,13 +67,16 @@ if ($('[data-story-host]')) {
   const host = $('[data-story-host]'), storySeen = onView(host), chapters = $$('.chapter'), tabs = $$('[data-goto]'), seg = $('.seg'), ind = $('.seg-ind'), slot = $('[data-sub-slot]');
   // a stage's treatments sit as small numbered buttons right under the animation, in the order they're shown
   const SUBS = chapters.map(c => $('.subtabs', c));
-  SUBS.forEach(c => c && c.prepend(el('span', { class: 'sub-ind', 'aria-hidden': 'true' })));
-  // the highlight slides to the chosen treatment, and the track scrolls it into view if they don't all fit
+  SUBS.forEach(c => c && c.prepend(el('span', { class: 'sub-ind', 'aria-hidden': 'true' }), el('span', { class: 'sub-ind', 'aria-hidden': 'true' })));
+  // The treatments differ in width, so the highlight crossfades: the second (pre-coloured) layer is placed under the
+  // chosen one and fades in while the first fades out, opacity only. The track scrolls it into view if they don't fit.
   function placeSubInd(animate) {
     const c = SUBS[step]; if (!c) return;
-    const on = $$('.subtab', c)[sub[step]], ind = $('.sub-ind', c);
-    ind.style.transition = animate && !reduceMotion ? '' : 'none';
-    ind.style.width = on.offsetWidth + 'px'; ind.style.transform = `translateX(${on.offsetLeft}px)`;
+    const on = $$('.subtab', c)[sub[step]], [a, b] = $$('.sub-ind', c), cur = c._ind || a;
+    const next = animate && !reduceMotion && cur.classList.contains('on') ? (cur === a ? b : a) : cur;
+    next.style.width = on.offsetWidth + 'px'; next.style.transform = `translateX(${on.offsetLeft}px)`;
+    if (next !== cur) cur.classList.remove('on');
+    next.classList.add('on'); c._ind = next;
     if (c.scrollWidth > c.clientWidth) c.scrollTo({ left: on.offsetLeft - (c.clientWidth - on.offsetWidth) / 2, behavior: animate && !reduceMotion ? 'smooth' : 'auto' });
   }
   // each stage shows one scene, or one per treatment in it
@@ -77,8 +84,9 @@ if ($('[data-story-host]')) {
   let step = -1, cycle;
   const sub = STEPS.map(() => 0), picked = STEPS.map(() => false);
   function showSub() {
-    const [name, cap] = STEPS[step][sub[step]];
-    showScene(host, name);
+    const [name, cap] = STEPS[step][sub[step]], at = [step, sub[step]];
+    // the buttons answer the tap first; the scene (the heavier drawing) follows once that has been drawn
+    afterPaint(() => { if (at[0] === step && at[1] === sub[step]) showScene(host, name); });
     $('[data-story-cap]').textContent = cap;
     $$(`[data-subs="${step}"] .subtab`).forEach((b, j) => {
       b.setAttribute('aria-pressed', String(j === sub[step]));
@@ -129,12 +137,25 @@ if ($('[data-story-host]')) {
 }
 
 /* ---------- the next free times at the nearest branch, straight into booking ---------- */
-const near = BRANCHES[nearestIndex()], nf = nextFree(near), area = document.body.dataset.area || '';
-if (nf) {
-  const day = nf.day, iso = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+// Until the live diary has that day's times, the block shows them loading; it is drawn again when they arrive (and
+// moves to a later day if that one has filled up).
+const near = BRANCHES[nearestIndex()], area = document.body.dataset.area || '';
+function paintNextFree() {
+  const nf = nextFree(near), box = $('[data-nextfree]');
+  if (!nf) { box.hidden = true; return; }
+  box.hidden = false;
+  const day = nf.day, loading = !!DIARY && !DIARY.ready(near.id, day);
+  box.setAttribute('aria-busy', String(loading));
+  if (loading) {
+    $('[data-nf-title]').replaceChildren(el('span', { class: 'skel', style: 'display:inline-block;width:15em;max-width:100%;height:1.1em;vertical-align:middle' }));
+    $('[data-nf-times]').replaceChildren(el('span', { class: 'nf-skel', 'aria-hidden': 'true' }, ...[0, 1, 2, 3].map(() => el('span', { class: 'skel' }))));
+    return;
+  }
+  const iso = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
   const times = sessionsOn(near, day).flatMap((_, si) => slotsFor(near, day, si)).filter(s => !s.taken).slice(0, 4);
   const href = s => `book.html?branch=${near.id}&day=${iso}&slot=${s.t}&service=${svcId}${area ? `&area=${area}` : ''}`;
   $('[data-nf-title]').textContent = `Next free at ${near.short}, ${nf.today ? 'today' : day.toLocaleDateString('en-IN', { weekday: 'long' })}`;
   $('[data-nf-times]').replaceChildren(...times.map(s => el('a', { class: 'pill', href: href(s) }, `${s.label} ${s.suffix}`)));
-  $('[data-nextfree]').hidden = false;
 }
+paintNextFree();
+if (DIARY) document.addEventListener('jpn:slots', paintNextFree);

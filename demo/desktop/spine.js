@@ -38,13 +38,7 @@ const mapSeen = onView(stage);
 if (!reduceMotion) condTimer = setInterval(() => { if (!mapSeen()) return; const keys = Object.keys(COND); setCond(keys[(keys.indexOf(cond) + 1) % keys.length]); }, 3400);
 
 /* ---------- the next free time, straight into booking ---------- */
-const near = BRANCHES[0], day = firstOpenDay(near), free = freeSlots(near, day);
-const slotHref = s => `book.html?branch=${near.id}&day=${dayISO(day)}&slot=${s.t}&service=spine&area=lower`;
-if (free.length) {
-  $('[data-next]').replaceChildren(`Next free at ${near.short}`, el('a', { href: slotHref(free[0]) }, `${dayShort(day)} · ${free[0].label} ${free[0].suffix}`));
-  $('[data-go-title]').textContent = `Next free at ${near.short}, ${dayShort(day).toLowerCase().startsWith('today') ? 'today' : dayShort(day)}`;
-  $('[data-go-times]').replaceChildren(...free.slice(0, 5).map(s => el('a', { class: 'tchip', href: slotHref(s) }, `${s.label} ${s.suffix}`)));
-}
+nextFreeBlock((b, day, s) => `book.html?branch=${b.id}&day=${dayISO(day)}&slot=${s.t}&service=spine&area=lower`);
 
 /* ---------- how we treat it: the stage follows the chapter you're reading ---------- */
 const STEPS = [['assess'], ['manual', 'ift', 'traction'], ['catcow', 'bridge']];

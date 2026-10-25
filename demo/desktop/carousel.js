@@ -62,7 +62,13 @@ function gradientCarousel(root, o) {
   // two glow layers trade places: the new colour fades in over the old one, then the old one lets go. Only opacity
   // changes, which the browser can do without repainting, so the cards keep moving smoothly
   let layer = 0;
-  const glow = first => { if (!first && TINTS.length === 1) return; if (!first) { glows[layer].classList.remove('on'); layer ^= 1; } glows[layer].style.setProperty('--a', TINTS[at % TINTS.length]); glows[layer].classList.add('on'); };
+  const glow = first => {
+    if (!first && TINTS.length === 1) return;
+    if (!first) { glows[layer].classList.remove('on'); layer ^= 1; }
+    const g = glows[layer]; g.style.setProperty('--a', TINTS[at % TINTS.length]);
+    // already lit when the page opens (no fade-in after arriving); later changes crossfade
+    if (first) { g.style.transition = 'none'; g.classList.add('on'); requestAnimationFrame(() => requestAnimationFrame(() => { g.style.transition = ''; })); } else g.classList.add('on');
+  };
   function go(i) { at = ((i % N) + N) % N; place(); caption(); glow(); paintTabs(); }
   // the tabs: built once; only the selected state and the sliding marker (a transform) change
   let tabs = null, mark = null, rolling = 0;

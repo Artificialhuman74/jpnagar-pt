@@ -113,6 +113,12 @@ function worksDays(b) {
 }
 function liveLine(b) { const st = branchStatus(b); return st.open ? `${b.short} open now · till ${st.text.split('till ')[1]}` : `${b.short} ${st.text[0].toLowerCase()}${st.text.slice(1)}`; }
 function freeSlots(b, day) { return sessionsOn(b, day).flatMap((_, si) => slotsFor(b, day, si)).filter(s => !s.taken); }
+// For a calendar of many days: whether a day has free times, without asking the server for each one. A day the live
+// diary hasn't read yet counts as open when the branch works that day; the day picked is then read as usual.
+function looksOpen(b, day) {
+  if (typeof DIARY !== 'undefined' && DIARY && DIARY.peek(b.id, day) === undefined) return worksOn(b, day);
+  return freeSlots(b, day).length > 0;
+}
 // false while the live diary is still reading that day (always true without it), so a component can show loading
 const diaryReady = (b, day) => typeof DIARY === 'undefined' || !DIARY || DIARY.ready(b.id, day);
 // A placeholder line or chip row while live times are on their way: the component keeps its shape, then fills in whole.
@@ -217,16 +223,6 @@ function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('show'); 
 function paintLive(n, b) { const st = branchStatus(b); n.classList.toggle('closed', !st.open); n.replaceChildren(el('i'), el('span', {}, liveLine(b))); }
 // the header shows the branch booking starts at: the nearest once shared, else JP Nagar
 $$('[data-live]').forEach(n => paintLive(n, BRANCHES[nearestIndex()]));
-
-/* ---------- dialogs (sheets, the photo viewer): while closed one can't be reached and is out of the accessibility
-   tree; while open, the rest of the page can't be reached, so aria-modal holds ---------- */
-function setModal(dialog, open) {
-  dialog.inert = !open; dialog.toggleAttribute('aria-hidden', !open);
-  if (open) {
-    dialog._inerted = [...document.body.children].filter(n => n !== dialog && !n.contains(dialog) && !n.inert && n.tagName !== 'SCRIPT' && !n.matches('.toast, .scrim'));
-    dialog._inerted.forEach(n => { n.inert = true; });
-  } else if (dialog._inerted) { dialog._inerted.forEach(n => { n.inert = false; }); dialog._inerted = null; }
-}
 
 /* ---------- dock: equal items, a sliding indicator that remembers where you came from ---------- */
 const DOCK = [['home', 'Home', 'home.html'], ['services', 'Services', 'services.html'], ['book', 'Book', 'book.html'], ['branches', 'Branches', 'branches.html'], ['team', 'Team', 'team.html']];

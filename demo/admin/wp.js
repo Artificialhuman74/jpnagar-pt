@@ -15,16 +15,19 @@ const WP = window.JPN_API ? (() => {
     if (!t || t === '0') return login();
     nonce = t;
   }
-  // resolves to { ok, status, data }; a lapsed login goes back to the sign-in page
-  async function call(method, route, body, query = {}) {
+  // Resolves to { ok, status, data }. Signed out (401) goes back to the sign-in page; a nonce that has lapsed while
+  // the page stayed open (403 rest_cookie_invalid_nonce) is renewed once and the request tried again; any other
+  // refusal comes back as an error to show.
+  async function call(method, route, body, query = {}, retried) {
     const url = window.JPN_API + route + Object.entries(query).map(([k, v]) => `&${k}=${encodeURIComponent(v)}`).join('');
     const opts = { method, credentials: 'same-origin', headers: { 'X-WP-Nonce': nonce } };
     if (body instanceof FormData) opts.body = body;
     else if (body !== undefined) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
     const r = await fetch(url, opts).catch(() => null);
     if (!r) return { ok: false, status: 0, data: { message: 'No connection. Check the internet and try again.' } };
-    if (r.status === 401 || (r.status === 403 && route.startsWith('/admin'))) return login();
+    if (r.status === 401) return login();
     const data = await r.json().catch(() => ({}));
+    if (r.status === 403 && data.code === 'rest_cookie_invalid_nonce' && !retried) { await getNonce(); return call(method, route, body, query, true); }
     return { ok: r.ok, status: r.status, data };
   }
   // A photo as WebP (or JPEG where the browser can't write WebP, as older Safari can't) under `limit` bytes: the
@@ -81,6 +84,14 @@ const WP = window.JPN_API ? (() => {
       pushed = json; return true;
     });
     return pushing;
+  }
+
+  // The state again after a change made on the server (timings, leave, closed days). Content edits still waiting to go
+  // up are sent first: reading the server's draft before they arrive would put the older one back on screen.
+  async function reload() {
+    clearTimeout(pushTimer);
+    if (!await pushDraft()) return false;
+    return load();
   }
 
   /* ---------- loading ---------- */
@@ -156,24 +167,24 @@ const WP = window.JPN_API ? (() => {
     async branchTimings(branch, t) {
       const r = await call('PUT', `/admin/schedule/${branch}`, { timings: timingsOut(t) });
       if (!r.ok) { fail(r); return false; }
-      return load();
+      return reload();
     },
     async ownTimings(branch, doc, t) {
       const r = await call('PUT', `/admin/schedule/${branch}/own/${doc}`, { timings: t ? timingsOut(t) : null });
       if (!r.ok) { fail(r); return false; }
-      return load();
+      return reload();
     },
     // leave and closed days answer with the bookings they cancelled (to call) and any that couldn't be
     async leave(add, doc, branch, date) {
       const r = await call(add ? 'POST' : 'DELETE', '/admin/leave', { doctor: doc, branch, date });
       if (!r.ok) { fail(r); return null; }
-      await load(); await this.reloadDays();
+      await reload(); await this.reloadDays();
       return { cancelled: (r.data.cancelled || []).map(bookingIn), failed: r.data.failed || [], notRestored: r.data.not_restored || [] };
     },
     async closed(add, branch, date, reason) {
       const r = await call(add ? 'POST' : 'DELETE', '/admin/closed', { branch, date, reason });
       if (!r.ok) { fail(r); return null; }
-      await load(); await this.reloadDays();
+      await reload(); await this.reloadDays();
       return { cancelled: (r.data.cancelled || []).map(bookingIn), failed: r.data.failed || [], notRestored: r.data.not_restored || [] };
     },
     // the cropped photo goes up small enough for the server (shrunk here first if it has to be); the plugin checks it,

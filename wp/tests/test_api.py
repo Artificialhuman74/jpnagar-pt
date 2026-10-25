@@ -179,9 +179,11 @@ check('timings: 20:00 slot now exists, 20:30 does not', any(x['t'] == 1200 for x
 week = {'1': [[540, 780]], '2': [[600, 720], [690, 900]], '3': []}  # Mon mornings; Tue overlapping (second dropped); Wed closed
 s, r = call('PUT', '/admin/schedule/arekere', {'timings': {'week': week, 'slot': 60}}, owner=True)
 check('week: per-day hours saved', s == 200 and r.get('days') == [1, 2], (s, r))
-check('week: overlapping hours cleaned up', s == 200 and r['week']['2'] if isinstance(r.get('week'), dict) else r.get('week', [None, None, None])[2] == [[600, 720]], r.get('week'))
+tue = r['week'].get('2') if isinstance(r.get('week'), dict) else (r.get('week') or [None, None, None])[2]
+check('week: overlapping hours cleaned up', s == 200 and tue == [[600, 720]], r.get('week'))
 s, r = call('GET', f'/slots?branch=arekere&date={DAY}')
-check('week: Monday offers 9-12 on the hour only', [x['t'] for x in r['times']] == [540, 600, 660, 720] or set(x['t'] for x in r['times']) <= {540, 600, 660, 720}, r)
+mon = [x['t'] for x in r['times']]
+check('week: Monday offers 9-12 on the hour only', bool(mon) and set(mon) <= {540, 600, 660, 720}, r)
 s, r = call('GET', f'/slots?branch=arekere&date={TUESDAY}')
 check('week: Tuesday follows its own hours', s == 200 and all(600 <= x['t'] < 720 for x in r['times']) and r['times'], r)
 js = subprocess.run(['curl','-s', SITE + '/wp-content/uploads/jpnagar/site-data.js'], capture_output=True, text=True).stdout
@@ -316,6 +318,8 @@ head, _ = on_host(ADMIN_HOST, '/?s=x')
 check('admin address: told not to be indexed', 'x-robots-tag: noindex, nofollow' in head, head[:400])
 head, body = on_host(ADMIN_HOST, '/wp-login.php')
 check('admin address: the login form posts back to the admin address', 'action="http://' + ADMIN_HOST + '/wp-login.php"' in body, body[body.find('<form'):body.find('<form') + 200])
+head, _ = on_host(ADMIN_HOST, '/?s=x')
+check('admin address: a visitor page there goes to the visitors\' address (never drawn or cached there)', head.startswith('http/1.1 302') and 'location: http://' + VISIT_HOST + '/?s=x' in head, head[:300])
 head, _ = on_host(VISIT_HOST, '/?s=x')
 check('admin address: the visitors\' address is unchanged', home_on(VISIT_HOST) == 'http://' + VISIT_HOST and 'x-robots-tag' not in head, home_on(VISIT_HOST))
 

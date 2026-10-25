@@ -17,7 +17,7 @@
   function tiltedCard(figure, o = {}) {
     const body = figure.querySelector('.tilted-card__body'), shade = figure.querySelector('.tilted-card__shadow'), caption = figure.querySelector('.tilted-card__caption');
     // the loading overlay (shown by CSS while the portrait is on its way): flat, on top, outside the 3D body
-    if (!figure.querySelector('.tilted-card__skel')) { const sk = document.createElement('span'); sk.className = 'tilted-card__skel'; sk.setAttribute('aria-hidden', 'true'); sk.append(document.createElement('i')); figure.append(sk); }
+    if (!figure.querySelector('.tilted-card__skel')) { const sk = document.createElement('span'); sk.className = 'tilted-card__skel'; sk.setAttribute('aria-hidden', 'true'); figure.append(sk); }
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const set = {
       amplitude: lim(o.rotateAmplitude ?? 10, 0, 60), scale: o.scaleOnHover ?? 1.03, smoothness: lim(o.smoothness ?? .6, 0, 1), glare: lim(o.glare ?? .45, 0, 1),

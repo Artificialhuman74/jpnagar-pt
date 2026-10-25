@@ -16,4 +16,4 @@ update_option( "jpn_closed", array(), false );
 $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE \"_transient_jpn_rl_%\" OR option_name LIKE \"_transient_timeout_jpn_rl_%\"" );
 echo "Bookings: " . (int) $wpdb->get_var( "SELECT COUNT(*) FROM " . jpn_bookings_table() ) . ", leave days: " . count( jpn_leave() ) . ", closed days: " . count( jpn_closed() ) . "\n";
 '
-curl -s -X DELETE http://localhost:8025/api/v1/messages >/dev/null && echo "Email inbox emptied (http://localhost:8025)" || true
+curl -fsS -X DELETE http://localhost:8025/api/v1/messages >/dev/null && echo "Email inbox emptied (http://localhost:8025)" || true

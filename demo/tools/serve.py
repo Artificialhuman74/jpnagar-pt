@@ -136,16 +136,21 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         except ValueError:
             return self.send_error(400)
         # each publish writes its own temporary file, then swaps it in whole, so two at once can't mix
+        try:
+            text = ('window.PUBLISHED_DATA = ' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n').encode('utf-8')
+        except UnicodeEncodeError:  # a lone surrogate, which no file can hold as UTF-8
+            return self.send_error(400)
         fd, tmp = tempfile.mkstemp(prefix='published-data.', suffix='.tmp', dir=os.path.dirname(DATA))
         try:
-            with os.fdopen(fd, 'w', encoding='utf-8') as f:
-                f.write('window.PUBLISHED_DATA = ' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n')
+            with os.fdopen(fd, 'wb') as f:
+                f.write(text)
             os.chmod(tmp, 0o644)
             os.replace(tmp, DATA)
         except OSError:
+            return self.send_error(500)
+        finally:
             if os.path.exists(tmp):
                 os.unlink(tmp)
-            return self.send_error(500)
         body = b'{"ok":true}'
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')

@@ -764,10 +764,11 @@ const qb = BRANCHES.findIndex(b => b.id === qp.get('branch')); S.b = qb >= 0 ? q
 // a service's own reason (children's physio is "For my child"), and a time picked from "Next free": it is waiting in
 // step 2 already chosen, after where it hurts (the booking still starts there)
 const SVC_REASON = { paeds: 'child', geri: 'elder', homecare: 'elder', neuro: 'neuro', women: 'women', postop: 'surgery' };
-if (SVC_REASON[qp.get('service')]) S.reasons.add(SVC_REASON[qp.get('service')]);
+if (Object.prototype.hasOwnProperty.call(SVC_REASON, qp.get('service'))) S.reasons.add(SVC_REASON[qp.get('service')]);
 $$('[data-reason]').forEach(p => { const on = S.reasons.has(p.dataset.reason); p.classList.toggle('on', on); p.setAttribute('aria-pressed', String(on)); });
 const qd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(qp.get('day') || ''), d0 = nowIST(); d0.setHours(0, 0, 0, 0);
-const qDay = qd ? new Date(+qd[1], +qd[2] - 1, +qd[3]) : null;
+// a real date only: 2026-02-31 would otherwise roll over into March
+const qDay = (d => d && d.getFullYear() === +qd[1] && d.getMonth() === +qd[2] - 1 && d.getDate() === +qd[3] ? d : null)(qd && new Date(+qd[1], +qd[2] - 1, +qd[3]));
 if (qDay && qDay >= d0 && worksOn(BRANCHES[S.b], qDay)) {
   S.day = qDay; pickSession();
   const want = +qp.get('slot'), b = BRANCHES[S.b];

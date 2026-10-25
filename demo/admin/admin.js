@@ -205,16 +205,31 @@ const todayCal = (() => {
   }
   function show(month) { shown = month; title.textContent = `${MONTH_NAMES[shown.getMonth()]} ${shown.getFullYear()}`; counts = WP ? seen.get(key()) : undefined; draw(); load(); }
   // the whole month at once: while its counts are on their way every day shows loading (and can still be picked)
+  // The month's buttons are built when the month changes; after that each one is updated in place (selection, counts,
+  // loading), so the button being tapped keeps its focus and nothing jumps. While the counts are on their way every
+  // day shows loading (and can still be picked).
+  let built = null, cells = [];
   function draw() {
-    const loading = counts === undefined, n = new Date(shown.getFullYear(), shown.getMonth() + 1, 0).getDate(), sel = iso(addDays(today(), V.day)), now = iso(today());
+    const ym = ymOf(shown), loading = counts === undefined, sel = iso(addDays(today(), V.day)), now = iso(today());
+    if (built !== ym) {
+      built = ym;
+      const n = new Date(shown.getFullYear(), shown.getMonth() + 1, 0).getDate();
+      cells = [...Array(n)].map((_, i) => {
+        const d = new Date(shown.getFullYear(), shown.getMonth(), i + 1), k = iso(d), num = el('small');
+        const b = el('button', { type: 'button', class: 'cal-d' }, el('b', {}, String(i + 1)), num);
+        b.addEventListener('click', () => { if (k === iso(addDays(today(), V.day))) return; V.day = Math.round((d - today()) / 864e5); renderToday(); freshDay(); });
+        return { d, k, b, num };
+      });
+      grid.replaceChildren(...DOW.map(w => el('span', { class: 'cal-w', 'aria-hidden': 'true' }, w.slice(0, 2))), ...[...Array(shown.getDay())].map(() => el('span')), ...cells.map(c => c.b));
+    }
     grid.setAttribute('aria-busy', String(loading));
-    grid.replaceChildren(...DOW.map(w => el('span', { class: 'cal-w', 'aria-hidden': 'true' }, w.slice(0, 2))), ...[...Array(shown.getDay())].map(() => el('span')), ...[...Array(n)].map((_, i) => {
-      const d = new Date(shown.getFullYear(), shown.getMonth(), i + 1), k = iso(d), c = loading ? 0 : counts[k] || 0;
-      const b = el('button', { type: 'button', class: ['cal-d', loading && 'skel', c && 'has', k === now && 'today', k === sel && 'on'].filter(Boolean).join(' '), 'aria-pressed': String(k === sel),
-        'aria-label': `${longDate(d)}${loading ? '' : c ? `, ${c} booking${c === 1 ? '' : 's'}` : ', no bookings'}` }, el('b', {}, String(i + 1)), c ? el('small', {}, String(c)) : '');
-      b.addEventListener('click', () => { if (k === sel) return; V.day = Math.round((d - today()) / 864e5); renderToday(); freshDay(); });
-      return b;
-    }));
+    cells.forEach(({ d, k, b, num }) => {
+      const c = loading ? 0 : counts[k] || 0;
+      b.className = ['cal-d', loading && 'skel', c && 'has', k === now && 'today', k === sel && 'on'].filter(Boolean).join(' ');
+      b.setAttribute('aria-pressed', String(k === sel));
+      b.setAttribute('aria-label', `${longDate(d)}${loading ? '' : c ? `, ${c} booking${c === 1 ? '' : 's'}` : ', no bookings'}`);
+      num.textContent = c ? String(c) : ''; num.hidden = !c;
+    });
   }
   return {
     node,
@@ -232,9 +247,13 @@ const skelRows = n => el('div', { class: 'card', 'aria-busy': 'true' }, ...[...A
   el('span', { class: 'skel', style: 'width:44px;height:30px' }), el('span', {}, el('span', { class: 'skel', style: 'display:block;width:60%;height:15px' }), el('span', { class: 'skel', style: 'display:block;width:85%;height:12px;margin-top:7px' })), el('span'))));
 // the first screen while the admin signs in to WordPress and reads its state
 const skelView = () => view.replaceChildren(el('header', { class: 'ahead' }, el('span', { class: 'skel', style: 'display:block;width:40%;height:14px' }), el('span', { class: 'skel', style: 'display:block;width:70%;height:30px;margin-top:8px' })), skelRows(4));
+const dayFailed = new Set(); // days whose bookings couldn't be read: they show a retry, not another request on every redraw
 function renderToday() {
-  const d = addDays(today(), V.day), date = iso(d), ready = !WP || WP.hasDay(date);
-  if (!ready) WP.loadDay(date).then(() => { if ((location.hash || '#today') === '#today' && iso(addDays(today(), V.day)) === date) renderToday(); });
+  const d = addDays(today(), V.day), date = iso(d), ready = !WP || WP.hasDay(date), failed = !ready && dayFailed.has(date);
+  if (!ready && !failed) WP.loadDay(date).then(() => {
+    if (!WP.hasDay(date)) dayFailed.add(date);
+    if ((location.hash || '#today') === '#today' && iso(addDays(today(), V.day)) === date) renderToday();
+  });
   // the days either side are fetched ahead, so the arrows open them at once
   if (WP) [-1, 1].forEach(k => { const o = iso(addDays(d, k)); if (!WP.hasDay(o)) WP.loadDay(o); });
   const list = S.bookings.filter(x => x.date === date && (V.branch === 'all' || x.branch === V.branch)).sort((a, b) => a.t - b.t || a.branch.localeCompare(b.branch));
@@ -267,7 +286,9 @@ function renderToday() {
     todayCal.node,
     branchTabs(V.branch, true, id => { V.branch = id; renderToday(); }),
     ...notes,
-    !ready ? skelRows(3) : list.length ? el('div', { class: 'card' }, ...rows) : el('div', { class: 'card' }, el('p', { class: 'empty' }, el('b', {}, 'No bookings'), 'Online and front-desk bookings for this day show up here.')),
+    failed ? (() => { const again = btn('Try again', 'btn--line', () => { dayFailed.delete(date); renderToday(); });
+      return el('div', { class: 'card' }, el('p', { class: 'empty' }, el('b', {}, 'Couldn’t load this day'), 'Check the internet, then try again.', el('span', { style: 'display:block;margin-top:12px' }, again))); })()
+      : !ready ? skelRows(3) : list.length ? el('div', { class: 'card' }, ...rows) : el('div', { class: 'card' }, el('p', { class: 'empty' }, el('b', {}, 'No bookings'), 'Online and front-desk bookings for this day show up here.')),
     add,
     WP ? '' : el('p', { class: 'note' }, 'Sample bookings for the demo. On the real site these come from patients booking online and from the front desk.'));
 }
@@ -598,9 +619,17 @@ const restoredText = (n, what) => n ? `${what}. ${n} booking${n === 1 ? '' : 's'
 async function removeLeave(docId, b, date) {
   if (WP) { const r = await WP.leave(false, docId, b, date); redraw(); return r ? restoredText(r.notRestored.length, 'Leave undone') : ''; }
   const l = S.leave.find(x => x.doc === docId && x.branch === b && x.date === date); if (!l) return '';
-  S.bookings.forEach(x => { if (l.cancelled.includes(x.id) && x.status === 'cancelled') { x.status = 'booked'; delete x.reason; } });
-  S.leave = S.leave.filter(x => x !== l); save(); redraw();
-  return 'Leave undone. Bookings restored.';
+  // the doctor is back first; then each booking returns only if it still fits (an "any doctor" one needs a free doctor
+  // at its time, and others may have been booked since). Those that don't stay cancelled, to be called.
+  S.leave = S.leave.filter(x => x !== l);
+  const back = [], kept = [];
+  S.bookings.filter(x => l.cancelled.includes(x.id) && x.status === 'cancelled').forEach(x => {
+    x.status = 'booked';
+    const fits = x.doc ? !S.bookings.some(y => y !== x && live(y) && y.doc === x.doc && y.branch === x.branch && y.date === x.date && Math.abs(y.t - x.t) < 1e-6) : !anySurplus(b, date).includes(x);
+    if (fits) { delete x.reason; back.push(x); } else { x.status = 'cancelled'; kept.push(x); }
+  });
+  save(); redraw();
+  return restoredText(kept.length, 'Leave undone');
 }
 function showAffected(title, lead, list, ...extra) {
   openSheet(title, el('p', { class: 'lead2' }, lead), el('div', { class: 'affected' }, ...list.map(x => el('div', {},
@@ -613,7 +642,10 @@ function renderSchedule() {
   let draft = null;
   const pub = btn(docs.length === 1 ? 'Publish to the doctor' : docs.length === 2 ? 'Publish to both doctors' : `Publish to all ${docs.length} doctors`, 'btn--act btn--block', async () => {
     if (WP) { pub.disabled = true; const ok = await WP.branchTimings(b, pack(draft)); pub.disabled = false; if (!ok) return; renderSchedule(); }
-    else { Object.assign(sc, pack(draft)); sc.own = {}; save(); writeSnapshot().catch(() => {}); renderSchedule(); }
+    else {
+      Object.assign(sc, pack(draft)); sc.own = {}; save(); renderSchedule();
+      if (!await writeSnapshot().catch(() => false)) { toast('Saved here, but the website couldn’t be updated. Try again.'); return; }
+    }
     toast(`New timings published for every doctor at ${BR(b).short}`);
   });
   const everyone = el('section', { class: 'card', 'aria-labelledby': 'h-every' },
@@ -918,7 +950,7 @@ function writeSnapshot() {
   const c = S.live;
   const snap = { v: 1, at: S.publishedAt, home: c.home, services: c.services, photos: c.photos,
     service_photos: Object.fromEntries(Object.entries(c.servicePhotos || {}).map(([k, v]) => [k, v.src])),
-    branches: Object.fromEntries(BRANCHES.map(b => [b.id, { ...c.branches[b.id], sessions: S.schedule[b.id].sessions, days: pack({ week: weekOf(S.schedule[b.id]), slot: 30 }).days, week: weekOf(S.schedule[b.id]) }])),
+    branches: Object.fromEntries(BRANCHES.map(b => [b.id, { ...c.branches[b.id], sessions: S.schedule[b.id].sessions, days: pack({ week: weekOf(S.schedule[b.id]), slot: 30 }).days, week: weekOf(S.schedule[b.id]), slot: S.schedule[b.id].slot || 30 }])),
     doctors: c.doctors.map(d => ({ id: d.id, name: d.name, role: d.role, years: d.years, deg: d.deg, treats: d.treats, bg: d.bg, branches: d.branches, photo: d.photo })) };
   try { localStorage.setItem(PUB, JSON.stringify(snap)); } catch (_) {}
   // the server writes it to the one static file every device's website loads

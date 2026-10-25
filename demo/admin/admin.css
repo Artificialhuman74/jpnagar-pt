@@ -220,3 +220,7 @@ body.admin.has-pub:has(.bigact.pinned){padding-bottom:calc(250px + env(safe-area
 .crop-zoom svg{width:22px;height:22px;display:block}
 .crop-hint{text-align:center;font-size:14px;color:rgba(255,255,255,.72);padding:4px 16px 16px}
 html.locked{overflow:hidden}
+
+/* the admin moves between its screens inside one page and hands over to the WordPress login, which doesn't take part
+   in page crossfades, so it doesn't opt in to them (the phone site's stylesheet does) */
+@view-transition{navigation:none}

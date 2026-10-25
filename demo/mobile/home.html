@@ -67,6 +67,7 @@
 
 <div class="fab"></div>
 <nav class="dock" data-active="home"></nav>
+<script src="../canon/clinic.js"></script>
 <script src="app.js"></script>
 <script src="../canon/published-data.js"></script>
 <script src="../canon/published.js"></script>
@@ -95,8 +96,9 @@ const LABELS = galleryLabels(['JP Nagar · reception', 'JP Nagar · treatment ro
 const vw = document.querySelector('[data-viewer]'), frame = vw.querySelector('.frame'), count = vw.querySelector('.count');
 let cur = 0, lastFocus;
 function show(i) { cur = (i + LABELS.length) % LABELS.length; frame.dataset.label = LABELS[cur]; count.textContent = `${cur + 1} / ${LABELS.length}`; paintPhoto(frame, clinicPhoto(cur)); }
-function openViewer(i) { lastFocus = document.activeElement; show(i); vw.classList.add('is-open'); vw.querySelector('.close').focus(); }
-function closeViewer() { vw.classList.remove('is-open'); lastFocus && lastFocus.focus(); }
+function openViewer(i) { lastFocus = document.activeElement; show(i); vw.classList.add('is-open'); setModal(vw, true); vw.querySelector('.close').focus(); }
+function closeViewer() { vw.classList.remove('is-open'); setModal(vw, false); lastFocus && lastFocus.focus(); }
+setModal(vw, false);
 vw.querySelector('.close').onclick = closeViewer;
 vw.querySelector('.prev').onclick = () => show(cur - 1);
 vw.querySelector('.next').onclick = () => show(cur + 1);

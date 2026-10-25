@@ -280,6 +280,8 @@
 </div>
 <nav class="dock" data-active="book"></nav>
 
+<script src="../canon/clinic.js"></script>
+<script src="../canon/figure.js"></script>
 <script src="app.js"></script>
 <script src="../canon/published-data.js"></script>
 <script src="../canon/published.js"></script>
@@ -301,12 +303,6 @@ const REASON = { surgery: 'After surgery', neuro: 'Stroke or nerve problem', chi
 S.gender = 'male';
 const tag = $('[data-tag]'), turn = $('[data-turn]'), fig = $('[data-figure]'), tilt = $('[data-tilt]');
 let sx = null, dragged = false;
-const REGIONS = [['neck'], ['shoulder', 'a'], ['shoulder', 'b'], ['upper'], ['lower'], ['elbow', 'a'], ['elbow', 'b'], ['hand', 'a'], ['hand', 'b'], ['hip', 'a'], ['hip', 'b'], ['knee', 'a'], ['knee', 'b'], ['foot', 'a'], ['foot', 'b']];
-// hotspot centres in the 240×480 figure per body type; "a" is the viewer's left
-const POS = {
-  male: { neck: [120, 78], shoulder: [74, 106], upper: [120, 134], lower: [120, 194], elbow: [58, 174], hand: [54, 256], hip: [94, 226], knee: [97, 328], foot: [98, 434] },
-  female: { neck: [120, 78], shoulder: [82, 106], upper: [120, 136], lower: [120, 196], elbow: [67, 174], hand: [63, 256], hip: [90, 228], knee: [98, 330], foot: [99, 434] }
-};
 const NAMES = { front: { upper: 'Chest', lower: 'Stomach' }, back: { upper: 'Upper back', lower: 'Lower back' } };
 // From the back the viewer's left is the person's left; from the front it is their right.
 function sideOf(face, pos) { if (!pos) return ''; return (face === 'back') === (pos === 'a') ? 'left' : 'right'; }
@@ -501,7 +497,8 @@ function renderTime() {
   dayBtns.forEach(n => {
     const off = !worksOn(b, n._d);
     n.classList.toggle('is-off', off); n.disabled = off; n.setAttribute('aria-label', n._d.toDateString() + (off ? ', closed' : ''));
-    n.classList.toggle('is-on', n._d.toDateString() === S.day.toDateString());
+    const on = n._d.toDateString() === S.day.toDateString();
+    n.classList.toggle('is-on', on); n.setAttribute('aria-pressed', String(on));
   });
   // the day's own sessions (a branch can open different hours on different days)
   const ss = sessionsOn(b, S.day);
@@ -513,7 +510,7 @@ function renderTime() {
   sessBtns.forEach((n, si) => {
     const [s, e] = ss[si];
     n.textContent = `${sessName(ss[si])} · ${fmtHour(s)}–${fmtHour(e)}`;
-    n.className = si === S.sess ? 'on' : '';
+    n.className = si === S.sess ? 'on' : ''; n.setAttribute('aria-pressed', String(si === S.sess));
     n.disabled = !slotsFor(b, S.day, si).some(x => !x.taken);
   });
   // The grid is rebuilt only when its times change (a new branch, day or session). Fresh news from the diary, or a
@@ -532,14 +529,14 @@ function renderTime() {
       const n = el('button', { class: 'slot' + (x.taken ? ' is-taken' : ''), 'aria-label': `${x.label} ${x.suffix}${x.taken ? ', taken' : ''}` }, `${x.label} ${x.suffix}`);
       if (x.taken) n.disabled = true;
       n._t = x.t;
-      n.addEventListener('click', () => { S.slot = x; grid.querySelectorAll('.slot').forEach(s => s.classList.toggle('is-on', s === n)); setBar(); });
+      n.addEventListener('click', () => { S.slot = x; grid.querySelectorAll('.slot').forEach(s => { s.classList.toggle('is-on', s === n); s.setAttribute('aria-pressed', String(s === n)); }); setBar(); });
       return n;
     }) : [el('p', { class: 'empty' }, 'No times left in this session. Try another day.')]));
     // one short line for screen readers, instead of reading out every time
     const open = list.filter(x => !x.taken).length;
     $('[data-slot-say]').textContent = open ? `${open} times free, ${S.day.toDateString() === nowIST().toDateString() ? 'today' : DOW[S.day.getDay()] + ' ' + S.day.getDate()}` : 'No times left in this session';
   }
-  grid.querySelectorAll('.slot').forEach(n => n.classList.toggle('is-on', !!S.slot && S.slot.t === n._t));
+  grid.querySelectorAll('.slot').forEach(n => { const on = !!S.slot && S.slot.t === n._t; n.classList.toggle('is-on', on); n.setAttribute('aria-pressed', String(on)); });
   // The branch, day and session switch the moment they're tapped; until that day's real times have arrived the grid
   // shows them loading (not tappable), and the other days of the branch are asked for ahead so they open at once.
   if (DIARY) {
@@ -655,7 +652,7 @@ function confirmBooking() {
   DIARY.book({ branch: b.id, date: DIARY.isoOf(S.day), time: Math.round(S.slot.t * 60), doctor: doc ? doc.id : null,
     name: S.name, phone: S.phone, email: S.email, problem: whatText(), note: S.story }).then(r => {
     next.classList.remove('is-busy'); next.disabled = false;
-    if (r.ok) { S.bookingNo = `JP-${CODES[b.id]}-${String(r.data.id).padStart(5, '0')}`; const got = DOCS.find(d => d.id === r.data.doctor); if (got) S.ther = got.name; return go(4); }
+    if (r.ok) { S.bookingNo = `JP-${b.code}-${String(r.data.id).padStart(5, '0')}`; const got = DOCS.find(d => d.id === r.data.doctor); if (got) S.ther = got.name; return go(4); }
     toast((r.data && r.data.message) || 'That didn’t go through. Please try again, or call the clinic.');
     if (r.status === 409) { DIARY.refresh(b.id, S.day); S.slot = null; go(2, true); }
     setBar();
@@ -688,20 +685,8 @@ $('#ph').addEventListener('input', e => { const d = e.target.value.replace(/\D/g
 
 /* ---------- confirmation ---------- */
 /* ---------- the ticket ---------- */
-const CODES = { arekere: 'ARK', bannerghatta: 'BGR', jpnagar: 'JPN' };
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 // Code 128 (set B) bar patterns, so the stub carries a real barcode of the booking ID
-const C128 = ['212222','222122','222221','121223','121322','131222','122213','122312','132212','221213','221312','231212','112232','122132','122231','113222','123122','123221','223211','221132','221231','213212','223112','312131','311222','321122','321221','312212','322112','322211','212123','212321','232121','111323','131123','131321','112313','132113','132311','211313','231113','231311','112133','112331','132131','113123','113321','133121','313121','211331','231131','213113','213311','213131','311123','311321','331121','312113','312311','332111','314111','221411','431111','111224','111422','121124','121421','141122','141221','112214','112412','122114','122411','142112','142211','241211','221114','413111','241112','134111','111242','121142','121241','114212','124112','124211','411212','421112','421211','212141','214121','412121','111143','111341','131141','114113','114311','411113','411311','113141','114131','311141','411131','211412','211214','211232','2331112'];
-function drawBarcode(svg, text) {
-  const vals = [104, ...[...text].map(c => c.charCodeAt(0) - 32)];
-  const check = vals.reduce((sum, v, i) => sum + v * (i || 1), 0) % 103;
-  const widths = [...vals, check, 106].map(v => C128[v]).join('');
-  const NS = 'http://www.w3.org/2000/svg', quiet = 10;
-  let x = quiet; const bars = [];
-  [...widths].forEach((w, i) => { const n = +w; if (i % 2 === 0) { const r = document.createElementNS(NS, 'rect'); r.setAttribute('x', x); r.setAttribute('y', 0); r.setAttribute('width', n); r.setAttribute('height', 46); bars.push(r); } x += n; });
-  svg.setAttribute('viewBox', `0 0 ${x + quiet} 46`); svg.setAttribute('preserveAspectRatio', 'none');
-  svg.replaceChildren(...bars);
-}
 // mini front and back figures with a dot on each chosen spot
 function miniFigure(face) {
   const NS = 'http://www.w3.org/2000/svg', P = POS[S.gender];
@@ -727,7 +712,7 @@ function miniFigure(face) {
 function confirmScreen() {
   const b = BRANCHES[S.b], d = S.day, t = S.slot;
   const hh = Math.floor(t.t), mm = Math.round((t.t % 1) * 60), pad = n => String(n).padStart(2, '0');
-  const id = S.bookingNo || `JP-${CODES[b.id]}-${pad(d.getDate())}${pad(d.getMonth() + 1)}-${pad(hh)}${pad(mm)}`;
+  const id = S.bookingNo || `JP-${b.code}-${pad(d.getDate())}${pad(d.getMonth() + 1)}-${pad(hh)}${pad(mm)}`;
   const today = d.toDateString() === nowIST().toDateString();
   $('[data-see]').textContent = `See you ${whenText().replace(/^Today/, 'today')} at ${b.short}.`;
   $('[data-sent]').textContent = `Your booking is saved and already with the ${b.short} team. WhatsApp is optional, for anything you'd like to add.`;
@@ -782,6 +767,18 @@ if (DOCS.some(d => d.name === qp.get('ther'))) { S.ther = qp.get('ther'); toast(
 const qb = BRANCHES.findIndex(b => b.id === qp.get('branch')); S.b = qb >= 0 ? qb : nearestIndex();
 (qp.get('area') || '').split(',').filter(k => CARE[k.split(/[-~]/)[0]])
   .forEach(k => S.areas.add(k.includes('~') ? k : `${k}~back`));
+// a service's own reason (children's physio is "For my child"), and a time picked from "Next free": it is waiting in
+// step 2 already chosen, after where it hurts (the booking still starts there)
+const SVC_REASON = { paeds: 'child', geri: 'elder', homecare: 'elder', neuro: 'neuro', women: 'women', postop: 'surgery' };
+if (SVC_REASON[qp.get('service')]) S.reasons.add(SVC_REASON[qp.get('service')]);
+$$('[data-reason]').forEach(p => { const on = S.reasons.has(p.dataset.reason); p.classList.toggle('on', on); p.setAttribute('aria-pressed', String(on)); });
+const qd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(qp.get('day') || ''), d0 = nowIST(); d0.setHours(0, 0, 0, 0);
+const qDay = qd ? new Date(+qd[1], +qd[2] - 1, +qd[3]) : null;
+if (qDay && qDay >= d0 && worksOn(BRANCHES[S.b], qDay)) {
+  S.day = qDay; pickSession();
+  const want = +qp.get('slot'), b = BRANCHES[S.b];
+  sessionsOn(b, qDay).some((_, si) => { const x = slotsFor(b, qDay, si).find(y => !y.taken && Math.abs(y.t - want) < 1e-6); if (x) { S.sess = si; S.slot = x; } return !!x; });
+}
 paintMap(); updateMatch(); go(FLOW[0]);
 </script>
 

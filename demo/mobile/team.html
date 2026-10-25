@@ -38,6 +38,8 @@
 
 <div class="fab"></div>
 <nav class="dock" data-active="team"></nav>
+<script src="../canon/clinic.js"></script>
+<script src="../canon/figure.js"></script>
 <script src="app.js"></script>
 <script src="../canon/published-data.js"></script>
 <script src="../canon/published.js"></script>
@@ -107,10 +109,11 @@ function openSheet(i, from) {
   list('[data-sh-treat]', t.treat); list('[data-sh-bg]', t.bg);
   const bk = document.querySelector('[data-sh-book]');
   bk.textContent = `Book with ${t.short}`; bk.href = 'book.html?ther=' + encodeURIComponent(t.short);
-  sheet.classList.add('is-open'); scrim.classList.add('is-open'); sheet.scrollTop = 0;
+  sheet.classList.add('is-open'); scrim.classList.add('is-open'); setModal(sheet, true); sheet.scrollTop = 0;
   document.querySelector('[data-close]').focus();
 }
-function closeSheet() { sheet.classList.remove('is-open'); scrim.classList.remove('is-open'); opener && opener.focus(); }
+function closeSheet() { sheet.classList.remove('is-open'); scrim.classList.remove('is-open'); setModal(sheet, false); opener && opener.focus(); }
+setModal(sheet, false);
 document.querySelector('[data-close]').addEventListener('click', closeSheet);
 scrim.addEventListener('click', closeSheet);
 addEventListener('keydown', e => { if (e.key === 'Escape' && sheet.classList.contains('is-open')) closeSheet(); });

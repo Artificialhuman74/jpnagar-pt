@@ -97,8 +97,9 @@ const viewer = el('div', { class: 'viewer', role: 'dialog', 'aria-modal': 'true'
 document.body.append(viewer);
 let cur = 0, lastFocus;
 function show(i) { cur = (i + LABELS.length) % LABELS.length; frame.dataset.label = LABELS[cur]; count.textContent = `${cur + 1} / ${LABELS.length}`; paintPhoto(frame, clinicPhoto(cur)); }
-function openViewer(i) { lastFocus = document.activeElement; show(i); viewer.classList.add('is-open'); document.documentElement.classList.add('locked'); bClose.focus(); }
-function closeViewer() { viewer.classList.remove('is-open'); document.documentElement.classList.remove('locked'); if (lastFocus) lastFocus.focus(); }
+function openViewer(i) { lastFocus = document.activeElement; show(i); viewer.classList.add('is-open'); setModal(viewer, true); document.documentElement.classList.add('locked'); bClose.focus(); }
+function closeViewer() { viewer.classList.remove('is-open'); setModal(viewer, false); document.documentElement.classList.remove('locked'); if (lastFocus) lastFocus.focus(); }
+setModal(viewer, false);
 bClose.addEventListener('click', closeViewer); bPrev.addEventListener('click', () => show(cur - 1)); bNext.addEventListener('click', () => show(cur + 1));
 viewer.addEventListener('click', e => { if (e.target === viewer) closeViewer(); });
 addEventListener('keydown', e => {

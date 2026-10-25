@@ -90,10 +90,10 @@ check('race: the rest told it is taken (409), none broke', all(x[0] in (200, 409
 
 # ---- rate limits
 reset_limits()
-p = phone(); codes = [book(660 + 30 * i, phone=p)[0] for i in range(4)]
-check('limit: 4th booking from one phone in a day refused', codes[:3] == [200, 200, 200] and codes[3] == 429, codes)
+p = phone(); codes = [book(t, phone=p)[0] for t in (570, 660, 690, 720, 750, 960)]
+check('limit: 6th booking from one phone in a day refused', codes[:5] == [200] * 5 and codes[5] == 429, codes)
 s, r = book(1110, phone=p)
-check('limit: the phone limit says so (not "too many from here")', s == 429 and 'mobile number already has 3 bookings' in r.get('message', ''), (s, r))
+check('limit: the phone limit says so (not "too many from here")', s == 429 and 'mobile number already has 5 bookings' in r.get('message', ''), (s, r))
 reset_limits()
 codes = [book(990 + 30 * i)[0] for i in range(6)]
 check('limit: 6th booking from one address in 10 min refused', codes[:5] == [200] * 5 and codes[5] == 429, codes)

@@ -111,13 +111,14 @@ function jpn_client_ip() {
 }
 
 /**
- * At most 5 bookings per address every 10 minutes and 3 per mobile number a day, so the form can't fill the diary.
- * Only bookings that succeed are counted: a patient who meets a taken slot or a typo isn't locked out.
+ * At most 5 bookings per mobile number a day (enough for a family booking together) and 5 per address every 10
+ * minutes, so the form can't fill the diary. Only bookings that succeed are counted: a patient who meets a taken slot
+ * or a typo isn't locked out. The number is checked first, so when both are reached the message is about the number.
  */
 function jpn_limit_keys( $phone ) {
 	return array(
+		'phone' => array( 'jpn_rl_ph_' . md5( (string) $phone ), 5, DAY_IN_SECONDS ),
 		'ip'    => array( 'jpn_rl_ip_' . md5( jpn_client_ip() ), 5, 10 * MINUTE_IN_SECONDS ),
-		'phone' => array( 'jpn_rl_ph_' . md5( (string) $phone ), 3, DAY_IN_SECONDS ),
 	);
 }
 /** Which limit a new booking would pass ('phone' or 'ip'), or null when it is within both. */
@@ -166,7 +167,7 @@ function jpn_rest_book( WP_REST_Request $req ) {
 			// say which limit, so a patient knows it isn't the time that's full
 			$limit = jpn_rate_limited( $b['phone'] );
 			if ( 'phone' === $limit ) {
-				return new WP_Error( 'jpn_slow', __( 'This mobile number already has 3 bookings today. To book another visit, please call or WhatsApp the clinic.', 'jpnagar-clinic' ), array( 'status' => 429 ) );
+				return new WP_Error( 'jpn_slow', __( 'This mobile number already has 5 bookings today. To book another visit, please call or WhatsApp the clinic.', 'jpnagar-clinic' ), array( 'status' => 429 ) );
 			}
 			if ( 'ip' === $limit ) {
 				return new WP_Error( 'jpn_slow', __( 'Several bookings were just made from this connection. Please wait 10 minutes, or call the clinic.', 'jpnagar-clinic' ), array( 'status' => 429 ) );

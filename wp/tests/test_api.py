@@ -40,6 +40,11 @@ def book(t, doctor=None, branch='arekere', **kw):
     b.update(kw)
     return call('POST', '/bookings', b)
 
+# ---- the website file, from the moment the plugin is switched on
+js = subprocess.run(['curl','-s',SITE + '/wp-content/uploads/jpnagar/site-data.js'], capture_output=True, text=True).stdout
+check('snapshot: written on activation, before any Publish', 'window.PUBLISHED_DATA = {' in js, js[:200])
+check('snapshot: tells the pages where the API is', js.startswith('window.JPN_API = "/?rest_route=/jpnagar/v1";'), js[:120])
+
 # ---- public: slots
 s, r = call('GET', f'/slots?branch=arekere&date={DAY}')
 check('slots: arekere has times with Dr Jeya', s == 200 and r['times'] and r['times'][0]['t'] == 540 and r['times'][0]['doctors'] == ['jeya'], (s, r))

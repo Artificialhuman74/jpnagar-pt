@@ -16,6 +16,14 @@ function jpn_snapshot_dir() {
 	);
 }
 
+/**
+ * Where the pages find the clinic API, as a path on this site. The query form works with or without pretty
+ * permalinks, and the pages add their own parameters after it with "&".
+ */
+function jpn_api_base() {
+	return wp_make_link_relative( home_url( '/' ) ) . '?rest_route=/jpnagar/v1';
+}
+
 /** The snapshot's public URL, versioned so browsers and Cloudflare fetch the new one after each publish. */
 function jpn_snapshot_url() {
 	$d = jpn_snapshot_dir();
@@ -113,7 +121,8 @@ function jpn_write_snapshot( $content = null ) {
 		return new WP_Error( 'jpn_write', __( 'Could not create the uploads folder for the website file.', 'jpnagar-clinic' ), array( 'status' => 500 ) );
 	}
 	$json = wp_json_encode( jpn_build_snapshot( $content ), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
-	$body = 'window.PUBLISHED_DATA = ' . $json . ";\n";
+	// the file also tells the pages where the API is, so they need nothing else from the server
+	$body = 'window.JPN_API = ' . wp_json_encode( jpn_api_base(), JSON_UNESCAPED_SLASHES ) . ";\nwindow.PUBLISHED_DATA = " . $json . ";\n";
 	$file = $dir['path'] . '/site-data.js';
 	$fail = new WP_Error( 'jpn_write', __( 'Could not save the website file.', 'jpnagar-clinic' ), array( 'status' => 500 ) );
 	$gz   = function_exists( 'gzencode' ) ? gzencode( $body, 9 ) : false;

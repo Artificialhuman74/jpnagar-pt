@@ -22,6 +22,10 @@ function jpn_activate() {
 		$admin->add_cap( JPN_CAP );
 	}
 	jpn_seed_defaults();
+	// a new site has its website file straight away, before the owner's first Publish
+	if ( ! file_exists( jpn_snapshot_dir()['path'] . '/site-data.js' ) ) {
+		jpn_locked( 'jpn_write_snapshot' );
+	}
 }
 
 function jpn_maybe_upgrade() {

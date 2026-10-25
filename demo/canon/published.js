@@ -142,11 +142,14 @@ const DIARY = window.JPN_API ? (() => {
   // A day's free times. While a newer answer is on its way the last one stays in use (nothing flips to free), and an
   // answer that arrives after a newer request is dropped. The page hears 'jpn:slots' only when something changed.
   // a day not read yet, or one that couldn't be read and has waited a little, is asked for (again)
-  const due = key => !days.has(key) || (days.get(key) === null && Date.now() - (failedAt.get(key) || 0) > 15000);
+  const inflight = new Set();
+  const due = key => !inflight.has(key) && (!days.has(key) || (days.get(key) === null && Date.now() - (failedAt.get(key) || 0) > 15000));
   function load(branch, date) {
     const key = `${branch}|${date}`, n = (asked.get(key) || 0) + 1;
     asked.set(key, n); if (!days.has(key)) days.set(key, undefined);
+    inflight.add(key);
     fetch(url('/slots', { branch, date }), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null).then(j => {
+      if (asked.get(key) === n) inflight.delete(key);
       if (asked.get(key) !== n) return;
       // no answer: the day stops "loading" (its times show, checked again when booking), and is asked again next time
       if (!j) {

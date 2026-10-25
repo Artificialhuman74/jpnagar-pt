@@ -135,6 +135,7 @@
     }
     new IntersectionObserver(es => {
       visible = es.some(e => e.isIntersecting);
+      figure.classList.toggle('is-away', !visible); // the loading pulse rests while the card is off screen
       if (visible && !entered && introAt < 0) introAt = performance.now() + set.introDelay;
       wake();
     }).observe(figure);

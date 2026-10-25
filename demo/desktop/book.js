@@ -184,7 +184,7 @@ function renderWhen() {
   }
   timesKey = key;
   // held at the week's longest session, so changing day never moves the page
-  const rows = Math.ceil(Math.max(1, ...[0, 1, 2, 3, 4, 5, 6].flatMap(n => sessionsOn(b, n)).map(([s, e]) => (e - s) * 2)) / 4);
+  const rows = Math.ceil(Math.max(1, ...[0, 1, 2, 3, 4, 5, 6].flatMap(n => sessionsOn(b, n)).map(([s, e]) => (e - s) * 60 / (b.slot || 30))) / 4);
   grid.style.minHeight = `${rows * 52 + (rows - 1) * 10}px`;
   grid.replaceChildren(...(list.length ? list.map((x, i) => {
     const n = el('button', { class: 'slot', type: 'button', role: 'radio', 'data-t': x.t, style: `--i:${i}`, 'aria-checked': String(!!S.slot && S.slot.t === x.t), 'aria-label': `${x.label} ${x.suffix}${x.taken ? ', taken' : ''}` }, `${x.label} ${x.suffix}`);

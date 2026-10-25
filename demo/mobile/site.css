@@ -815,6 +815,7 @@ body{overflow-x:clip}
 .tilted-card__skel{position:absolute;inset:0;z-index:3;display:none;border-radius:var(--tc-radius,30px);background:rgba(255,255,255,.3);pointer-events:none;
   animation:skel 1.1s ease-in-out infinite alternate}
 .tilted-card:has(.tilted-card__front .is-loading) .tilted-card__skel{display:block}
+.tilted-card.is-away .tilted-card__skel{animation-play-state:paused}
 @media (prefers-reduced-motion:reduce){.tilted-card__skel{animation:none}}
 /* everything still works without motion: animations and transitions finish at once */
 @media (prefers-reduced-motion:reduce){

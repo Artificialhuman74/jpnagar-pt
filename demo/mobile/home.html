@@ -9,13 +9,15 @@
 </head><body>
 <header class="top"><img class="logo" src="../canon/logo.webp" alt="J.P. Nagar Medical & Physiotherapy Centre" width="408" height="301"><p class="top-live" data-live><i></i><span>Checking hours…</span></p></header>
 
-<section class="hero" data-inview>
-  <div class="photo" data-label="Photo: Arekere clinic (to be shot)" data-branch-photo="start"></div>
-  <div class="copy">
-    <h1 data-home-headline>Feel better, sooner.</h1>
-    <p data-home-intro>Expert physiotherapy at 3 branches in South Bangalore.</p>
-    <a class="btn btn--act btn--block" href="book.html">Book a visit <i data-icon="arrow"></i></a>
+<section class="hero hero--band" data-inview>
+  <div class="hero-pic">
+    <div class="photo" data-label="Photo: Arekere clinic (to be shot)" data-branch-photo="start"></div>
+    <div class="copy">
+      <p data-home-intro>Expert physiotherapy at 3 branches in South Bangalore.</p>
+      <a class="btn btn--act btn--block" href="book.html">Book a visit <i data-icon="arrow"></i></a>
+    </div>
   </div>
+  <h1 class="hero-line" data-home-headline>Feel better, sooner.</h1>
 </section>
 
 <section class="sec">
@@ -74,7 +76,8 @@
 const near = BRANCHES[nearestIndex()], st = branchStatus(near);
 const live = document.querySelector('[data-live]');
 live.classList.toggle('closed', !st.open);
-live.querySelector('span').textContent = `${near.short} · ${st.text.toLowerCase()}`;
+// the grey dot already says closed, so a closed branch shows only when it opens: one line beside the logo
+live.querySelector('span').textContent = `${near.short} · ${st.text.replace(/^Closed · /, '').toLowerCase()}`;
 
 // each branch's status right now (the week's hours are on Branches)
 const ul = document.querySelector('[data-hours]');

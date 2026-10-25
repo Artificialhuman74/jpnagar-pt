@@ -40,6 +40,20 @@
 @keyframes beat{0%{transform:scale(1);opacity:1}70%,100%{transform:scale(3.25);opacity:0}}
 @media (prefers-reduced-motion:reduce){.top-live i::after{animation:none}}
 .hero .btn{height:56px}
+/* home: the intro and Book button stay on the photo; the tagline sits in a navy band joined under it with a clean edge.
+   Only the bottom of the photo is shaded, in neutral dark (no colour cast on the photo), so the text there reads */
+.hero--band{height:auto;background:#22277A}
+.hero--band::after{display:none}
+.hero--band .hero-pic{position:relative;height:400px}
+.hero--band .hero-pic{overflow:hidden}
+.hero--band .hero-pic::after{content:"";position:absolute;left:0;right:0;bottom:0;height:52%;background:linear-gradient(180deg,rgba(12,13,24,0),rgba(12,13,24,.62))}
+.hero--band .copy p{margin:0 0 14px}
+/* the navy action, lifted off the photo: a lighter top, a top highlight and two shadows (close and wide). The shadow
+   never animates; a press only scales it */
+.hero--band .btn--act{background:linear-gradient(180deg,#3A41AE,var(--act));font-weight:750;border:1px solid rgba(255,255,255,.14);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 2px rgba(8,10,45,.35),0 10px 24px -8px rgba(8,10,45,.7)}
+.hero--band .btn--act:hover{background:linear-gradient(180deg,#333A9E,var(--act-press))}
+.hero-line{position:relative;z-index:2;padding:16px 20px 22px;font-size:38px;color:#fff}
 .hero .btn svg{width:20px;height:20px;transition:transform .3s var(--ease)}
 .hero .btn:hover svg{transform:translateX(4px)}
 

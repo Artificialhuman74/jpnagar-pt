@@ -523,7 +523,7 @@ function renderTime() {
   if (key !== timesKey) {
     timesKey = key;
     // held at the week's longest session, so changing day never moves the page
-    const rows = Math.ceil(Math.max(1, ...[0, 1, 2, 3, 4, 5, 6].flatMap(n => sessionsOn(b, n)).map(([s, e]) => (e - s) * 2)) / 3);
+    const rows = Math.ceil(Math.max(1, ...[0, 1, 2, 3, 4, 5, 6].flatMap(n => sessionsOn(b, n)).map(([s, e]) => (e - s) * 60 / (b.slot || 30))) / 3);
     grid.style.minHeight = `${rows * 48 + (rows - 1) * 8}px`;
     grid.replaceChildren(...(list.length ? list.map(x => {
       const n = el('button', { class: 'slot' + (x.taken ? ' is-taken' : ''), 'aria-label': `${x.label} ${x.suffix}${x.taken ? ', taken' : ''}` }, `${x.label} ${x.suffix}`);

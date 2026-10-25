@@ -51,6 +51,8 @@ const WP = window.JPN_API ? (() => {
     return null;
   }
   const fail = r => toast((r.data && r.data.message) || 'That didn’t save. Please try again.');
+  // the change was made, but the latest state couldn't be read back: say so rather than show an older one as current
+  const stale = () => toast('Done, but the latest schedule couldn’t be loaded. Reload the page before making more changes.');
 
   /* ---------- the plugin's shapes <-> the admin's ---------- */
   // timings carry each weekday's own sessions (t.week, a list or a {day: sessions} map); older ones only days + sessions
@@ -176,15 +178,19 @@ const WP = window.JPN_API ? (() => {
     },
     // leave and closed days answer with the bookings they cancelled (to call) and any that couldn't be
     async leave(add, doc, branch, date) {
+      clearTimeout(pushTimer); if (!await pushDraft()) return null;
       const r = await call(add ? 'POST' : 'DELETE', '/admin/leave', { doctor: doc, branch, date });
       if (!r.ok) { fail(r); return null; }
-      await reload(); await this.reloadDays();
+      if (!await reload()) stale();
+      await this.reloadDays();
       return { cancelled: (r.data.cancelled || []).map(bookingIn), failed: r.data.failed || [], notRestored: r.data.not_restored || [] };
     },
     async closed(add, branch, date, reason) {
+      clearTimeout(pushTimer); if (!await pushDraft()) return null;
       const r = await call(add ? 'POST' : 'DELETE', '/admin/closed', { branch, date, reason });
       if (!r.ok) { fail(r); return null; }
-      await reload(); await this.reloadDays();
+      if (!await reload()) stale();
+      await this.reloadDays();
       return { cancelled: (r.data.cancelled || []).map(bookingIn), failed: r.data.failed || [], notRestored: r.data.not_restored || [] };
     },
     // the cropped photo goes up small enough for the server (shrunk here first if it has to be); the plugin checks it,

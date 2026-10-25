@@ -625,7 +625,13 @@ async function removeLeave(docId, b, date) {
   const back = [], kept = [];
   S.bookings.filter(x => l.cancelled.includes(x.id) && x.status === 'cancelled').forEach(x => {
     x.status = 'booked';
-    const fits = x.doc ? !S.bookings.some(y => y !== x && live(y) && y.doc === x.doc && y.branch === x.branch && y.date === x.date && Math.abs(y.t - x.t) < 1e-6) : !anySurplus(b, date).includes(x);
+    const at = y => Math.abs(y.t - x.t) < 1e-6;
+    // a doctor's own booking: that doctor still works then (at this branch, in their hours) and nobody else has the time;
+    // an "any doctor" one: with it back, that time holds no more "any doctor" bookings than it has free doctors
+    // and either way the time must still hold every "any doctor" booking (a doctor's own patient takes that doctor)
+    const fits = (x.doc
+      ? docsAt(b).some(d => d.id === x.doc) && docTimes(b, x.doc, fromIso(date)).some(t => Math.abs(t - x.t) < 1e-6) && !S.bookings.some(y => y !== x && live(y) && y.doc === x.doc && y.branch === x.branch && y.date === x.date && at(y))
+      : true) && !anySurplus(b, date).some(at);
     if (fits) { delete x.reason; back.push(x); } else { x.status = 'cancelled'; kept.push(x); }
   });
   save(); redraw();

@@ -116,7 +116,12 @@ function freeSlots(b, day) { return sessionsOn(b, day).flatMap((_, si) => slotsF
 // For a calendar of many days: whether a day has free times, without asking the server for each one. A day the live
 // diary hasn't read yet counts as open when the branch works that day; the day picked is then read as usual.
 function looksOpen(b, day) {
-  if (typeof DIARY !== 'undefined' && DIARY && DIARY.peek(b.id, day) === undefined) return worksOn(b, day);
+  if (typeof DIARY !== 'undefined' && DIARY && DIARY.peek(b.id, day) === undefined) {
+    if (!worksOn(b, day)) return false;
+    if (!isToday(day)) return true;
+    const now = nowIST(), h = now.getHours() + now.getMinutes() / 60;
+    return sessionsOn(b, day).some(([, e]) => e - (b.slot || 30) / 60 > h + .25); // the same cut-off slotsFor uses
+  }
   return freeSlots(b, day).length > 0;
 }
 // false while the live diary is still reading that day (always true without it), so a component can show loading

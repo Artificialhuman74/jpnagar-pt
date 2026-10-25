@@ -24,7 +24,11 @@ function jpn_activate() {
 	jpn_seed_defaults();
 	// a new site has its website file straight away, before the owner's first Publish
 	if ( ! file_exists( jpn_snapshot_dir()['path'] . '/site-data.js' ) ) {
-		jpn_locked( 'jpn_write_snapshot' );
+		$written = jpn_locked( 'jpn_write_snapshot' );
+		if ( is_wp_error( $written ) ) {
+			// the pages have no website file until the owner's first Publish, which writes it (or says why it can't)
+			error_log( 'J.P. Nagar Clinic: website file not written on activation: ' . $written->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+		}
 	}
 }
 

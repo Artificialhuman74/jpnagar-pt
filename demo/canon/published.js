@@ -136,11 +136,13 @@ if (PUBLISHED) document.addEventListener('DOMContentLoaded', () => {
    plugin instead of the sample ones: each day is fetched once, slotsFor() answers from what has arrived, and a
    'jpn:slots' event tells the page to redraw when a day comes in. Confirming a booking saves it in WordPress. */
 const DIARY = window.JPN_API ? (() => {
-  const days = new Map(), asked = new Map(), isoOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const days = new Map(), asked = new Map(), failedAt = new Map(), isoOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const url = (route, q = {}) => window.JPN_API + route + Object.entries(q).map(([k, v]) => `&${k}=${encodeURIComponent(v)}`).join('');
   let watched = null, timer = 0;
   // A day's free times. While a newer answer is on its way the last one stays in use (nothing flips to free), and an
   // answer that arrives after a newer request is dropped. The page hears 'jpn:slots' only when something changed.
+  // a day not read yet, or one that couldn't be read and has waited a little, is asked for (again)
+  const due = key => !days.has(key) || (days.get(key) === null && Date.now() - (failedAt.get(key) || 0) > 15000);
   function load(branch, date) {
     const key = `${branch}|${date}`, n = (asked.get(key) || 0) + 1;
     asked.set(key, n); if (!days.has(key)) days.set(key, undefined);
@@ -148,7 +150,10 @@ const DIARY = window.JPN_API ? (() => {
       if (asked.get(key) !== n) return;
       // no answer: the day stops "loading" (its times show, checked again when booking), and is asked again next time
       if (!j) {
-        if (days.get(key) === undefined) { days.set(key, null); document.dispatchEvent(new CustomEvent('jpn:slots', { detail: { branch, date, failed: true } })); }
+        if (days.get(key) === undefined || days.get(key) === null) {
+          failedAt.set(key, Date.now()); // before the repaint, so a redraw it causes doesn't ask again at once
+          if (days.get(key) === undefined) { days.set(key, null); document.dispatchEvent(new CustomEvent('jpn:slots', { detail: { branch, date, failed: true } })); }
+        }
         return;
       }
       const next = new Map((j.times || []).map(x => [x.t, x.doctors])), prev = days.get(key);
@@ -167,23 +172,25 @@ const DIARY = window.JPN_API ? (() => {
     // minute of the day -> free doctor ids; undefined while the day is still on its way, null if it couldn't be read
     free(branch, day) {
       const date = isoOf(day), key = `${branch}|${date}`;
-      if (!days.has(key)) load(branch, date);
+      if (due(key)) load(branch, date);
       return days.get(key) || undefined;
     },
     // false while the day's real times are still on their way, so the page shows them loading
     ready(branch, day) {
       const key = `${branch}|${isoOf(day)}`;
-      if (!days.has(key)) load(branch, isoOf(day));
+      if (due(key)) load(branch, isoOf(day));
       return days.get(key) !== undefined;
     },
     // asks for days the visitor is likely to open next, so tapping one shows its times at once
-    ahead(branch, list) { list.forEach(d => { const date = isoOf(d); if (!days.has(`${branch}|${date}`)) load(branch, date); }); },
+    ahead(branch, list) { list.forEach(d => { const date = isoOf(d); if (due(`${branch}|${date}`)) load(branch, date); }); },
     // keep this day fresh while it is on screen
     watch(branch, day) {
       const w = [branch, isoOf(day)];
       if (!watched || watched[0] !== w[0] || watched[1] !== w[1]) { watched = w; clearTimeout(timer); timer = setTimeout(tick, 30000); }
     },
     refresh(branch, day) { load(branch, isoOf(day)); },
+    // what is known about a day without asking for it (undefined until it has been read)
+    peek(branch, day) { const v = days.get(`${branch}|${isoOf(day)}`); return v === null ? undefined : v; },
     // resolves to { ok, status, data }: data is the booking, or WordPress's error with a message to show
     book(b) {
       return fetch(url('/bookings'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })

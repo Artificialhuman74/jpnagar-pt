@@ -181,3 +181,13 @@ function calendarFile({ id, day, t, minutes = 45, branch, phone }) {
     `SUMMARY:${esc(`Physiotherapy at ${branch.short}`)}`, `LOCATION:${esc(`J.P. Nagar Medical & Physiotherapy Centre, ${branch.name}, Bengaluru`)}`,
     `DESCRIPTION:${esc(`Booking ${id}. Call ${phone} to change or cancel.`)}`, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n') + '\r\n';
 }
+
+/* ---------- dialogs (sheets, the photo viewer): while closed one can't be reached and is out of the accessibility
+   tree; while open, the rest of the page can't be reached, so aria-modal holds ---------- */
+function setModal(dialog, open) {
+  dialog.inert = !open; dialog.toggleAttribute('aria-hidden', !open);
+  if (open) {
+    dialog._inerted = [...document.body.children].filter(n => n !== dialog && !n.contains(dialog) && !n.inert && n.tagName !== 'SCRIPT' && !n.matches('.toast, .scrim'));
+    dialog._inerted.forEach(n => { n.inert = true; });
+  } else if (dialog._inerted) { dialog._inerted.forEach(n => { n.inert = false; }); dialog._inerted = null; }
+}

@@ -51,7 +51,7 @@ function render() {
   });
   // the map follows the nearest branch once the visitor has said where they are; until then the starting one
   const start = BR[0].km == null ? BRANCHES[nearestIndex()] : order[0].b;
-  shown = null; showOnMap(start);
+  showOnMap(start); // the same branch keeps its map (no reload)
 }
 
 /* ---------- nearest first ---------- */

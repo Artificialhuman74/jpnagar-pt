@@ -54,7 +54,7 @@ function fillBranches() {
     return o;
   }));
 }
-function fillDays() { calendar(pops.day, { selected: H.day, works: d => worksOn(BRANCHES[H.b], d), worksText: worksDays(BRANCHES[H.b]), isOpen: d => freeSlots(BRANCHES[H.b], d).length > 0, onPick: pickDay }); }
+function fillDays() { calendar(pops.day, { selected: H.day, works: d => worksOn(BRANCHES[H.b], d), worksText: worksDays(BRANCHES[H.b]), isOpen: d => looksOpen(BRANCHES[H.b], d), onPick: pickDay }); }
 function openPopover(which) {
   if (activePop === which) { closePopover(); return; }
   closePopover();

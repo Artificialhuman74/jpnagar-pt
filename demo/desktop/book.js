@@ -149,7 +149,7 @@ function renderWhen() {
     const st = branchStatus(BRANCHES[i]), live = n.querySelector('.live');
     n.setAttribute('aria-checked', String(i === S.b)); live.classList.toggle('closed', !st.open); live.lastChild.textContent = st.text;
   });
-  calendar($('[data-cal]'), { selected: S.day, works: d => worksOn(b, d), worksText: worksDays(b), isOpen: d => freeSlots(b, d).length > 0, onPick: d => { if (sameDay(d, S.day)) return; S.day = d; S.slot = null; pickSession(); renderWhen(); update(); } });
+  calendar($('[data-cal]'), { selected: S.day, works: d => worksOn(b, d), worksText: worksDays(b), isOpen: d => looksOpen(b, d), onPick: d => { if (sameDay(d, S.day)) return; S.day = d; S.slot = null; pickSession(); renderWhen(); update(); } });
   $('[data-slot-title]').textContent = `Times ${isToday(S.day) ? 'today' : `on ${DAYS[S.day.getDay()]}`}, ${S.day.getDate()} ${MONTHS[S.day.getMonth()]}`;
   // the day's own sessions (a branch can open different hours on different days)
   const ss = sessionsOn(b, S.day);

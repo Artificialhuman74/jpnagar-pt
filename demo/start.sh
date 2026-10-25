@@ -9,9 +9,10 @@ if [ "$1" = "--wp" ]; then
   bash ../wp/dev/up.sh || exit 1
   export JPN_WP=http://127.0.0.1:8898
 fi
-# a demo server already on the port is stopped; anything else listening there is left alone
+# the server this demo started last time (its process id is kept in .serve.pid) is stopped; anything else listening on
+# the port is left alone
 for pid in $(lsof -ti tcp:$PORT -sTCP:LISTEN 2>/dev/null); do
-  if ps -o command= -p "$pid" | grep -q "tools/serve.py"; then kill "$pid"
+  if [ -f .serve.pid ] && [ "$(cat .serve.pid)" = "$pid" ]; then kill "$pid"
   else echo "Port $PORT is in use by another program ($(ps -o comm= -p "$pid")). Stop it, then run this again."; exit 1; fi
 done
 sleep 0.3
@@ -24,4 +25,5 @@ if [ -n "$IP" ]; then echo "  On a phone:   http://$IP:$PORT/m   (same Wi-Fi as 
 echo "  Stop:         Ctrl+C"
 echo
 (sleep 1; open "http://localhost:$PORT/") &
+echo $$ > .serve.pid   # exec keeps this process id for the server
 exec python3 tools/serve.py $PORT

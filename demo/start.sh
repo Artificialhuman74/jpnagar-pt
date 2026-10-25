@@ -9,7 +9,12 @@ if [ "$1" = "--wp" ]; then
   bash ../wp/dev/up.sh || exit 1
   export JPN_WP=http://127.0.0.1:8898
 fi
-kill $(lsof -ti tcp:$PORT) 2>/dev/null
+# a demo server already on the port is stopped; anything else listening there is left alone
+for pid in $(lsof -ti tcp:$PORT -sTCP:LISTEN 2>/dev/null); do
+  if ps -o command= -p "$pid" | grep -q "tools/serve.py"; then kill "$pid"
+  else echo "Port $PORT is in use by another program ($(ps -o comm= -p "$pid")). Stop it, then run this again."; exit 1; fi
+done
+sleep 0.3
 IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null)
 printf '{"ip":"%s","port":%s}\n' "$IP" "$PORT" > lan.json
 echo

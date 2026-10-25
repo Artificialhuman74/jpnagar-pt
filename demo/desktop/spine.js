@@ -23,6 +23,10 @@ const k = 1.05, stage = $('[data-spine-stage]');
 const spine = svgEl({ class: 'spine', viewBox: '0 0 400 520', role: 'img', 'aria-label': 'The back of a body with the spine drawn in, lighting up where the chosen problem happens', 'data-on': 'lower' },
   `<g transform="translate(${(200 - 120 * k).toFixed(1)} ${(262 - 230 * k).toFixed(1)}) scale(${k})">${FIG.male.back}${GLOWS}${spineMarkup()}${MARKS}</g>`);
 stage.prepend(spine);
+// "Stiff back": the vertebrae light up in a wave. A cyan copy of each sits on top and only its opacity changes, so the
+// colour itself never animates; and every loop here pauses while the figure is off screen
+spine.querySelectorAll('.v').forEach(v => { const c = v.cloneNode(); c.setAttribute('class', 'v-hot'); c.setAttribute('aria-hidden', 'true'); v.after(c); });
+new IntersectionObserver(([e]) => spine.classList.toggle('off', !e.isIntersecting)).observe(stage);
 let cond = 'lower', condTimer;
 function setCond(c) {
   cond = c; spine.dataset.on = c;
@@ -45,44 +49,8 @@ const STEPS = [['assess'], ['manual', 'ift', 'traction'], ['catcow', 'bridge']];
 const CAPS = { assess: 'Day one: posture, movement and strength checks', manual: 'Manual therapy: steady pressure from the hands',
   ift: 'IFT: two gentle currents crossing where it hurts', traction: 'Traction: a slow pull that eases the lower spine',
   catcow: 'Cat–cow: round, then gently dip the back', bridge: 'Bridge: lift the hips, hold, lower slowly' };
-const host = $('[data-story-host]'), chapters = $$('.chapter'), stepBtns = $$('[data-goto]'), storySeen = onView(host);
-let step = -1, cycle;
-const sub = [0, 0, 0], picked = [false, false, false];
-function showSub() {
-  const name = STEPS[step][sub[step]];
-  showScene(host, name);
-  $('[data-story-cap]').textContent = CAPS[name];
-  $$(`[data-subs="${step}"] .subtab`).forEach((b, j) => {
-    b.setAttribute('aria-pressed', String(j === sub[step]));
-    b.classList.remove('run'); void b.offsetWidth;
-    b.classList.toggle('run', j === sub[step] && !picked[step] && !reduceMotion);
-  });
-}
-function setStep(i) {
-  if (i === step) return;
-  step = i;
-  chapters.forEach((c, j) => c.classList.toggle('on', j === i));
-  stepBtns.forEach((b, j) => b.setAttribute('aria-current', j === i ? 'step' : 'false'));
-  showSub();
-  clearInterval(cycle);
-  if (STEPS[i].length > 1 && !reduceMotion) cycle = setInterval(() => {
-    if (picked[step] || !storySeen()) return;
-    sub[step] = (sub[step] + 1) % STEPS[step].length; showSub();
-  }, 7000);
-}
-$$('.subtab').forEach(b => b.addEventListener('click', () => {
-  const s = +b.closest('[data-subs]').dataset.subs;
-  picked[s] = true; sub[s] = +b.dataset.sub;
-  if (step !== s) setStep(s); else showSub();
-}));
-stepBtns.forEach((b, j) => b.addEventListener('click', () => chapters[j].scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' })));
-const chapterIO = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) setStep(+e.target.dataset.step); }), { rootMargin: '-45% 0px -45% 0px' });
-chapters.forEach(c => chapterIO.observe(c));
-setStep(0);
+storyStepper(STEPS.map(r => r.map(n => [n, CAPS[n]])));
 
 /* ---------- who treats it ---------- */
-$('[data-who]').replaceChildren(...TEAM.map((t, i) => el('article', { class: 'mini-prof' },
-  el('div', { class: 'photo', role: 'img', 'aria-label': `Portrait of ${t.short}, to be shot` }),
-  el('div', {}, el('b', {}, t.name), el('small', {}, t.card), degChips(t.deg.slice(0, 3), true),
-    el('a', { class: 'link', href: `book.html?therapist=${i}&service=spine&area=lower` }, `Book with ${t.first}`, icon('chevron'))))));
+whoTreats(i => `book.html?therapist=${i}&service=spine&area=lower`);
 paintIcons();

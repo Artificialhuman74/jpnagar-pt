@@ -890,8 +890,10 @@ button.link{border:0;background:none;padding:0;font-size:var(--fs-body)}
 .spine[data-on="sciatica"] .hl-lower,.spine[data-on="disc"] .hl-lower{opacity:.55}
 .spine[data-on="lower"] .v-l,.spine[data-on="neck"] .v-c,.spine[data-on="disc"] .l45,.spine[data-on="sciatica"] .l45,
 .spine[data-on="posture"] .v-c,.spine[data-on="posture"] .up,.spine[data-on="pregnancy"] .v-l{fill:var(--sky);stroke:#fff}
-.spine[data-on="stiff"] .v{animation:v-wave 2.2s ease-in-out infinite;animation-delay:calc(var(--i) * 70ms)}
-@keyframes v-wave{0%,100%{fill:#fff}45%{fill:#00A8EC}}
+.spine .v-hot{fill:#00A8EC;opacity:0;pointer-events:none}
+.spine[data-on="stiff"] .v-hot{animation:v-wave 2.2s ease-in-out infinite;animation-delay:calc(var(--i) * 70ms)}
+@keyframes v-wave{0%,100%{opacity:0}45%{opacity:1}}
+.spine.off,.spine.off *{animation-play-state:paused!important}
 .hl-nerve{fill:none;stroke:var(--sky);stroke-width:3;stroke-linecap:round;stroke-dasharray:6 6;animation:nerve 1.1s linear infinite paused}
 .spine[data-on="sciatica"] .hl-nerve{animation-play-state:running}
 .hl-nerve-glow{fill:none;stroke:var(--sky);stroke-width:9;stroke-linecap:round;opacity:0}

@@ -749,14 +749,8 @@ $('[data-share]').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(S.shareText); toast('Booking details copied'); } catch (_) { toast(S.shareText); }
 });
 $('[data-ics]').addEventListener('click', () => {
-  const b = BRANCHES[S.b], d = new Date(S.day); const h = Math.floor(S.slot.t), m = (S.slot.t % 1) * 60;
-  const pad = n => String(n).padStart(2, '0');
-  const stamp = (H, M) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(H)}${pad(M)}00`;
-  const end = S.slot.t + .75;
-  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//JPN Physio//Booking//EN', 'BEGIN:VEVENT',
-    `DTSTART;TZID=Asia/Kolkata:${stamp(h, m)}`, `DTEND;TZID=Asia/Kolkata:${stamp(Math.floor(end), (end % 1) * 60)}`,
-    `SUMMARY:Physiotherapy at ${b.short}`, `LOCATION:J.P. Nagar Medical & Physiotherapy Centre, ${b.name}, Bengaluru`,
-    'DESCRIPTION:Call +91 99161 16625 to change or cancel.', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  const b = BRANCHES[S.b], d = new Date(S.day);
+  const ics = calendarFile({ id: S.bookingNo || bookingId(b, d, S.slot.t), day: d, t: S.slot.t, branch: b, phone: '+91 99161 16625' });
   const a = el('a', { href: URL.createObjectURL(new Blob([ics], { type: 'text/calendar' })), download: 'physio-visit.ics' });
   document.body.append(a); a.click(); a.remove(); toast('Calendar file ready');
 });

@@ -169,3 +169,15 @@ function drawBarcode(svg, text) {
   svg.setAttribute('viewBox', `0 0 ${x + quiet} 48`); svg.setAttribute('preserveAspectRatio', 'none');
   svg.replaceChildren(...bars);
 }
+
+// A visit as a calendar file (RFC 5545): a unique id and a timestamp, text escaped, and times in UTC (IST is UTC+5:30
+// all year), so no time-zone block is needed and every calendar app reads it the same way.
+function calendarFile({ id, day, t, minutes = 45, branch, phone }) {
+  const flat = d => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const at = h => flat(new Date(Date.UTC(day.getFullYear(), day.getMonth(), day.getDate(), 0, Math.round(h * 60) - 330)));
+  const esc = x => String(x).replace(/[\\;,]/g, m => '\\' + m).replace(/\n/g, '\\n');
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//J.P. Nagar Physio//Booking//EN', 'BEGIN:VEVENT',
+    `UID:${esc(id)}@jpnagarmedicalandphysiotherapy.com`, `DTSTAMP:${flat(new Date())}`, `DTSTART:${at(t)}`, `DTEND:${at(t + minutes / 60)}`,
+    `SUMMARY:${esc(`Physiotherapy at ${branch.short}`)}`, `LOCATION:${esc(`J.P. Nagar Medical & Physiotherapy Centre, ${branch.name}, Bengaluru`)}`,
+    `DESCRIPTION:${esc(`Booking ${id}. Call ${phone} to change or cancel.`)}`, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n') + '\r\n';
+}

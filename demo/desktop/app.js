@@ -118,6 +118,54 @@ const diaryReady = (b, day) => typeof DIARY === 'undefined' || !DIARY || DIARY.r
 // A placeholder line or chip row while live times are on their way: the component keeps its shape, then fills in whole.
 const skelLine = w => el('span', { class: 'skel', 'aria-hidden': 'true', style: `display:inline-block;vertical-align:middle;width:${w};height:1em` });
 const skelChips = n => [...Array(n)].map(() => el('span', { class: 'skel tchip-skel', 'aria-hidden': 'true' }));
+/* "How we treat it" on a service page: the stage follows the chapter being read, and a chapter's treatments take turns
+   on it until one is picked. The steps come from the chapters' data-scene and data-cap, unless a page gives its own. */
+function storyStepper(steps) {
+  const host = $('[data-story-host]'), chapters = $$('.chapter'), stepBtns = $$('[data-goto]'), storySeen = onView(host);
+  // each chapter shows one scene, or one per sub-tab
+  const STEPS = steps || chapters.map(c => { const subs = $$('.subtab', c); return subs.length ? subs.map(s => [s.dataset.scene, s.dataset.cap]) : [[c.dataset.scene, c.dataset.cap]]; });
+  let step = -1, cycle;
+  const sub = STEPS.map(() => 0), picked = STEPS.map(() => false);
+  function showSub() {
+    const [name, cap] = STEPS[step][sub[step]], at = [step, sub[step]];
+    // the buttons answer first; the scene (the heavier drawing) follows once that has been drawn
+    requestAnimationFrame(() => requestAnimationFrame(() => { if (at[0] === step && at[1] === sub[step]) showScene(host, name); }));
+    $('[data-story-cap]').textContent = cap;
+    $$(`[data-subs="${step}"] .subtab`).forEach((b, j) => {
+      b.setAttribute('aria-pressed', String(j === sub[step]));
+      b.classList.remove('run'); void b.offsetWidth;
+      b.classList.toggle('run', j === sub[step] && !picked[step] && !reduceMotion);
+    });
+  }
+  function setStep(i) {
+    if (i === step) return;
+    step = i;
+    chapters.forEach((c, j) => c.classList.toggle('on', j === i));
+    stepBtns.forEach((b, j) => b.setAttribute('aria-current', j === i ? 'step' : 'false'));
+    showSub();
+    clearInterval(cycle);
+    if (STEPS[i].length > 1 && !reduceMotion) cycle = setInterval(() => {
+      if (picked[step] || !storySeen()) return;
+      sub[step] = (sub[step] + 1) % STEPS[step].length; showSub();
+    }, 7000);
+  }
+  $$('.subtab').forEach(b => b.addEventListener('click', () => {
+    const s = +b.closest('[data-subs]').dataset.subs;
+    picked[s] = true; sub[s] = +b.dataset.sub;
+    if (step !== s) setStep(s); else showSub();
+  }));
+  stepBtns.forEach((b, j) => b.addEventListener('click', () => chapters[j].scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' })));
+  const chapterIO = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) setStep(+e.target.dataset.step); }), { rootMargin: '-45% 0px -45% 0px' });
+  chapters.forEach(c => chapterIO.observe(c));
+  setStep(0);
+}
+/* "Who treats it" on a service page: each physiotherapist with their published photo, and a link to book with them */
+function whoTreats(bookHref) {
+  $('[data-who]').replaceChildren(...TEAM.map((t, i) => el('article', { class: 'mini-prof' },
+    (() => { const p = el('div', { class: 'photo', role: 'img', 'aria-label': t.photo ? `Portrait of ${t.short}` : `Portrait of ${t.short}, to be shot` }); paintPhoto(p, t.photo); return p; })(),
+    el('div', {}, el('b', {}, t.name), el('small', {}, t.card), degChips(t.deg.slice(0, 3), true),
+      el('a', { class: 'link', href: bookHref(i) }, `Book with ${t.first}`, icon('chevron'))))));
+}
 /* "Next free at …" on a service page: the line under the title and the box beside the story, at the starting branch
    (the nearest once the visitor has shared where they are, else JP Nagar). While that day's real times are on their
    way both show loading, and they are drawn again when the times arrive (moving on a day if it has filled up). */

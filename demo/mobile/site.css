@@ -29,15 +29,16 @@
 .hero .copy{position:absolute;left:18px;right:18px;bottom:18px;color:#fff;z-index:2}
 .hero h1{font-size:40px}
 .hero p{margin:8px 0 16px;color:rgba(255,255,255,.88)}
-.hero .live{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:14px;font-weight:600;
-  background:rgba(255,255,255,.16);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.25);
-  padding:8px 12px;border-radius:999px;width:max-content;max-width:100%}
-.hero .live i{position:relative;width:8px;height:8px;border-radius:50%;background:var(--sky)}
-/* the beat is a ring that grows and fades on its own layer, so it never makes the page repaint */
-.hero .live i::after{content:"";position:absolute;inset:0;border-radius:50%;background:rgba(0,168,236,.55);animation:beat 2.4s infinite;will-change:transform,opacity}
-.hero .live.closed i{background:#C9CCD6;animation:none}
+/* the nearest branch's status, top right beside the logo */
+.top-live{display:flex;align-items:center;gap:8px;max-width:calc(100% - 104px);padding:7px 12px;border-radius:999px;background:var(--surface);
+  font-size:13px;font-weight:650;line-height:1.25;color:var(--ink);text-align:right}
+.top-live i{position:relative;flex:none;width:8px;height:8px;border-radius:50%;background:var(--sky)}
+/* the beat is a ring that grows and fades on its own layer, so it never makes the page repaint; a few beats, then still */
+.top-live i::after{content:"";position:absolute;inset:0;border-radius:50%;background:rgba(0,168,236,.55);animation:beat 2.4s 4;opacity:0}
+.top-live.closed i{background:var(--ink-3)}
+.top-live.closed i::after{animation:none}
 @keyframes beat{0%{transform:scale(1);opacity:1}70%,100%{transform:scale(3.25);opacity:0}}
-.hero .live.closed i::after{animation:none;opacity:0}
+@media (prefers-reduced-motion:reduce){.top-live i::after{animation:none}}
 .hero .btn{height:56px}
 .hero .btn svg{width:20px;height:20px;transition:transform .3s var(--ease)}
 .hero .btn:hover svg{transform:translateX(4px)}

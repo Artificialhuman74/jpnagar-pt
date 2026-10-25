@@ -30,9 +30,13 @@ function jpn_snapshot_url() {
 	return $d['url'] . '/site-data.js?v=' . rawurlencode( (string) get_option( 'jpn_snapshot_version', '0' ) );
 }
 
+/**
+ * A photo's address as a path on this site (/wp-content/uploads/...), so the website file is the same whichever of
+ * the site's addresses (the visitors' or the admin's) the owner published from.
+ */
 function jpn_photo_url( $id ) {
 	$url = $id ? wp_get_attachment_url( $id ) : '';
-	return $url ? $url : null;
+	return $url ? wp_make_link_relative( $url ) : null;
 }
 
 /** Content (the live copy unless given) plus the current timings, in the shape the pages read. */

@@ -285,6 +285,25 @@ draft['home']['photo'] = 424242
 s, r = call('PUT', '/admin/content', draft, owner=True)
 check('home photo: an id that isn\'t one of our photos is dropped', s == 200 and r['home']['photo'] == 0, r.get('home'))
 
+check('photos: the website file names photos by path, not by one of the site\'s addresses', '"photo":"/wp-content/uploads/' in js and 'localhost' not in js, js[js.find('"home"'):js.find('"home"') + 160])
+
+# ---- the clinic admin on its own address (admin.<site>), served by this same WordPress
+ADMIN_HOST, VISIT_HOST = 'admin.localhost:' + PORT, 'localhost:' + PORT
+def on_host(host, path):
+    p = subprocess.run(['curl','-s','-D','-','-H','Host: ' + host, SITE + path], capture_output=True, text=True).stdout
+    head, _, body = p.partition('\n\n')  # text mode has already turned \r\n into \n
+    return head.lower(), body
+def home_on(host):
+    try: return json.loads(on_host(host, '/?rest_route=/')[1]).get('home')
+    except ValueError: return None
+check('admin address: WordPress uses it for its own links there', home_on(ADMIN_HOST) == 'http://' + ADMIN_HOST, home_on(ADMIN_HOST))
+head, _ = on_host(ADMIN_HOST, '/?s=x')
+check('admin address: told not to be indexed', 'x-robots-tag: noindex, nofollow' in head, head[:400])
+head, body = on_host(ADMIN_HOST, '/wp-login.php')
+check('admin address: the login form posts back to the admin address', 'action="http://' + ADMIN_HOST + '/wp-login.php"' in body, body[body.find('<form'):body.find('<form') + 200])
+head, _ = on_host(VISIT_HOST, '/?s=x')
+check('admin address: the visitors\' address is unchanged', home_on(VISIT_HOST) == 'http://' + VISIT_HOST and 'x-robots-tag' not in head, home_on(VISIT_HOST))
+
 # ---- no PHP warnings or notices anywhere in the run
 log = subprocess.run(['docker','compose','exec','-T','wp','sh','-c','grep -v -E "J.P. Nagar Clinic: (booking email for|photo upload failed)" /var/www/html/wp-content/debug.log 2>/dev/null || true'], cwd=D, capture_output=True, text=True).stdout.strip()
 check('no PHP warnings, notices or errors logged', log == '', log[:600])

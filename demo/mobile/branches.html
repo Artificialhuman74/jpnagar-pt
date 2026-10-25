@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Branches · J.P. Nagar Physio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="../canon/base.css">
+<link rel="stylesheet" href="site.css">
+</head><body>
+<header class="top"><img class="logo" src="../canon/logo.webp" alt="J.P. Nagar Medical & Physiotherapy Centre" width="408" height="301"></header>
+<div class="phead" data-reveal>
+  <h1>Our branches</h1>
+  <p>Three clinics in South Bangalore, all with parking.</p>
+</div>
+
+<section class="locate" data-reveal>
+  <b>Which one is closest to you?</b>
+  <p>Share your location, or pick your area.</p>
+  <button class="btn btn--act btn--block" data-geo><i data-icon="pin"></i>Use my location</button>
+  <div class="or" data-areas></div>
+  <p class="found" data-found aria-live="polite"></p>
+</section>
+
+<div class="blist" data-blist></div>
+<div class="mapbox" data-mapbox></div>
+
+<div class="fab"></div>
+<nav class="dock" data-active="branches"></nav>
+<script src="app.js"></script>
+<script src="../canon/published-data.js"></script>
+<script src="../canon/published.js"></script>
+<script>
+document.querySelector('[data-mapbox]').append(mapEmbed(null)); // all three branches
+const list = document.querySelector('[data-blist]');
+const cards = BRANCHES.map((b, i) => {
+  const st = branchStatus(b);
+  const dist = el('span', { 'data-dist': '' }, kmText(b)), tag = el('span', { class: 'near-tag', hidden: '' }, 'Nearest');
+  const card = el('article', { class: 'bcard', 'data-id': b.id },
+    el('div', { class: 'photo tilt', 'data-label': `Photo: ${b.short} entrance (to be shot)`, 'data-branch-photo': b.id }),
+    el('div', { class: 'in' },
+      el('div', { class: 'h' }, el('h2', {}, b.name), tag),
+      el('div', { class: 'meta' }, el('span', { class: 'open' + (st.open ? '' : ' closed') }, st.text), dist),
+      el('p', { class: 'addr' }, b.addr),
+      el('div', { class: 'acts' },
+        el('a', { href: mapsLink(b), target: '_blank', rel: 'noopener' }, icon('pin'), 'Directions'),
+        el('a', { href: 'tel:' + b.phone }, icon('phone'), 'Call'),
+        el('a', { class: 'act', href: `book.html?branch=${b.id}` }, 'Book here')),
+      el('a', { class: 'more-link', href: b.id === 'arekere' ? 'arekere.html' : '#' }, 'Branch details, hours and team', icon('chevron'))));
+  card.querySelector('.more-link').addEventListener('click', e => { if (b.id !== 'arekere') { e.preventDefault(); toast('Each branch page uses the Arekere template'); } });
+  list.append(card); return { b, card, dist, tag };
+});
+
+// Re-sort nearest first, sliding each card from its old place to its new one.
+function sortFrom(lat, lng, where) {
+  cards.forEach(c => { c.d = kmBetween(lat, lng, c.b.lat, c.b.lng); c.dist.textContent = `${c.d.toFixed(1)} km`; });
+  saveKm(Object.fromEntries(cards.map(c => [c.b.id, c.d])));
+  const before = new Map(cards.map(c => [c, c.card.getBoundingClientRect().top]));
+  [...cards].sort((x, y) => x.d - y.d).forEach((c, i) => { list.append(c.card); c.tag.hidden = i !== 0; });
+  if (!reduceMotion) cards.forEach(c => {
+    const dy = before.get(c) - c.card.getBoundingClientRect().top; if (!dy) return;
+    c.card.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 650, easing: 'cubic-bezier(.16,1,.3,1)' });
+  });
+  const n = [...cards].sort((x, y) => x.d - y.d)[0];
+  document.querySelector('[data-found]').textContent = `${where}: ${n.b.short} is closest, ${n.d.toFixed(1)} km away`;
+}
+const areas = document.querySelector('[data-areas]');
+AREAS.forEach(([name, lat, lng]) => {
+  const p = el('button', { class: 'pill' }, name);
+  p.addEventListener('click', () => { areas.querySelectorAll('.pill').forEach(x => x.classList.toggle('on', x === p)); sortFrom(lat, lng, `From ${name}`); });
+  areas.append(p);
+});
+document.querySelector('[data-geo]').addEventListener('click', () => {
+  const f = document.querySelector('[data-found]');
+  if (!navigator.geolocation) { f.textContent = 'Location isn’t available here. Pick your area instead.'; return; }
+  f.textContent = 'Finding you…';
+  navigator.geolocation.getCurrentPosition(
+    p => sortFrom(p.coords.latitude, p.coords.longitude, 'From where you are'),
+    () => { f.textContent = 'No problem. Pick your area instead.'; },
+    { timeout: 8000, maximumAge: 600000 });
+});
+</script>
+</body></html>

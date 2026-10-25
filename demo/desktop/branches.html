@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Branches in South Bangalore · J.P. Nagar Physio</title>
+<meta name="description" content="Three physiotherapy branches in South Bangalore: Arekere MICO Layout, Bannerghatta Road and JP Nagar 7th Phase. Open Monday to Saturday, all with parking.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="desktop.css">
+</head>
+<body data-page="branches">
+<a class="skiplink" href="#main">Skip to content</a>
+<header class="hd">
+  <div class="wrap hd-in">
+    <a class="hd-logo" href="home.html"><img src="../canon/logo.webp" alt="J.P. Nagar Medical &amp; Physiotherapy Centre, home" width="408" height="301"></a>
+    <div class="hd-right">
+      <span class="live" data-live></span>
+      <span class="hd-sep" aria-hidden="true"></span>
+      <a class="hd-call" href="tel:+919916116625"><i data-icon="phone"></i>+91 99161 16625</a>
+      <a class="btn btn--ghost btn--sm" href="https://wa.me/919916116625" target="_blank" rel="noopener"><i data-icon="whatsapp"></i>WhatsApp</a>
+    </div>
+  </div>
+</header>
+
+<main id="main" tabindex="-1" class="wrap">
+  <div class="ptop">
+    <div>
+      <h1 class="h1">Our branches</h1>
+      <p class="lead">Three clinics in South Bangalore, open <span data-open-days>Monday to Saturday</span>, all with parking.</p>
+    </div>
+  </div>
+
+  <div class="brs">
+    <div>
+      <section class="locate" aria-labelledby="loc-h">
+        <div class="locate-h"><h2 id="loc-h">Which one is closest to you?</h2><p>Type your area or pincode, or share your location.</p></div>
+        <div class="locate-row">
+          <label class="input" for="area-in"><i data-icon="search"></i><span class="vh">Your area or pincode</span><input id="area-in" list="area-list" placeholder="e.g. BTM Layout or 560076" autocomplete="off"></label>
+          <button class="btn btn--act" type="button" data-locate><i data-icon="locate"></i>Use my location</button>
+        </div>
+        <datalist id="area-list" data-area-list></datalist>
+        <div class="areas" data-areas></div>
+        <p class="found" data-found aria-live="polite"></p>
+      </section>
+      <div class="bcards" data-bcards></div>
+    </div>
+
+    <div class="map" data-map><p class="map-note" data-map-note aria-live="polite"></p></div>
+  </div>
+</main>
+
+<footer class="ft" data-footer></footer>
+<div class="fab"></div>
+<nav class="dock" data-active="branches"></nav>
+<script src="app.js"></script>
+<script src="../canon/published-data.js"></script>
+<script src="../canon/published.js"></script>
+<script src="branches.js"></script>
+</body>
+</html>

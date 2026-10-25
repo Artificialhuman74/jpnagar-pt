@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Book a Visit · J.P. Nagar Physio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="../canon/base.css">
+<link rel="stylesheet" href="site.css">
+</head><body class="book-page in-flow">
+<a class="skiplink" href="#main-step">Skip to the current step</a>
+
+<header class="bhead">
+  <div class="row">
+    <button class="iconbtn" data-back aria-label="Back" data-icon="back"></button>
+    <span class="title">Book a visit</span>
+    <a class="help" href="tel:+919916116625">Call us</a>
+  </div>
+  <div class="prog" aria-hidden="true"><span></span><span></span><span></span></div>
+  <div class="prog-labels"><span>Where it hurts</span><span>Time</span><span>Your details</span></div>
+</header>
+
+<!-- STEP 1: where does it hurt -->
+<section class="step" data-step="1" aria-labelledby="s1">
+  <div class="done-list" data-done-1></div>
+  <h1 id="s1" tabindex="-1">Where does it hurt? <small class="opt">Optional</small></h1>
+  <p class="lead">Tap one spot or several, or skip.</p>
+  <div class="mapctl">
+    <div class="seg" role="radiogroup" aria-label="Show the figure as">
+      <button class="on" data-gender="male" role="radio" aria-checked="true">Male</button>
+      <button data-gender="female" role="radio" aria-checked="false">Female</button>
+    </div>
+    <div class="seg" role="radiogroup" aria-label="View">
+      <button data-view="front" role="radio" aria-checked="false">Front</button>
+      <button class="on" data-view="back" role="radio" aria-checked="true">Back</button>
+    </div>
+  </div>
+  <div class="mapwrap">
+    <span class="side l" data-side-l>LEFT</span><span class="side r" data-side-r>RIGHT</span>
+    <!-- shared shapes: one silhouette per body type; each view adds its own hair, feet and anatomy lines -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="skin" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="480"><stop offset="0" stop-color="#F1F3F9"/><stop offset="1" stop-color="#D9DDEA"/></linearGradient>
+        <linearGradient id="hair" gradientUnits="userSpaceOnUse" x1="0" y1="10" x2="0" y2="96"><stop offset="0" stop-color="#C3C8D9"/><stop offset="1" stop-color="#AEB4C9"/></linearGradient>
+        <filter id="vol" x="-15%" y="-8%" width="130%" height="116%" color-interpolation-filters="sRGB">
+          <feOffset in="SourceAlpha" dx="-7" dy="-5"/><feGaussianBlur stdDeviation="7" result="ob"/>
+          <feComposite in="SourceAlpha" in2="ob" operator="out" result="shadeMask"/>
+          <feFlood flood-color="#2B3192" flood-opacity=".2"/><feComposite in2="shadeMask" operator="in" result="shade"/>
+          <feOffset in="SourceAlpha" dx="5" dy="4"/><feGaussianBlur stdDeviation="5" result="hb"/>
+          <feComposite in="SourceAlpha" in2="hb" operator="out" result="hiMask"/>
+          <feFlood flood-color="#FFFFFF" flood-opacity=".9"/><feComposite in2="hiMask" operator="in" result="hi"/>
+          <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="shade"/><feMergeNode in="hi"/></feMerge>
+        </filter>
+        <!-- ~7.5 heads tall: crotch at mid-height, elbows at the waist, wrists at the hips -->
+        <g id="m-body">
+          <ellipse cx="120" cy="42" rx="22" ry="28"/>
+          <ellipse cx="97.5" cy="45" rx="4" ry="7"/><ellipse cx="142.5" cy="45" rx="4" ry="7"/>
+          <path d="M110 64 L130 64 L133 88 L107 88 Z"/>
+          <path d="M107 86 C96 89 80 91 72 98 C66 104 66 114 70 124 L77 148 C81 164 85 174 86 182 C84 196 81 210 82 224 L120 246 L158 224 C159 210 156 196 154 182 C155 174 159 164 163 148 L170 124 C174 114 174 104 168 98 C160 91 144 89 133 86 Z"/>
+          <path d="M70 101 C60 114 56 140 56 170 C54 196 51 218 48 240 L61 242 C64 220 67 198 70 176 C73 152 77 132 80 122 Z"/>
+          <path d="M170 101 C180 114 184 140 184 170 C186 196 189 218 192 240 L179 242 C176 220 173 198 170 176 C167 152 163 132 160 122 Z"/>
+          <ellipse cx="54" cy="256" rx="8.5" ry="16" transform="rotate(8 54 256)"/>
+          <ellipse cx="186" cy="256" rx="8.5" ry="16" transform="rotate(-8 186 256)"/>
+          <path d="M82 216 C78 262 82 298 86 330 C88 362 90 396 92 428 L106 428 C106 396 108 362 110 330 C114 300 119 276 119 244 Z"/>
+          <path d="M158 216 C162 262 158 298 154 330 C152 362 150 396 148 428 L134 428 C134 396 132 362 130 330 C126 300 121 276 121 244 Z"/>
+        </g>
+        <g id="f-body">
+          <ellipse cx="120" cy="43" rx="20" ry="27"/>
+          <ellipse cx="100" cy="46" rx="3.5" ry="6"/><ellipse cx="140" cy="46" rx="3.5" ry="6"/>
+          <path d="M112 64 L128 64 L130 88 L110 88 Z"/>
+          <path d="M110 86 C100 89 88 91 81 98 C76 104 76 114 79 124 L85 148 C89 162 92 170 92 178 C89 194 80 208 78 222 L120 248 L162 222 C160 208 151 194 148 178 C148 170 151 162 155 148 L161 124 C164 114 164 104 159 98 C152 91 140 89 130 86 Z"/>
+          <path d="M79 101 C70 116 66 142 66 170 C64 196 61 218 58 240 L70 242 C73 220 76 198 78 176 C81 152 84 134 87 122 Z"/>
+          <path d="M161 101 C170 116 174 142 174 170 C176 196 179 218 182 240 L170 242 C167 220 164 198 162 176 C159 152 156 134 153 122 Z"/>
+          <ellipse cx="63" cy="256" rx="7.5" ry="14.5" transform="rotate(8 63 256)"/>
+          <ellipse cx="177" cy="256" rx="7.5" ry="14.5" transform="rotate(-8 177 256)"/>
+          <path d="M78 218 C73 264 79 300 87 332 C89 364 92 398 94 428 L106 428 C106 398 108 364 110 332 C114 302 119 280 119 248 Z"/>
+          <path d="M162 218 C167 264 161 300 153 332 C151 364 148 398 146 428 L134 428 C134 398 132 364 130 332 C126 302 121 280 121 248 Z"/>
+        </g>
+        <!-- one hairstyle per body type, seen from both sides: the back shape doubles as the hair behind the head in front view -->
+        <path id="m-hair" d="M97 44 C95 12 145 12 143 44 C143 56 139 65 133 70 L107 70 C101 65 97 56 97 44 Z"/>
+        <path id="m-fringe" d="M98 40 C97 13 143 13 142 40 C137 29 129 25 120 25 C111 25 103 29 98 40 Z"/>
+        <path id="f-hair" d="M99 44 C97 13 143 13 141 44 C142 62 146 80 149 92 C146 99 135 102 120 102 C105 102 94 99 91 92 C94 80 98 62 99 44 Z"/>
+        <path id="f-fringe" d="M100 42 C99 15 141 15 140 42 C136 31 130 27 122 27 C114 30 106 33 100 42 Z"/>
+      </defs>
+    </svg>
+
+    <div class="turn" data-turn data-g="male">
+      <div class="btilt" data-tilt>
+        <div class="lift">
+          <div class="figure is-back" data-figure>
+            <!-- FRONT: fringe over the forehead, hair behind the head, ears, collarbones, chest, navel, kneecaps, toes forward -->
+            <div class="face f" data-face="front" inert>
+              <svg viewBox="0 0 240 480" aria-hidden="true">
+                <g class="g-m">
+                  <use filter="url(#vol)" fill="url(#hair)" href="#m-hair"/>
+                  <g filter="url(#vol)" fill="url(#skin)"><use href="#m-body"/><ellipse cx="97" cy="438" rx="13" ry="9"/><ellipse cx="143" cy="438" rx="13" ry="9"/></g>
+                  <use filter="url(#vol)" fill="url(#hair)" href="#m-fringe"/>
+                  <g class="ln">
+                    <path d="M104 93 C96 96 86 97 79 99"/><path d="M136 93 C144 96 154 97 161 99"/>
+                    <path d="M90 130 C100 142 113 142 119 135"/><path d="M150 130 C140 142 127 142 121 135"/>
+                    <path d="M120 150 L120 176"/><circle class="dot" cx="120" cy="186" r="1.8"/>
+                    <path d="M92 214 C104 226 114 238 120 244"/><path d="M148 214 C136 226 126 238 120 244"/>
+                    <path d="M92 327 C95 320 104 320 106 328"/><path d="M148 327 C145 320 136 320 134 328"/>
+                    <path d="M90 441 L104 441"/><path d="M136 441 L150 441"/>
+                  </g>
+                </g>
+                <g class="g-f">
+                  <use filter="url(#vol)" fill="url(#hair)" href="#f-hair"/>
+                  <g filter="url(#vol)" fill="url(#skin)"><use href="#f-body"/><ellipse cx="99" cy="438" rx="11" ry="8"/><ellipse cx="141" cy="438" rx="11" ry="8"/></g>
+                  <use filter="url(#vol)" fill="url(#hair)" href="#f-fringe"/>
+                  <g class="ln">
+                    <path d="M108 93 C100 96 92 97 86 99"/><path d="M132 93 C140 96 148 97 154 99"/>
+                    <path d="M93 130 C98 145 112 147 118 138"/><path d="M147 130 C142 145 128 147 122 138"/>
+                    <circle class="dot" cx="120" cy="188" r="1.8"/>
+                    <path d="M90 214 C103 228 114 240 120 248"/><path d="M150 214 C137 228 126 240 120 248"/>
+                    <path d="M93 329 C96 322 104 322 106 330"/><path d="M147 329 C144 322 136 322 134 330"/>
+                    <path d="M92 441 L104 441"/><path d="M136 441 L148 441"/>
+                  </g>
+                </g>
+              </svg>
+              <div class="hsl" data-hsl="front"></div>
+            </div>
+            <!-- BACK: the same hair seen from behind, spine, shoulder blades, lifted glutes, knee creases, heels -->
+            <div class="face b" data-face="back">
+              <svg viewBox="0 0 240 480" aria-hidden="true">
+                <g class="g-m">
+                  <g filter="url(#vol)" fill="url(#skin)"><use href="#m-body"/><ellipse cx="99" cy="434" rx="9" ry="8"/><ellipse cx="141" cy="434" rx="9" ry="8"/></g>
+                  <use filter="url(#vol)" fill="url(#hair)" href="#m-hair"/>
+                  <g class="ln">
+                    <path class="spine" d="M120 90 L120 210"/>
+                    <path d="M96 110 C91 122 93 136 104 144"/><path d="M144 110 C149 122 147 136 136 144"/>
+                    <circle class="dot" cx="113" cy="204" r="1.8"/><circle class="dot" cx="127" cy="204" r="1.8"/>
+                    <path d="M120 218 L120 240"/>
+                    <path d="M88 236 C95 249 111 251 119 243"/><path d="M152 236 C145 249 129 251 121 243"/>
+                    <path d="M93 334 C97 337 103 337 107 334"/><path d="M147 334 C143 337 137 337 133 334"/>
+                  </g>
+                </g>
+                <g class="g-f">
+                  <g filter="url(#vol)" fill="url(#skin)"><use href="#f-body"/><ellipse cx="100" cy="434" rx="8" ry="7"/><ellipse cx="140" cy="434" rx="8" ry="7"/></g>
+                  <use filter="url(#vol)" fill="url(#hair)" href="#f-hair"/>
+                  <g class="ln">
+                    <path class="spine" d="M120 104 L120 210"/>
+                    <path d="M100 112 C96 122 98 134 106 142"/><path d="M140 112 C144 122 142 134 134 142"/>
+                    <circle class="dot" cx="113" cy="206" r="1.8"/><circle class="dot" cx="127" cy="206" r="1.8"/>
+                    <path d="M120 220 L120 243"/>
+                    <path d="M84 236 C92 252 110 254 119 246"/><path d="M156 236 C148 252 130 254 121 246"/>
+                    <path d="M94 336 C98 339 103 339 107 336"/><path d="M146 336 C142 339 137 339 133 336"/>
+                  </g>
+                </g>
+              </svg>
+              <div class="hsl" data-hsl="back"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="floor" aria-hidden="true"></div>
+    </div>
+    <p class="turnhint" data-hint><b>Back view</b> · swipe to turn</p>
+    <span class="tag" data-tag></span>
+  </div>
+  <div class="also">
+    <p>Or tell us what's going on</p>
+    <div class="pills" data-reasons>
+      <button class="pill" data-reason="surgery">After surgery</button>
+      <button class="pill" data-reason="neuro">Stroke or nerve problem</button>
+      <button class="pill" data-reason="child">For my child</button>
+      <button class="pill" data-reason="elder">For an elderly parent</button>
+      <button class="pill" data-reason="women">Pregnancy or after delivery</button>
+    </div>
+  </div>
+  <div class="field story">
+    <label for="story">What happened? <small>(optional)</small></label>
+    <div class="input area"><textarea id="story" rows="3" maxlength="300" placeholder="e.g. Twisted my knee playing badminton last Sunday. It hurts on the stairs."></textarea></div>
+    <div class="pills starters" data-starters>
+      <button class="pill" type="button">Started after a fall</button>
+      <button class="pill" type="button">Hurts at night</button>
+      <button class="pill" type="button">Worse in the morning</button>
+      <button class="pill" type="button">Getting worse</button>
+    </div>
+    <p class="hint"><span data-count>0</span>/300</p>
+  </div>
+  <div class="match" data-match aria-live="polite">
+    <b>Matching care</b>
+    <div class="chips" data-match-chips></div>
+    <p style="margin-top:10px">Your physiotherapist confirms this at your first visit.</p>
+  </div>
+</section>
+
+<!-- STEP 2: time -->
+<section class="step" data-step="2" aria-labelledby="s2">
+  <div class="done-list" data-done-2></div>
+  <h1 id="s2" tabindex="-1">Pick a time</h1>
+  <p class="lead">Pick a branch, day and time. No payment now.</p>
+  <div class="bk" style="margin-top:16px">
+    <div class="tabs" role="tablist" aria-label="Branch" data-tabs><span class="tind" aria-hidden="true"></span></div>
+    <div class="status"><span class="open" data-status></span><a href="https://www.google.com/maps/search/?api=1&amp;query=J.P.+Nagar+Medical+and+Physiotherapy+Centre" target="_blank" rel="noopener" data-dir>Directions</a></div>
+    <div class="days" data-days></div>
+    <div class="sessions" data-sessions></div>
+    <div class="slots" data-slots></div>
+    <p class="vh" aria-live="polite" data-slot-say></p>
+  </div>
+  <div class="therapists">
+    <p>Who would you like to see?</p>
+    <div class="docs" data-ther role="radiogroup" aria-label="Therapist"></div>
+    <a class="meet" href="team.html">
+      <span class="faces" aria-hidden="true"><i class="photo"></i><i class="photo"></i><i class="photo"></i></span>
+      <span><b>Not sure who to choose?</b><small>Meet the team</small></span>
+      <i data-icon="chevron"></i>
+    </a>
+  </div>
+</section>
+
+<!-- STEP 3: details -->
+<section class="step" data-step="3" aria-labelledby="s3">
+  <div class="done-list" data-done-3></div>
+  <h1 id="s3" tabindex="-1">Your details</h1>
+  <p class="lead">No sign-up. Only used to reach you about this visit.</p>
+  <form data-form novalidate>
+    <div class="field" data-f="name"><label for="nm">Full name</label><div class="input"><input id="nm" autocomplete="name" placeholder="e.g. Priya Raman"></div><p class="msg">Please enter your name.</p></div>
+    <div class="field" data-f="phone"><label for="ph">Mobile number</label><div class="input"><span>+91</span><input id="ph" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="e.g. 98765 43210" maxlength="11"></div><p class="msg">Enter a 10-digit mobile number starting with 6, 7, 8 or 9.</p></div>
+    <div class="field" data-f="email"><label for="em">Email <small>(optional)</small></label><div class="input"><input id="em" type="email" autocomplete="email" placeholder="you@example.com"></div><p class="msg">That email doesn't look right. Check it, or leave it empty.</p></div>
+  </form>
+  <p class="note">To change or cancel, call or WhatsApp +91 99161 16625.</p>
+</section>
+
+<!-- STEP 4: confirmed — a printed appointment ticket -->
+<section class="step done" data-step="4" aria-labelledby="s4">
+  <h1 id="s4" tabindex="-1">You're booked</h1>
+  <p class="lead" data-see></p>
+  <div class="printer" aria-hidden="true"><span></span><i class="led"></i></div>
+  <div class="tk-wrap">
+    <div class="tk-paper">
+    <article class="tk" data-tk aria-label="Appointment ticket">
+      <header class="tk-head">
+        <div class="tk-top">
+          <span class="tk-logo"><img src="../canon/logo.webp" alt="J.P. Nagar Medical &amp; Physiotherapy Centre" width="408" height="301"></span>
+          <span class="tk-id"><small>Booking ID</small><b data-tk-id></b></span>
+        </div>
+        <p class="tk-day" data-tk-day></p>
+        <p class="tk-time"><span data-tk-time></span><em data-tk-ampm></em></p>
+        <p class="tk-where"><i data-icon="pin"></i><span><b data-tk-branch></b><small data-tk-landmark></small></span></p>
+      </header>
+      <div class="tk-perf" data-perf aria-hidden="true"></div>
+      <div class="tk-body">
+        <dl class="tk-grid">
+          <div><dt>Therapist</dt><dd data-tk-ther></dd></div>
+          <div><dt>Arrive by</dt><dd data-tk-arrive></dd></div>
+          <div><dt>Patient</dt><dd data-tk-name></dd></div>
+          <div><dt>Mobile</dt><dd data-tk-phone></dd></div>
+        </dl>
+        <div class="tk-hurt">
+          <p class="tk-label">Where it hurts</p>
+          <div class="tk-figs" data-tk-figs></div>
+          <div class="tk-chips" data-tk-chips></div>
+        </div>
+        <blockquote class="tk-note" data-tk-note></blockquote>
+      </div>
+      <div class="tk-perf" data-perf aria-hidden="true"></div>
+      <footer class="tk-stub">
+        <svg class="tk-bar" data-tk-bar role="img" aria-label="Barcode of the booking ID"></svg>
+        <p><span data-tk-id2></span><small>Show this, or say your booking ID</small></p>
+      </footer>
+      <span class="tk-stamp" aria-hidden="true"><b>Confirmed</b><small data-tk-stampdate></small></span>
+      <span class="tk-sheen" aria-hidden="true"></span>
+    </article>
+    </div>
+  </div>
+  <p class="sent" data-sent></p>
+  <a class="btn btn--act btn--block wa" data-wa target="_blank" rel="noopener"><i data-icon="whatsapp"></i>Also send it on WhatsApp</a>
+  <div class="tk-acts">
+    <button class="btn btn--ghost" data-ics><i data-icon="calendar"></i>Calendar</button>
+    <a class="btn btn--ghost" data-dir2 target="_blank" rel="noopener"><i data-icon="pin"></i>Directions</a>
+    <button class="btn btn--ghost" data-share><i data-icon="arrow"></i>Share</button>
+  </div>
+  <a class="btn btn--ghost btn--block" href="home.html" style="background:none">Back to home</a>
+</section>
+
+<div class="actionbar">
+  <button class="skip" data-skip>Not sure? Skip</button>
+  <button class="btn btn--act" data-next disabled>Continue</button>
+</div>
+<nav class="dock" data-active="book"></nav>
+
+<script src="app.js"></script>
+<script src="../canon/published-data.js"></script>
+<script src="../canon/published.js"></script>
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const S = { step: 1, view: 'back', areas: new Set(), reasons: new Set(), b: 0, day: null, sess: 0, slot: null, ther: 'Any available' };
+
+const TYPE = { neck: 'Neck', shoulder: 'shoulder', upper: ['Upper back', 'Chest'], lower: ['Lower back', 'Abdomen'], elbow: 'elbow', hand: 'wrist & hand', hip: 'hip', knee: 'knee', foot: 'ankle & foot' };
+const CARE = {
+  neck: ['Spine & Back Care', 'Orthopaedic'], shoulder: ['Orthopaedic', 'Sports', 'Post-Operative Rehab'],
+  upper: ['Spine & Back Care', 'Orthopaedic'], lower: ['Spine & Back Care', 'Orthopaedic', "Women's Health"],
+  elbow: ['Orthopaedic', 'Sports'], hand: ['Orthopaedic', 'Post-Operative Rehab'], hip: ['Orthopaedic', 'Joint Replacement Rehab', 'Geriatric'],
+  knee: ['Orthopaedic', 'Sports', 'Joint Replacement Rehab'], foot: ['Sports', 'Orthopaedic'],
+  surgery: ['Post-Operative Rehab'], neuro: ['Neurological'], child: ['Paediatric'], elder: ['Geriatric', 'Home Care'], women: ["Women's Health"]
+};
+const REASON = { surgery: 'After surgery', neuro: 'Stroke or nerve problem', child: 'For my child', elder: 'For an elderly parent', women: 'Pregnancy or after delivery' };
+
+/* ---------- body map: male/female, front/back, with a 3D turn ---------- */
+S.gender = 'male';
+const tag = $('[data-tag]'), turn = $('[data-turn]'), fig = $('[data-figure]'), tilt = $('[data-tilt]');
+let sx = null, dragged = false;
+const REGIONS = [['neck'], ['shoulder', 'a'], ['shoulder', 'b'], ['upper'], ['lower'], ['elbow', 'a'], ['elbow', 'b'], ['hand', 'a'], ['hand', 'b'], ['hip', 'a'], ['hip', 'b'], ['knee', 'a'], ['knee', 'b'], ['foot', 'a'], ['foot', 'b']];
+// hotspot centres in the 240×480 figure per body type; "a" is the viewer's left
+const POS = {
+  male: { neck: [120, 78], shoulder: [74, 106], upper: [120, 134], lower: [120, 194], elbow: [58, 174], hand: [54, 256], hip: [94, 226], knee: [97, 328], foot: [98, 434] },
+  female: { neck: [120, 78], shoulder: [82, 106], upper: [120, 136], lower: [120, 196], elbow: [67, 174], hand: [63, 256], hip: [90, 228], knee: [98, 330], foot: [99, 434] }
+};
+const NAMES = { front: { upper: 'Chest', lower: 'Stomach' }, back: { upper: 'Upper back', lower: 'Lower back' } };
+// From the back the viewer's left is the person's left; from the front it is their right.
+function sideOf(face, pos) { if (!pos) return ''; return (face === 'back') === (pos === 'a') ? 'left' : 'right'; }
+// Torso spots are different body parts front and back (chest vs upper back), so their keys carry the face.
+// Every spot belongs to one side of the body: the back of the hip is a different choice from the front of the hip.
+// Keys look like "hip-left~back", "neck~front", "upper~back".
+function keyOf(face, h) {
+  const s = sideOf(face, h.dataset.pos);
+  return `${h.dataset.type}${s ? '-' + s : ''}~${face}`;
+}
+function labelOf(key) {
+  const [base, face] = key.split('~'), [type, side] = base.split('-');
+  if (face && NAMES[face][type]) return NAMES[face][type];
+  const t = TYPE[type], name = Array.isArray(t) ? t[0] : t;
+  const named = side ? `${side[0].toUpperCase() + side.slice(1)} ${name}` : name[0].toUpperCase() + name.slice(1);
+  return face ? `${named} (${face})` : named;
+}
+const HS = { front: [], back: [] };
+['front', 'back'].forEach(face => {
+  const layer = $(`[data-hsl="${face}"]`);
+  REGIONS.forEach(([type, pos]) => {
+    const h = el('button', { class: 'hs', 'data-type': type, ...(pos ? { 'data-pos': pos } : {}) });
+    h.addEventListener('click', e => {
+      if (dragged) { e.preventDefault(); return; }
+      const k = keyOf(face, h);
+      S.areas.has(k) ? S.areas.delete(k) : S.areas.add(k);
+      paintMap(); updateMatch(); flashTag(h, labelOf(k), S.areas.has(k));
+      if (S.areas.has(k)) { h.classList.remove('pulse'); void h.offsetWidth; h.classList.add('pulse'); }
+    });
+    layer.append(h); HS[face].push(h);
+  });
+});
+function placeSpots() {
+  const P = POS[S.gender];
+  ['front', 'back'].forEach(face => HS[face].forEach(h => {
+    let [x, y] = P[h.dataset.type]; if (h.dataset.pos === 'b') x = 240 - x;
+    h.style.left = (x / 240 * 100) + '%'; h.style.top = (y / 480 * 100) + '%';
+  }));
+}
+function paintMap() {
+  ['front', 'back'].forEach(face => HS[face].forEach(h => {
+    const k = keyOf(face, h), on = S.areas.has(k);
+    h.classList.toggle('on', on); h.setAttribute('aria-pressed', on); h.setAttribute('aria-label', labelOf(k));
+  }));
+}
+function setView(v) {
+  if (v === S.view) return;
+  S.view = v;
+  $$('[data-view]').forEach(b => { b.classList.toggle('on', b.dataset.view === v); b.setAttribute('aria-checked', b.dataset.view === v); });
+  fig.classList.toggle('is-back', v === 'back');
+  $('[data-face="front"]').inert = v !== 'front'; $('[data-face="back"]').inert = v !== 'back';
+  turn.classList.remove('turning'); void turn.offsetWidth; turn.classList.add('turning');
+  const L = $('[data-side-l]'), R = $('[data-side-r]');
+  L.classList.add('fade'); R.classList.add('fade');
+  setTimeout(() => {
+    L.textContent = v === 'back' ? 'LEFT' : 'RIGHT'; R.textContent = v === 'back' ? 'RIGHT' : 'LEFT';
+    L.classList.remove('fade'); R.classList.remove('fade');
+  }, reduceMotion ? 0 : 450);
+  $('[data-hint]').replaceChildren(el('b', {}, v === 'back' ? 'Back view' : 'Front view'), ' · swipe to turn');
+}
+function setGender(g) {
+  if (g === S.gender) return;
+  S.gender = g; turn.dataset.g = g;
+  $$('[data-gender]').forEach(b => { b.classList.toggle('on', b.dataset.gender === g); b.setAttribute('aria-checked', b.dataset.gender === g); });
+  turn.classList.remove('swapping'); void turn.offsetWidth; turn.classList.add('swapping');
+  placeSpots();
+}
+$$('[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+$$('[data-gender]').forEach(b => b.addEventListener('click', () => setGender(b.dataset.gender)));
+// swipe sideways to turn the body; with a mouse it also leans toward the pointer
+turn.addEventListener('pointerdown', e => { sx = e.clientX; dragged = false; });
+turn.addEventListener('pointermove', e => {
+  if (sx !== null && Math.abs(e.clientX - sx) > 12) dragged = true;
+  if (e.pointerType === 'mouse' && !reduceMotion) {
+    const r = turn.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+    tilt.style.transform = `rotateY(${x * 16}deg) rotateX(${-y * 6}deg)`;
+  }
+});
+addEventListener('pointerup', e => {
+  if (sx === null) return;
+  const dx = e.clientX - sx; sx = null;
+  if (Math.abs(dx) > 40) setView(S.view === 'back' ? 'front' : 'back');
+  setTimeout(() => { dragged = false; }, 0);
+});
+turn.addEventListener('pointerleave', () => { tilt.style.transform = ''; });
+placeSpots();
+
+/* ---------- optional note in their own words ---------- */
+S.story = '';
+const story = $('#story');
+function syncStory() { S.story = story.value.trim(); $('[data-count]').textContent = story.value.length; }
+story.addEventListener('input', syncStory);
+$$('[data-starters] .pill').forEach(p => p.addEventListener('click', () => {
+  const t = p.textContent, v = story.value.trim();
+  if (v.toLowerCase().includes(t.toLowerCase())) return;
+  story.value = (v ? v.replace(/[.\s]*$/, '. ') : '') + t + '.';
+  p.classList.add('on'); syncStory(); story.focus();
+}));
+let tagT;
+function flashTag(h, text, on) {
+  const r = h.getBoundingClientRect(), w = $('.mapwrap').getBoundingClientRect();
+  tag.textContent = on ? text : `${text} removed`;
+  tag.style.left = (r.left + r.width / 2 - w.left) + 'px'; tag.style.top = (r.top - w.top) + 'px';
+  tag.classList.add('show'); clearTimeout(tagT); tagT = setTimeout(() => tag.classList.remove('show'), 1200);
+}
+$$('[data-reason]').forEach(p => p.addEventListener('click', () => {
+  const r = p.dataset.reason; S.reasons.has(r) ? S.reasons.delete(r) : S.reasons.add(r);
+  p.classList.toggle('on', S.reasons.has(r)); p.setAttribute('aria-pressed', S.reasons.has(r)); updateMatch();
+}));
+function careList() {
+  const out = new Set();
+  S.areas.forEach(k => CARE[k.split(/[-~]/)[0]].forEach(c => out.add(c)));
+  S.reasons.forEach(r => CARE[r].forEach(c => out.add(c)));
+  return [...out];
+}
+function updateMatch() {
+  const list = careList(), box = $('[data-match]');
+  box.classList.toggle('show', list.length > 0);
+  $('[data-match-chips]').replaceChildren(...list.map((c, i) => { const s = el('span', {}, c); s.style.animationDelay = (i * .05) + 's'; return s; }));
+  setBar();
+}
+function whatText() {
+  const parts = [...S.areas].map(k => labelOf(k)).concat([...S.reasons].map(r => REASON[r]));
+  return parts.length ? parts.join(', ') : 'Not sure yet';
+}
+
+/* ---------- time picker ---------- */
+const tabs = $('[data-tabs]'), tind = tabs.querySelector('.tind');
+BRANCHES.forEach((b, i) => {
+  const t = el('button', { class: 'tab', role: 'tab' }, el('b', {}, b.short), el('small', {}, kmText(b)));
+  t.addEventListener('click', () => { S.b = i; S.slot = null; pickFirstDay(); renderTime(); });
+  tabs.append(t);
+});
+// "Use my location": picks the nearest branch and shows how far each one is (only after the visitor asks)
+const nearBtn = el('button', { class: 'near-btn', type: 'button' }, icon('pin'), el('span', {}, savedKm() ? 'Update my location' : 'Find my nearest branch'));
+nearBtn.addEventListener('click', () => {
+  nearBtn.disabled = true; nearBtn.lastChild.textContent = 'Finding you…';
+  locateNearest().then(i => {
+    [...tabs.querySelectorAll('.tab small')].forEach((s, j) => { s.textContent = kmText(BRANCHES[j]); });
+    nearBtn.lastChild.textContent = 'Update my location';
+    if (S.b !== i) { S.b = i; S.slot = null; pickFirstDay(); renderTime(); }
+    toast(`Nearest branch: ${BRANCHES[i].short}, ${savedKm()[BRANCHES[i].id] < .2 ? 'right next to you' : `${kmText(BRANCHES[i])} away`}`);
+  }, msg => { nearBtn.lastChild.textContent = 'Find my nearest branch'; toast(msg); }).finally(() => { nearBtn.disabled = false; });
+});
+tabs.after(nearBtn);
+function days() { const d0 = nowIST(); return [...Array(6)].map((_, i) => { const d = new Date(d0); d.setDate(d0.getDate() + i); d.setHours(0, 0, 0, 0); return d; }); }
+const sessName = ([s]) => s < 12 ? 'Morning' : s < 16 ? 'Afternoon' : 'Evening';
+function hasSlots(day) { const b = BRANCHES[S.b]; return sessionsOn(b, day).some((_, si) => slotsFor(b, day, si).some(s => !s.taken)); }
+function pickFirstDay() { S.day = days().find(hasSlots) || days()[1]; pickSession(); }
+function pickSession() { const b = BRANCHES[S.b]; const i = sessionsOn(b, S.day).findIndex((_, si) => slotsFor(b, S.day, si).some(s => !s.taken)); S.sess = i < 0 ? 0 : i; }
+const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DOCS = publishedDocs([
+  { name: 'Any available', role: 'Gets you the earliest slot', deg: [], any: true },
+  { name: 'Dr. P. Senthil', role: 'Founder · 27+ years', deg: ['MPT', 'COMT'], care: ['Orthopaedic', 'Sports', 'Neurological', 'Spine & Back Care', 'Joint Replacement Rehab'] },
+  { name: 'Dr. Vanitha Senthil', role: 'Senior Consultant', deg: ['MPT', 'COMT'], care: ['Post-Operative Rehab', 'Joint Replacement Rehab', 'Geriatric', 'Home Care'] },
+  { name: 'Dr. Jeya Chitra Devi', role: 'HOD, Arekere · 15+ years', deg: ['BPT'], care: ['Orthopaedic', 'Post-Operative Rehab', 'Sports', 'Neurological', 'Spine & Back Care'] }
+]);
+// The days, sessions and therapists are built once and updated in place, so a tap only changes what's chosen: the
+// day strip keeps its scroll, nothing flickers. The times are rebuilt only when the day, session or branch changes,
+// and their area keeps the height of the longest session so the page below never jumps.
+let dayBtns, sessBtns, docBtns, timesKey = '';
+function renderTime() {
+  const b = BRANCHES[S.b];
+  // the times follow the physiotherapist picked (only times they are free count), and the day stays fresh on screen
+  if (DIARY) {
+    const doc = DOCS.find(d => d.name === S.ther && !d.any), want = doc ? doc.id : null;
+    DIARY.watch(b.id, S.day);
+    if (want !== DIARY.want) { DIARY.want = want; slotGone(`isn’t free with ${S.ther}`); }
+  }
+  [...tabs.querySelectorAll('.tab')].forEach((t, i) => { t.classList.toggle('is-on', i === S.b); t.setAttribute('aria-selected', i === S.b); });
+  const on = tabs.querySelectorAll('.tab')[S.b];
+  tind.style.width = on.offsetWidth + 'px'; tind.style.transform = `translateX(${on.offsetLeft - 4}px)`;
+  const st = branchStatus(b); const so = $('[data-status]'); so.textContent = st.text; so.classList.toggle('closed', !st.open);
+  $('[data-dir]').href = mapsLink(b); // directions to the branch on screen, not the clinic in general
+  if (!dayBtns) {
+    const today = nowIST().toDateString();
+    dayBtns = days().map(d => {
+      const n = el('button', { class: 'day' },
+        el('small', {}, d.toDateString() === today ? 'Today' : DOW[d.getDay()]), el('b', {}, String(d.getDate())));
+      n._d = d;
+      n.addEventListener('click', () => { if (d.toDateString() === S.day.toDateString()) return; S.day = d; S.slot = null; pickSession(); renderTime(); });
+      return n;
+    });
+    $('[data-days]').replaceChildren(...dayBtns);
+  }
+  // each branch has its own working days, so the days are switched off in place when the branch changes
+  dayBtns.forEach(n => {
+    const off = !worksOn(b, n._d);
+    n.classList.toggle('is-off', off); n.disabled = off; n.setAttribute('aria-label', n._d.toDateString() + (off ? ', closed' : ''));
+    n.classList.toggle('is-on', n._d.toDateString() === S.day.toDateString());
+  });
+  // the day's own sessions (a branch can open different hours on different days)
+  const ss = sessionsOn(b, S.day);
+  if (S.sess >= ss.length) S.sess = 0;
+  if (!sessBtns || sessBtns.length !== ss.length) {
+    sessBtns = ss.map((_, si) => { const n = el('button', {}); n.addEventListener('click', () => { if (S.sess === si) return; S.sess = si; S.slot = null; renderTime(); }); return n; });
+    $('[data-sessions]').replaceChildren(...sessBtns);
+  }
+  sessBtns.forEach((n, si) => {
+    const [s, e] = ss[si];
+    n.textContent = `${sessName(ss[si])} · ${fmtHour(s)}–${fmtHour(e)}`;
+    n.className = si === S.sess ? 'on' : '';
+    n.disabled = !slotsFor(b, S.day, si).some(x => !x.taken);
+  });
+  // The grid is rebuilt only when its times change (a new branch, day or session). Fresh news from the diary, or a
+  // different physiotherapist, only changes which times are taken, so the buttons update in place.
+  const list = slotsFor(b, S.day, S.sess), grid = $('[data-slots]'), key = `${S.b}|${S.day.toDateString()}|${S.sess}|${list.map(x => x.t).join(',')}`;
+  if (key === timesKey) grid.querySelectorAll('.slot').forEach((n, i) => {
+    const x = list[i]; if (!x) return;
+    n.disabled = x.taken; n.classList.toggle('is-taken', x.taken); n.setAttribute('aria-label', `${x.label} ${x.suffix}${x.taken ? ', taken' : ''}`);
+  });
+  if (key !== timesKey) {
+    timesKey = key;
+    // held at the week's longest session, so changing day never moves the page
+    const rows = Math.ceil(Math.max(1, ...[0, 1, 2, 3, 4, 5, 6].flatMap(n => sessionsOn(b, n)).map(([s, e]) => (e - s) * 2)) / 3);
+    grid.style.minHeight = `${rows * 48 + (rows - 1) * 8}px`;
+    grid.replaceChildren(...(list.length ? list.map(x => {
+      const n = el('button', { class: 'slot' + (x.taken ? ' is-taken' : ''), 'aria-label': `${x.label} ${x.suffix}${x.taken ? ', taken' : ''}` }, `${x.label} ${x.suffix}`);
+      if (x.taken) n.disabled = true;
+      n._t = x.t;
+      n.addEventListener('click', () => { S.slot = x; grid.querySelectorAll('.slot').forEach(s => s.classList.toggle('is-on', s === n)); setBar(); });
+      return n;
+    }) : [el('p', { class: 'empty' }, 'No times left in this session. Try another day.')]));
+    // one short line for screen readers, instead of reading out every time
+    const open = list.filter(x => !x.taken).length;
+    $('[data-slot-say]').textContent = open ? `${open} times free, ${S.day.toDateString() === nowIST().toDateString() ? 'today' : DOW[S.day.getDay()] + ' ' + S.day.getDate()}` : 'No times left in this session';
+  }
+  grid.querySelectorAll('.slot').forEach(n => n.classList.toggle('is-on', !!S.slot && S.slot.t === n._t));
+  // each branch lists its own doctors (those published for it), plus "Any available"
+  const here = DOCS.filter(d => d.any || !d.branches || d.branches.includes(b.id));
+  if (S.ther !== 'Any available' && !here.some(d => d.name === S.ther)) S.ther = 'Any available';
+  if (!docBtns || docBtns.branch !== b.id) {
+    docBtns = here.map(d => {
+      const pic = d.any
+        ? el('span', { class: 'ph any', 'aria-hidden': 'true' }, el('i', { class: 'photo' }), el('i', { class: 'photo' }), el('i', { class: 'photo' }))
+        : el('span', { class: 'ph photo' + (d.photo ? ' is-real' : ''), 'aria-hidden': 'true', ...(d.photo ? { style: `background:center/cover url("${d.photo}")` } : {}) });
+      const n = el('button', { class: 'doc tilt', role: 'radio' },
+        pic, el('span', { class: 'tick', 'aria-hidden': 'true' }, icon('check')),
+        el('b', {}, d.name), el('small', {}, d.role),
+        el('span', { class: 'deg' }, ...d.deg.map(x => el('em', {}, x))),
+        ...(d.any ? [] : [el('span', { class: 'fit', hidden: '' }, icon('check'), 'Treats this')]));
+      n.addEventListener('click', () => { if (S.ther === d.name) return; S.ther = d.name; renderTime(); });
+      return n;
+    });
+    docBtns.list = here; docBtns.branch = b.id;
+    $('[data-ther]').replaceChildren(...docBtns);
+  }
+  // who treats what was picked, from each one's "What they treat" (a sample until the clinic confirms)
+  const care = careList();
+  docBtns.forEach((n, i) => {
+    const on = S.ther === docBtns.list[i].name; n.classList.toggle('on', on); n.setAttribute('aria-checked', on);
+    const hit = (docBtns.list[i].care || []).filter(c => care.includes(c)), tag = n.querySelector('.fit');
+    if (tag) { tag.hidden = !hit.length; tag.title = hit.join(', '); }
+  });
+  setBar();
+}
+function whenText(short) {
+  if (!S.slot) return '';
+  const d = S.day, today = d.toDateString() === nowIST().toDateString();
+  const day = today ? 'Today' : `${DOW[d.getDay()]} ${d.getDate()}`;
+  return short ? `${day} ${S.slot.label} ${S.slot.suffix}` : `${day}, ${S.slot.label} ${S.slot.suffix}`;
+}
+
+/* ---------- steps ---------- */
+function doneItem(label, value, step) {
+  const b = el('button', {}, 'Change'); b.addEventListener('click', () => go(step, true));
+  return el('div', { class: 'done-item' }, el('span', {}, label + ': ', el('b', {}, value)), b);
+}
+// the steps, in order: where it hurts first (it decides which physiotherapist suits you), then the time, then details
+const FLOW = [1, 2, 3, 4], pos = n => FLOW.indexOf(n);
+function setBar() {
+  const next = $('[data-next]'), skip = $('[data-skip]');
+  skip.hidden = S.step !== 1;
+  $('.actionbar').hidden = S.step === 4;
+  if (S.step === 1) { const n = S.areas.size + S.reasons.size; next.disabled = n === 0; next.textContent = n ? `Continue · ${n} selected` : 'Tap where it hurts'; skip.textContent = n ? 'Clear' : 'Skip'; }
+  if (S.step === 2) { next.disabled = !S.slot; next.textContent = S.slot ? `Continue · ${whenText(true)}` : 'Pick a time'; }
+  if (S.step === 3) { next.disabled = false; next.textContent = 'Confirm booking'; }
+}
+// each step is a history entry, so the phone's back gesture steps back through the booking instead of leaving it
+function go(n, back, fromHistory) {
+  const first = !S.started; S.started = true;
+  S.step = n;
+  const p = pos(n);
+  $$('.step').forEach(s => { s.classList.remove('on', 'back'); s.removeAttribute('id'); });
+  const cur = $(`[data-step="${n}"]`); cur.classList.add('on'); cur.id = 'main-step'; if (back) cur.classList.add('back');
+  $$('.prog span').forEach((s, i) => { s.classList.toggle('done', i < p); s.classList.toggle('on', i === p); });
+  $$('.prog-labels span').forEach((s, i) => s.classList.toggle('on', i === p));
+  const noteItem = () => S.story ? [doneItem('Note', S.story.length > 34 ? S.story.slice(0, 32) + '…' : S.story, 1)] : [];
+  const when = () => doneItem('When', `${whenText()} · ${BRANCHES[S.b].short}`, 2);
+  if (n === 2) { $('[data-done-2]').replaceChildren(doneItem('For', whatText(), 1), ...noteItem()); if (!S.day) pickFirstDay(); renderTime(); }
+  if (n === 1) $('[data-done-1]').replaceChildren(...(S.slot ? [when()] : []));
+  if (n === 3) $('[data-done-3]').replaceChildren(doneItem('For', whatText(), 1), ...noteItem(), when());
+  if (n === 4) confirmScreen();
+  // the booking is a focused task: the dock steps aside until it's done, and the back arrow goes once you're booked
+  document.body.classList.toggle('in-flow', n !== 4);
+  $('[data-back]').hidden = n === 4;
+  if (!fromHistory) history[first ? 'replaceState' : 'pushState']({ step: n }, '');
+  scrollTo({ top: 0, behavior: reduceMotion || first ? 'auto' : 'smooth' });
+  if (!first) $(`#s${n}`).focus({ preventScroll: true });
+  setBar();
+}
+addEventListener('popstate', e => {
+  if (S.step === 4) { location.href = 'home.html'; return; }
+  const n = e.state && e.state.step;
+  if (n && n !== S.step) go(n, pos(n) < pos(S.step), true);
+});
+$('[data-back]').addEventListener('click', () => (pos(S.step) > 0 && S.step !== 4 ? history.back() : (location.href = 'home.html')));
+$('[data-skip]').addEventListener('click', () => {
+  const had = S.areas.size + S.reasons.size;
+  S.areas.clear(); S.reasons.clear(); paintMap(); updateMatch();
+  if (had) { setBar(); return; }
+  go(FLOW[pos(S.step) + 1]);
+});
+$('[data-next]').addEventListener('click', () => {
+  if (S.step === 3) { if (validate()) confirmBooking(); return; }
+  go(FLOW[pos(S.step) + 1]);
+});
+addEventListener('scroll', () => $('.bhead').classList.toggle('scrolled', scrollY > 4), { passive: true });
+
+// on WordPress the slot is reserved for real before the ticket prints; offline (the plain demo) it prints at once
+function confirmBooking() {
+  if (!DIARY) return go(4);
+  const next = $('[data-next]'); if (next.classList.contains('is-busy')) return;
+  next.classList.add('is-busy'); next.disabled = true; next.textContent = 'Booking…';
+  const b = BRANCHES[S.b], doc = DOCS.find(d => d.name === S.ther && !d.any);
+  DIARY.book({ branch: b.id, date: DIARY.isoOf(S.day), time: Math.round(S.slot.t * 60), doctor: doc ? doc.id : null,
+    name: S.name, phone: S.phone, email: S.email, problem: whatText(), note: S.story }).then(r => {
+    next.classList.remove('is-busy'); next.disabled = false;
+    if (r.ok) { S.bookingNo = `JP-${CODES[b.id]}-${String(r.data.id).padStart(5, '0')}`; const got = DOCS.find(d => d.id === r.data.doctor); if (got) S.ther = got.name; return go(4); }
+    toast((r.data && r.data.message) || 'That didn’t go through. Please try again, or call the clinic.');
+    if (r.status === 409) { DIARY.refresh(b.id, S.day); S.slot = null; go(2, true); }
+    setBar();
+  });
+}
+// a picked time can stop being free: someone else booked it, or the visitor picked a doctor who is busy then
+function slotGone(why) {
+  if (!S.slot || !slotsFor(BRANCHES[S.b], S.day, S.sess).some(x => x.t === S.slot.t && x.taken)) return false;
+  toast(`${S.slot.label} ${S.slot.suffix} ${why}. Please pick another time.`); S.slot = null; return true;
+}
+if (DIARY) document.addEventListener('jpn:slots', () => { slotGone('was just booked by someone else'); if (S.step === 2) renderTime(); else setBar(); });
+
+/* ---------- details ---------- */
+function validate() {
+  const f = n => $(`[data-f="${n}"]`);
+  const name = $('#nm').value.trim(), phone = $('#ph').value.replace(/\D/g, ''), email = $('#em').value.trim();
+  const ok = { name: name.length > 1, phone: /^[6-9]\d{9}$/.test(phone), email: !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) };
+  Object.entries(ok).forEach(([k, v]) => {
+    const fl = f(k), inp = fl.querySelector('input'), msg = fl.querySelector('.msg');
+    fl.classList.toggle('err', !v); msg.id = `msg-${k}`;
+    if (v) { inp.removeAttribute('aria-invalid'); inp.removeAttribute('aria-describedby'); }
+    else { inp.setAttribute('aria-invalid', 'true'); inp.setAttribute('aria-describedby', msg.id); }
+  });
+  const bad = Object.keys(ok).find(k => !ok[k]);
+  if (bad) { ({ name: $('#nm'), phone: $('#ph'), email: $('#em') })[bad].focus(); return false; }
+  S.name = name; S.phone = phone; S.email = email; return true;
+}
+['#nm', '#ph', '#em'].forEach(s => $(s).addEventListener('input', e => { e.target.closest('.field').classList.remove('err'); e.target.removeAttribute('aria-invalid'); e.target.removeAttribute('aria-describedby'); }));
+$('#ph').addEventListener('input', e => { const d = e.target.value.replace(/\D/g, '').slice(0, 10); e.target.value = d.length > 5 ? d.slice(0, 5) + ' ' + d.slice(5) : d; });
+
+/* ---------- confirmation ---------- */
+/* ---------- the ticket ---------- */
+const CODES = { arekere: 'ARK', bannerghatta: 'BGR', jpnagar: 'JPN' };
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// Code 128 (set B) bar patterns, so the stub carries a real barcode of the booking ID
+const C128 = ['212222','222122','222221','121223','121322','131222','122213','122312','132212','221213','221312','231212','112232','122132','122231','113222','123122','123221','223211','221132','221231','213212','223112','312131','311222','321122','321221','312212','322112','322211','212123','212321','232121','111323','131123','131321','112313','132113','132311','211313','231113','231311','112133','112331','132131','113123','113321','133121','313121','211331','231131','213113','213311','213131','311123','311321','331121','312113','312311','332111','314111','221411','431111','111224','111422','121124','121421','141122','141221','112214','112412','122114','122411','142112','142211','241211','221114','413111','241112','134111','111242','121142','121241','114212','124112','124211','411212','421112','421211','212141','214121','412121','111143','111341','131141','114113','114311','411113','411311','113141','114131','311141','411131','211412','211214','211232','2331112'];
+function drawBarcode(svg, text) {
+  const vals = [104, ...[...text].map(c => c.charCodeAt(0) - 32)];
+  const check = vals.reduce((sum, v, i) => sum + v * (i || 1), 0) % 103;
+  const widths = [...vals, check, 106].map(v => C128[v]).join('');
+  const NS = 'http://www.w3.org/2000/svg', quiet = 10;
+  let x = quiet; const bars = [];
+  [...widths].forEach((w, i) => { const n = +w; if (i % 2 === 0) { const r = document.createElementNS(NS, 'rect'); r.setAttribute('x', x); r.setAttribute('y', 0); r.setAttribute('width', n); r.setAttribute('height', 46); bars.push(r); } x += n; });
+  svg.setAttribute('viewBox', `0 0 ${x + quiet} 46`); svg.setAttribute('preserveAspectRatio', 'none');
+  svg.replaceChildren(...bars);
+}
+// mini front and back figures with a dot on each chosen spot
+function miniFigure(face) {
+  const NS = 'http://www.w3.org/2000/svg', P = POS[S.gender];
+  const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', '0 0 240 480'); svg.setAttribute('aria-hidden', 'true');
+  // porcelain, a shade deeper than the body map so it reads on the ticket's grey panel; no SVG filter, because iPhone
+  // Safari won't draw one inside the ticket (it has its own shadow and cut-out notches) and the figure would vanish
+  const gid = `tkSkin-${face}`, grad = document.createElementNS(NS, 'linearGradient');
+  [['gradientUnits', 'userSpaceOnUse'], ['id', gid], ['x1', 0], ['y1', 0], ['x2', 0], ['y2', 480]].forEach(([k, v]) => grad.setAttribute(k, v));
+  [['0', '#DCE0EB'], ['1', '#BFC5D6']].forEach(([o, c]) => { const st = document.createElementNS(NS, 'stop'); st.setAttribute('offset', o); st.setAttribute('stop-color', c); grad.append(st); });
+  const defs = document.createElementNS(NS, 'defs'); defs.append(grad); svg.append(defs);
+  const use = document.createElementNS(NS, 'use'); use.setAttribute('href', S.gender === 'female' ? '#f-body' : '#m-body'); use.setAttribute('fill', `url(#${gid})`); use.setAttribute('stroke', '#AEB4C8'); use.setAttribute('stroke-width', '2.5'); svg.append(use);
+  let n = 0;
+  S.areas.forEach(k => {
+    const [base, f] = k.split('~'); if (f !== face) return;
+    const [type, side] = base.split('-'); let [x, y] = P[type];
+    if (side) { const viewerLeft = (face === 'back') === (side === 'left'); if (!viewerLeft) x = 240 - x; } else x = 120;
+    const halo = document.createElementNS(NS, 'circle'); halo.setAttribute('cx', x); halo.setAttribute('cy', y); halo.setAttribute('r', 30); halo.setAttribute('fill', 'rgba(0,168,236,.25)');
+    const dot = document.createElementNS(NS, 'circle'); dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('r', 13); dot.setAttribute('fill', '#00A8EC'); dot.setAttribute('stroke', '#fff'); dot.setAttribute('stroke-width', 5);
+    svg.append(halo, dot); n++;
+  });
+  return el('figure', { class: n ? '' : 'none' }, svg, el('figcaption', {}, face === 'front' ? 'Front' : 'Back'));
+}
+function confirmScreen() {
+  const b = BRANCHES[S.b], d = S.day, t = S.slot;
+  const hh = Math.floor(t.t), mm = Math.round((t.t % 1) * 60), pad = n => String(n).padStart(2, '0');
+  const id = S.bookingNo || `JP-${CODES[b.id]}-${pad(d.getDate())}${pad(d.getMonth() + 1)}-${pad(hh)}${pad(mm)}`;
+  const today = d.toDateString() === nowIST().toDateString();
+  $('[data-see]').textContent = `See you ${whenText().replace(/^Today/, 'today')} at ${b.short}.`;
+  $('[data-sent]').textContent = `Your booking is saved and already with the ${b.short} team. WhatsApp is optional, for anything you'd like to add.`;
+  $('[data-tk-id]').textContent = id; $('[data-tk-id2]').textContent = id;
+  $('[data-tk-day]').textContent = `${today ? 'Today · ' : ''}${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  $('[data-tk-time]').textContent = t.label; $('[data-tk-ampm]').textContent = t.suffix;
+  $('[data-tk-branch]').textContent = b.name; $('[data-tk-landmark]').textContent = b.landmark;
+  $('[data-tk-ther]').textContent = S.ther;
+  const early = t.t - 1 / 6, eh = Math.floor(early), em = Math.round((early - eh) * 60);
+  $('[data-tk-arrive]').textContent = `${eh % 12 || 12}:${pad(em)} ${eh >= 12 ? 'pm' : 'am'}`;
+  $('[data-tk-name]').textContent = S.name;
+  $('[data-tk-phone]').textContent = '+91 ' + S.phone.slice(0, 5) + ' ' + S.phone.slice(5);
+  $('[data-tk-figs]').replaceChildren(miniFigure('front'), miniFigure('back'));
+  const labels = [...S.areas].map(k => labelOf(k)).concat([...S.reasons].map(r => REASON[r]));
+  $('[data-tk-chips]').replaceChildren(...(labels.length ? labels : ['Not sure yet']).map(l => el('span', {}, l)));
+  $('.tk-hurt').classList.toggle('no-figs', !S.areas.size);
+  const note = $('[data-tk-note]'); note.hidden = !S.story; note.textContent = S.story;
+  $('[data-tk-stampdate]').textContent = `${pad(d.getDate())} ${MONTHS[d.getMonth()].toUpperCase()}`;
+  drawBarcode($('[data-tk-bar]'), id);
+  $('[data-dir2]').href = mapsLink(b);
+  const msg = `Hello, I booked a visit at ${b.name} on ${whenText()} (booking ${id}).\nFor: ${whatText()}${S.story ? `\nWhat happened: ${S.story}` : ''}\nTherapist: ${S.ther}\nName: ${S.name}`;
+  $('[data-wa]').href = 'https://wa.me/919916116625?text=' + encodeURIComponent(msg);
+  S.shareText = `Physio visit at J.P. Nagar Physio, ${b.name}: ${whenText()}. Booking ${id}.`;
+  // notches sit exactly on the perforations; then print, stamp and shine
+  requestAnimationFrame(() => {
+    const tk = $('[data-tk]'), perfs = [...tk.querySelectorAll('[data-perf]')];
+    perfs.forEach((p, i) => tk.style.setProperty(`--n${i + 1}`, (p.offsetTop + 1) + 'px'));
+    const wrap = $('.tk-wrap'), done = wrap.closest('.done');
+    wrap.classList.remove('go'); done.classList.remove('go-print'); void wrap.offsetWidth; wrap.classList.add('go'); done.classList.add('go-print');
+  });
+}
+$('[data-share]').addEventListener('click', async () => {
+  try { if (navigator.share) { await navigator.share({ title: 'Physio appointment', text: S.shareText }); return; } } catch (_) { return; }
+  try { await navigator.clipboard.writeText(S.shareText); toast('Booking details copied'); } catch (_) { toast(S.shareText); }
+});
+$('[data-ics]').addEventListener('click', () => {
+  const b = BRANCHES[S.b], d = new Date(S.day); const h = Math.floor(S.slot.t), m = (S.slot.t % 1) * 60;
+  const pad = n => String(n).padStart(2, '0');
+  const stamp = (H, M) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(H)}${pad(M)}00`;
+  const end = S.slot.t + .75;
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//JPN Physio//Booking//EN', 'BEGIN:VEVENT',
+    `DTSTART;TZID=Asia/Kolkata:${stamp(h, m)}`, `DTEND;TZID=Asia/Kolkata:${stamp(Math.floor(end), (end % 1) * 60)}`,
+    `SUMMARY:Physiotherapy at ${b.short}`, `LOCATION:J.P. Nagar Medical & Physiotherapy Centre, ${b.name}, Bengaluru`,
+    'DESCRIPTION:Call +91 99161 16625 to change or cancel.', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  const a = el('a', { href: URL.createObjectURL(new Blob([ics], { type: 'text/calendar' })), download: 'physio-visit.ics' });
+  document.body.append(a); a.click(); a.remove(); toast('Calendar file ready');
+});
+
+// arriving from Team, a branch page or a service page pre-fills the choice
+const qp = new URLSearchParams(location.search);
+if (DOCS.some(d => d.name === qp.get('ther'))) { S.ther = qp.get('ther'); toast(`${S.ther} selected · pick where it hurts`); }
+const qb = BRANCHES.findIndex(b => b.id === qp.get('branch')); S.b = qb >= 0 ? qb : nearestIndex();
+(qp.get('area') || '').split(',').filter(k => CARE[k.split(/[-~]/)[0]])
+  .forEach(k => S.areas.add(k.includes('~') ? k : `${k}~back`));
+paintMap(); updateMatch(); go(FLOW[0]);
+</script>
+
+</body></html>

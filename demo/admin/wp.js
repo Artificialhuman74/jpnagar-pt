@@ -71,6 +71,18 @@ const WP = window.JPN_API ? (() => {
   const bookingIn = r => ({ id: +r.id, name: r.name, phone: r.phone, branch: r.branch, doc: r.doctor, date: r.slot_date, t: H(+r.slot_time),
     problem: r.problem, note: r.note, status: r.status, source: r.source, reason: r.reason });
 
+  // the next draft save, after any still on its way; resolves true once the server has the current draft
+  function pushDraft() {
+    pushing = pushing.catch(() => false).then(async () => {
+      const body = contentOut(S.content), json = JSON.stringify(body);
+      if (json === pushed) return true;
+      const r = await call('PUT', '/admin/content', body);
+      if (!r.ok) { fail(r); return false; }
+      pushed = json; return true;
+    });
+    return pushing;
+  }
+
   /* ---------- loading ---------- */
   async function load() {
     const r = await call('GET', '/admin/state');
@@ -97,20 +109,16 @@ const WP = window.JPN_API ? (() => {
     load, loadDay, hasDay: date => days.has(date),
     // reloads every day already on screen, after something that can change bookings on several days
     async reloadDays() { for (const d of [...days]) await loadDay(d); },
-    // the content draft is saved a moment after the last edit; publishing waits for it
+    // The content draft is saved a moment after the last edit. Saves go one at a time, in order, each sending the
+    // draft as it is when its turn comes, so an older draft can never land after a newer one; publishing waits its turn.
     saveDraft() {
-      const body = contentOut(S.content), json = JSON.stringify(body);
-      if (json === pushed) return;
+      if (JSON.stringify(contentOut(S.content)) === pushed) return;
       clearTimeout(pushTimer);
-      pushTimer = setTimeout(() => {
-        pushing = call('PUT', '/admin/content', body).then(r => { if (r.ok) pushed = json; else fail(r); return r.ok; });
-      }, 400);
+      pushTimer = setTimeout(() => { pushDraft(); }, 400);
     },
     async publish() {
       clearTimeout(pushTimer);
-      const body = contentOut(S.content), json = JSON.stringify(body);
-      if (json !== pushed) { const r = await call('PUT', '/admin/content', body); if (!r.ok) { fail(r); return false; } pushed = json; }
-      await pushing;
+      if (!await pushDraft()) return false;
       const r = await call('POST', '/admin/publish', {});
       if (!r.ok) { fail(r); return false; }
       return load();

@@ -48,6 +48,7 @@ function jpn_register_routes() {
 		array( '/admin/state', WP_REST_Server::READABLE, 'jpn_rest_state' ),
 		array( '/admin/bookings', WP_REST_Server::READABLE, 'jpn_rest_day' ),
 		array( '/admin/bookings', WP_REST_Server::CREATABLE, 'jpn_rest_desk_booking' ),
+		array( '/admin/bookings/month', WP_REST_Server::READABLE, 'jpn_rest_month' ),
 		array( '/admin/bookings/(?P<id>\d+)/status', WP_REST_Server::CREATABLE, 'jpn_rest_status' ),
 		array( '/admin/schedule/(?P<branch>[a-z]+)', WP_REST_Server::EDITABLE, 'jpn_rest_branch_timings' ),
 		array( '/admin/schedule/(?P<branch>[a-z]+)/own/(?P<doctor>[a-z0-9_-]+)', WP_REST_Server::EDITABLE, 'jpn_rest_own_timings' ),
@@ -310,6 +311,34 @@ function jpn_rest_day( WP_REST_Request $req ) {
 		$args[] = $branch;
 	}
 	return $wpdb->get_results( $wpdb->prepare( $sql . ' ORDER BY slot_time, branch', $args ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- built from fixed fragments above
+}
+
+/**
+ * The admin's calendar: how many bookings stand on each day of a month (month=YYYY-MM, optionally one branch), as
+ * { "2026-10-27": 3, ... }. Cancelled bookings don't count; days with none are left out.
+ */
+function jpn_rest_month( WP_REST_Request $req ) {
+	global $wpdb;
+	$month = (string) $req['month'];
+	$first = preg_match( '/^(20[2-9]\d)-(0[1-9]|1[0-2])$/', $month ) ? DateTimeImmutable::createFromFormat( '!Y-m-d', $month . '-01', wp_timezone() ) : false;
+	if ( ! $first ) {
+		return new WP_Error( 'jpn_month', 'Bad month.', array( 'status' => 400 ) );
+	}
+	$branch = $req['branch'] ? jpn_clean_branch( $req['branch'] ) : null;
+	if ( $req['branch'] && ! $branch ) {
+		return new WP_Error( 'jpn_branch', 'Unknown branch.', array( 'status' => 400 ) );
+	}
+	$sql    = 'SELECT slot_date, COUNT(*) AS n FROM ' . jpn_bookings_table() . " WHERE slot_date BETWEEN %s AND %s AND status <> 'cancelled'";
+	$args   = array( $first->format( 'Y-m-d' ), $first->format( 'Y-m-t' ) );
+	if ( $branch ) {
+		$sql   .= ' AND branch = %s';
+		$args[] = $branch;
+	}
+	$out = array();
+	foreach ( (array) $wpdb->get_results( $wpdb->prepare( $sql . ' GROUP BY slot_date', $args ), ARRAY_A ) as $row ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- built from fixed fragments above
+		$out[ $row['slot_date'] ] = (int) $row['n'];
+	}
+	return (object) $out;
 }
 
 function jpn_rest_desk_booking( WP_REST_Request $req ) {

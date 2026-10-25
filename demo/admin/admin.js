@@ -150,6 +150,7 @@ function route(first) {
   const k = (location.hash || '#today').slice(1), tab = TABS.find(t => t[0] === k) ? k : 'today';
   tabLinks.forEach((a, i) => { if (TABS[i][0] === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   ({ today: renderToday, schedule: renderSchedule, doctors: renderDoctors, content: renderContent })[tab]();
+  if (tab === 'today' && !first) freshDay();
   placeInd(!first);
   if (!first) { scrollTo(0, 0); view.focus({ preventScroll: true }); }
 }
@@ -168,6 +169,64 @@ function branchTabs(cur, withAll, onPick) {
 const notice = (text, ic = 'info') => el('p', { class: 'notice' }, icon(ic), el('span', {}, text));
 
 /* ---------- Today: the day sheet ---------- */
+// Every switch to a day asks WordPress again (the day's bookings and the month's counts). A day already seen shows at
+// once and is redrawn only if the answer differs; one not seen yet shows its rows loading until it arrives.
+function freshDay() {
+  todayCal.sync(true);
+  if (!WP) return;
+  const date = iso(addDays(today(), V.day));
+  WP.loadDay(date).then(changed => { if (changed && (location.hash || '#today') === '#today' && iso(addDays(today(), V.day)) === date) renderToday(); });
+}
+
+/* ---------- the calendar on Today: every day of the month, the days with bookings in the accent with how many ---------- */
+// One card, kept across redraws (so nothing on it is rebuilt by a redraw of the list). Picking a day marks it at once
+// and the day's bookings load below; every switch of day or month asks WordPress for the month's counts again, and a
+// month already seen shows its last counts meanwhile.
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const ymOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+const todayCal = (() => {
+  let shown = null, branch = null, counts;
+  const seen = new Map(); // 'YYYY-MM|branch' -> the counts last read
+  const title = el('p', { class: 'cal-month', 'aria-live': 'polite' }), grid = el('div', { class: 'cal-grid' });
+  const arrow = (c, label, k) => { const b = el('button', { class: `chipbtn2 icon ${c}`, type: 'button', 'aria-label': label }, icon('chevron')); b.addEventListener('click', () => show(new Date(shown.getFullYear(), shown.getMonth() + k, 1))); return b; };
+  const node = el('section', { class: 'card cal-card', 'aria-label': 'Calendar' }, el('div', { class: 'cal-head' }, arrow('prev', 'Previous month', -1), title, arrow('next', 'Next month', 1)), grid);
+  const key = () => `${ymOf(shown)}|${branch}`;
+  // the demo counts its own bookings
+  const local = () => { const ym = ymOf(shown), out = {}; S.bookings.filter(x => live(x) && x.date.startsWith(ym) && (branch === 'all' || x.branch === branch)).forEach(x => { out[x.date] = (out[x.date] || 0) + 1; }); return out; };
+  function load() {
+    if (!WP) { counts = local(); draw(); return; }
+    const k = key(), ym = ymOf(shown);
+    WP.month(ym, branch === 'all' ? null : branch).then(c => {
+      if (key() !== k) return;
+      if (!c) { if (counts === undefined) { counts = {}; draw(); } return; }
+      seen.set(k, c);
+      if (JSON.stringify(c) !== JSON.stringify(counts)) { counts = c; draw(); }
+    });
+  }
+  function show(month) { shown = month; title.textContent = `${MONTH_NAMES[shown.getMonth()]} ${shown.getFullYear()}`; counts = WP ? seen.get(key()) : undefined; draw(); load(); }
+  // the whole month at once: while its counts are on their way every day shows loading (and can still be picked)
+  function draw() {
+    const loading = counts === undefined, n = new Date(shown.getFullYear(), shown.getMonth() + 1, 0).getDate(), sel = iso(addDays(today(), V.day)), now = iso(today());
+    grid.setAttribute('aria-busy', String(loading));
+    grid.replaceChildren(...DOW.map(w => el('span', { class: 'cal-w', 'aria-hidden': 'true' }, w.slice(0, 2))), ...[...Array(shown.getDay())].map(() => el('span')), ...[...Array(n)].map((_, i) => {
+      const d = new Date(shown.getFullYear(), shown.getMonth(), i + 1), k = iso(d), c = loading ? 0 : counts[k] || 0;
+      const b = el('button', { type: 'button', class: ['cal-d', loading && 'skel', c && 'has', k === now && 'today', k === sel && 'on'].filter(Boolean).join(' '), 'aria-pressed': String(k === sel),
+        'aria-label': `${longDate(d)}${loading ? '' : c ? `, ${c} booking${c === 1 ? '' : 's'}` : ', no bookings'}` }, el('b', {}, String(i + 1)), c ? el('small', {}, String(c)) : '');
+      b.addEventListener('click', () => { if (k === sel) return; V.day = Math.round((d - today()) / 864e5); renderToday(); freshDay(); });
+      return b;
+    }));
+  }
+  return {
+    node,
+    // after a redraw of Today: follows the chosen day's month and branch; with fresh, asks for the month again
+    sync(fresh) {
+      const sel = addDays(today(), V.day), m = new Date(sel.getFullYear(), sel.getMonth(), 1);
+      if (!shown || +m !== +shown || branch !== V.branch) { branch = V.branch; show(m); return; }
+      draw(); if (fresh) load();
+    }
+  };
+})();
+
 // a day's bookings still on their way: the same rows, greyed and pulsing, so the list never says "no bookings" first
 const skelRows = n => el('div', { class: 'card', 'aria-busy': 'true' }, ...[...Array(n)].map(() => el('div', { class: 'row row-skel', 'aria-hidden': 'true' },
   el('span', { class: 'skel', style: 'width:44px;height:30px' }), el('span', {}, el('span', { class: 'skel', style: 'display:block;width:60%;height:15px' }), el('span', { class: 'skel', style: 'display:block;width:85%;height:12px;margin-top:7px' })), el('span'))));
@@ -180,10 +239,9 @@ function renderToday() {
   if (WP) [-1, 1].forEach(k => { const o = iso(addDays(d, k)); if (!WP.hasDay(o)) WP.loadDay(o); });
   const list = S.bookings.filter(x => x.date === date && (V.branch === 'all' || x.branch === V.branch)).sort((a, b) => a.t - b.t || a.branch.localeCompare(b.branch));
   const n = list.filter(live).length;
-  const nav = el('div', { class: 'daynav' }, ...[['prev', 'Previous day', -1], ['next', 'Next day', 1]].map(([c, label, step]) => {
-    const b = el('button', { class: c, type: 'button', 'aria-label': label }, icon('chevron'));
-    b.addEventListener('click', () => { V.day += step; renderToday(); }); return b;
-  }));
+  // days are picked on the calendar below; from another day, one tap back to today
+  const nav = V.day === 0 ? '' : (() => { const b = el('button', { class: 'chipbtn2', type: 'button' }, 'Today'); b.addEventListener('click', () => { V.day = 0; renderToday(); freshDay(); }); return b; })();
+  todayCal.sync();
   const notes = [];
   BRANCHES.filter(b => V.branch === 'all' || b.id === V.branch).forEach(b => {
     if (isClosed(b.id, date)) notes.push(notice(`${b.short} is closed ${dayLabel(d).toLowerCase() === 'today' ? 'today' : 'this day'}.`, 'leave'));
@@ -206,6 +264,7 @@ function renderToday() {
   add.addEventListener('click', () => openAdd(d));
   view.replaceChildren(
     head(longDate(d), ready ? `${dayLabel(d)} · ${n} booking${n === 1 ? '' : 's'}` : dayLabel(d), nav),
+    todayCal.node,
     branchTabs(V.branch, true, id => { V.branch = id; renderToday(); }),
     ...notes,
     !ready ? skelRows(3) : list.length ? el('div', { class: 'card' }, ...rows) : el('div', { class: 'card' }, el('p', { class: 'empty' }, el('b', {}, 'No bookings'), 'Online and front-desk bookings for this day show up here.')),
@@ -258,7 +317,7 @@ function confirmInline(host, text, yesLabel, onYes) {
 
 function openBooking(x) {
   const b = BR(x.branch), doc = x.doc && docById(x.doc), d = fromIso(x.date);
-  const facts = el('dl', { class: 'facts' }, ...[['Branch', b.name], ['Doctor', doc ? shortName(doc) : 'Any doctor'], ['Problem', x.problem || 'Not said'], ['Mobile', `+91 ${x.phone.slice(0, 5)} ${x.phone.slice(5)}`], ['Booked', x.source === 'desk' ? 'At the front desk' : 'Online']]
+  const facts = el('dl', { class: 'facts' }, ...[['Branch', b.name], ['Doctor', doc ? shortName(doc) : 'Any doctor'], ['Problem', x.problem || 'Not said'], ['Note', x.note || 'Nothing written'], ['Mobile', `+91 ${x.phone.slice(0, 5)} ${x.phone.slice(5)}`], ['Booked', x.source === 'desk' ? 'At the front desk' : 'Online']]
     .map(([k, v]) => el('div', {}, el('dt', {}, k), el('dd', {}, v))));
   const actions = [];
   // Marking someone arrived (or undoing it) only changes the front desk's view, so it shows at once and is put back
@@ -267,7 +326,7 @@ function openBooking(x) {
   const setStatus = async (status, msg, button) => {
     if (!WP) { x.status = status; save(); closeSheet(); renderToday(); if (msg) toast(msg); return; }
     if (status === 'arrived' || (status === 'booked' && x.status === 'arrived')) {
-      const was = x.status; x.status = status; closeSheet(); renderToday(); if (msg) toast(msg);
+      const was = x.status; x.status = status; closeSheet(); renderToday(); if (msg) toast(msg); // arriving doesn't change the counts
       if (!await WP.setStatus(x, status)) { x.status = was; renderToday(); toast(`Couldn't save that for ${x.name}. It's back as it was.`); }
       return;
     }
@@ -276,7 +335,7 @@ function openBooking(x) {
     const ok = await WP.setStatus(x, status);
     if (button) { button.disabled = false; button.textContent = label; }
     if (!ok) return;
-    closeSheet(); renderToday(); if (msg) toast(msg);
+    closeSheet(); renderToday(); todayCal.sync(true); if (msg) toast(msg); // cancelling or restoring changes the day's count
   };
   if (x.status === 'booked') actions.push(btn('Mark as arrived', 'btn--act btn--block', () => setStatus('arrived', `${x.name} marked as arrived`), 'check'));
   if (x.status === 'arrived') actions.push(btn('Undo arrived', 'btn--line btn--block', () => setStatus('booked')));
@@ -308,7 +367,7 @@ function openAdd(startDay) {
       S.bookings.push({ id: `d${Date.now()}`, name: nm.value.trim(), phone, branch: A.b, doc, date: iso(A.day), t: A.t, problem: A.problem, status: 'booked', source: 'desk' });
       save();
     }
-    closeSheet(); V.day = Math.round((A.day - today()) / 864e5); V.branch = 'all'; location.hash === '#today' ? renderToday() : (location.hash = '#today');
+    closeSheet(); V.day = Math.round((A.day - today()) / 864e5); V.branch = 'all'; location.hash === '#today' ? (renderToday(), todayCal.sync(true)) : (location.hash = '#today');
     toast(`Booked: ${nm.value.trim()}, ${dayLabel(A.day)} ${timeText(A.t)} at ${BR(A.b).short}`);
   });
   const field = (label, ...kids) => el('div', { class: 'field' }, el('label', {}, label), ...kids);

@@ -287,6 +287,21 @@ check('home photo: an id that isn\'t one of our photos is dropped', s == 200 and
 
 check('photos: the website file names photos by path, not by one of the site\'s addresses', '"photo":"/wp-content/uploads/' in js and 'localhost' not in js, js[js.find('"home"'):js.find('"home"') + 160])
 
+# ---- the admin's calendar: how many bookings stand on each day of a month
+M = DAY[:7]
+s, r = call('GET', f'/admin/bookings/month?month={M}', owner=True)
+check('calendar: counts the day\'s standing bookings', s == 200 and r.get(DAY, 0) >= 1, (s, r))
+_, day = call('GET', f'/admin/bookings?date={DAY}', owner=True)
+check('calendar: the count matches the day, cancelled ones left out', r.get(DAY) == len([b for b in day if b['status'] != 'cancelled']), (r.get(DAY), [b['status'] for b in day]))
+s, r = call('GET', f'/admin/bookings/month?month={M}&branch=jpnagar', owner=True)
+check('calendar: one branch counts only its own', s == 200 and DAY not in r, (s, r))
+s, r = call('GET', f'/admin/bookings/month?month={M}')
+check('calendar: no login refused', s in (401, 403), s)
+s, r = call('GET', '/admin/bookings/month?month=2026-13', owner=True)
+check('calendar: a bad month refused', s == 400, (s, r))
+s, r = call('GET', f'/admin/bookings/month?month={M}&branch=nowhere', owner=True)
+check('calendar: an unknown branch refused', s == 400, (s, r))
+
 # ---- the clinic admin on its own address (admin.<site>), served by this same WordPress
 ADMIN_HOST, VISIT_HOST = 'admin.localhost:' + PORT, 'localhost:' + PORT
 def on_host(host, path):

@@ -97,16 +97,31 @@ const WP = window.JPN_API ? (() => {
     pushed = JSON.stringify(contentOut(S.content));
     return true;
   }
-  async function loadDay(date) {
-    const r = await call('GET', '/admin/bookings', undefined, { date });
-    if (!r.ok) { fail(r); return; }
-    S.bookings = S.bookings.filter(x => x.date !== date).concat(r.data.map(bookingIn));
-    days.add(date);
+  // a day's bookings from the server; asking again while one request is on its way shares it. Resolves true when the
+  // day's list changed (or arrived for the first time).
+  const loading = new Map();
+  function loadDay(date) {
+    if (loading.has(date)) return loading.get(date);
+    const sig = () => JSON.stringify(S.bookings.filter(x => x.date === date)), was = days.has(date) ? sig() : null;
+    const p = call('GET', '/admin/bookings', undefined, { date }).then(r => {
+      if (!r.ok) { fail(r); return false; }
+      S.bookings = S.bookings.filter(x => x.date !== date).concat(r.data.map(bookingIn));
+      days.add(date);
+      return sig() !== was;
+    }).finally(() => loading.delete(date));
+    loading.set(date, p);
+    return p;
   }
 
   return {
     async boot() { await getNonce(); S.bookings = []; return load(); },
     load, loadDay, hasDay: date => days.has(date),
+    // the calendar: { 'YYYY-MM-DD': standing bookings } for a month (YYYY-MM), for one branch or all of them
+    async month(ym, branch) {
+      const r = await call('GET', '/admin/bookings/month', undefined, branch ? { month: ym, branch } : { month: ym });
+      if (!r.ok) { fail(r); return null; }
+      return r.data || {};
+    },
     // reloads every day already on screen, after something that can change bookings on several days
     async reloadDays() { for (const d of [...days]) await loadDay(d); },
     // The content draft is saved a moment after the last edit. Saves go one at a time, in order, each sending the

@@ -116,17 +116,18 @@ function jpn_client_ip() {
  */
 function jpn_limit_keys( $phone ) {
 	return array(
-		array( 'jpn_rl_ip_' . md5( jpn_client_ip() ), 5, 10 * MINUTE_IN_SECONDS ),
-		array( 'jpn_rl_ph_' . md5( (string) $phone ), 3, DAY_IN_SECONDS ),
+		'ip'    => array( 'jpn_rl_ip_' . md5( jpn_client_ip() ), 5, 10 * MINUTE_IN_SECONDS ),
+		'phone' => array( 'jpn_rl_ph_' . md5( (string) $phone ), 3, DAY_IN_SECONDS ),
 	);
 }
+/** Which limit a new booking would pass ('phone' or 'ip'), or null when it is within both. */
 function jpn_rate_limited( $phone ) {
-	foreach ( jpn_limit_keys( $phone ) as $k ) {
+	foreach ( jpn_limit_keys( $phone ) as $which => $k ) {
 		if ( (int) get_transient( $k[0] ) >= $k[1] ) {
-			return true;
+			return $which;
 		}
 	}
-	return false;
+	return null;
 }
 function jpn_count_booking( $phone ) {
 	foreach ( jpn_limit_keys( $phone ) as $k ) {
@@ -162,8 +163,13 @@ function jpn_rest_book( WP_REST_Request $req ) {
 	// under the lock, two bookings at once can't both slip under the limit
 	$row = jpn_locked(
 		function () use ( $b ) {
-			if ( jpn_rate_limited( $b['phone'] ) ) {
-				return new WP_Error( 'jpn_slow', __( 'Too many bookings from here just now. Please call the clinic.', 'jpnagar-clinic' ), array( 'status' => 429 ) );
+			// say which limit, so a patient knows it isn't the time that's full
+			$limit = jpn_rate_limited( $b['phone'] );
+			if ( 'phone' === $limit ) {
+				return new WP_Error( 'jpn_slow', __( 'This mobile number already has 3 bookings today. To book another visit, please call or WhatsApp the clinic.', 'jpnagar-clinic' ), array( 'status' => 429 ) );
+			}
+			if ( 'ip' === $limit ) {
+				return new WP_Error( 'jpn_slow', __( 'Several bookings were just made from this connection. Please wait 10 minutes, or call the clinic.', 'jpnagar-clinic' ), array( 'status' => 429 ) );
 			}
 			$b['source'] = 'online';
 			$row         = jpn_create_booking( $b );

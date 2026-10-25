@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-GB
+reviews:
+  profile: assertive
+  high_level_summary: true
+  poem: false
+  review_status: true
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!.impeccable/mocks/**"
+    - "!.impeccable/review/**"
+    - "!**/*.png"
+    - "!**/*.webp"
+  path_instructions:
+    - path: "**/*.{css,js,html,php}"
+      instructions: |
+        Review against CLAUDE.md section 3 (performance and Safari):
+        - animate only transform and opacity; never filter/blur, box-shadow, clip-path, width/height, top/left or margins;
+        - no clip-path over constantly animating content; no SVG filters inside masked or filtered parents (iPhone Safari drops them);
+        - backdrop-filter always paired with -webkit-backdrop-filter and kept to small elements;
+        - animations and timers only run while on screen (IntersectionObserver), and prefers-reduced-motion is respected;
+        - reserve space for anything that loads or changes (aspect-ratio, image width/height); update UI in place instead of rebuilding lists;
+        - accessibility (WCAG 2.2 AA): text contrast 4.5:1, touch targets 44px, errors announced with aria-invalid and aria-describedby, focus moved to new steps, no interactive elements nested inside interactive elements.
+        Flag code that rewrites something the demo already has instead of reusing it (CLAUDE.md section 1).
+    - path: "**/*.php"
+      instructions: |
+        WordPress plugin/theme code for GoDaddy shared hosting. Check:
+        - every REST route has a permission_callback with a real capability check (the admin is owner-only);
+        - nonces on state-changing requests; sanitize all input, escape all output (esc_html, esc_attr, esc_url, wp_kses);
+        - $wpdb queries use prepare(); no raw SQL with user input;
+        - stays compatible with PHP 7.4 until the host is upgraded;
+        - a visitor's page view never queries the database for published content (it reads the static snapshot), per CLAUDE.md section 4;
+        - uploaded images are resized and stored as WebP; originals are never served.
+    - path: "demo/**"
+      instructions: |
+        This is the approved design. Changes must keep the decisions in CLAUDE.md section 2 (booking order is pain first,
+        no guessed location, porcelain-atlas illustration style) and match DESIGN.md tokens.
+chat:
+  auto_reply: true
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "CLAUDE.md"
+      - "DESIGN.md"
+      - "PRODUCT.md"

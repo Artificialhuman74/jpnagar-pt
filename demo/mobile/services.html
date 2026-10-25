@@ -10,7 +10,7 @@
 <header class="top"><img class="logo" src="../canon/logo.webp" alt="J.P. Nagar Medical & Physiotherapy Centre" width="408" height="301"></header>
 <div class="phead" data-reveal>
   <h1>What we treat</h1>
-  <p>Ten areas of care, one clinic. Find yours by body area or by situation.</p>
+  <p>Ten areas of care. Find yours by body area or situation.</p>
 </div>
 
 <a class="finder" href="book.html" data-reveal>
@@ -26,21 +26,13 @@
 <p class="count" data-count aria-live="polite"></p>
 <div class="svcs" data-svcs></div>
 
-<section class="sec" aria-labelledby="tx-h">
-  <h2 id="tx-h" data-reveal>See how each treatment is done</h2>
-  <div class="tx-chips" role="group" aria-label="Treatments" data-tx-chips></div>
-  <div class="tx-stage"><div class="scene-host" data-tx-host></div></div>
-  <div class="tx-info" aria-live="polite" data-tx-info><b data-tx-name></b><p data-tx-what></p><p class="feels"><span>How it feels</span><span data-tx-feels></span></p></div>
-</section>
+<a class="tx-link" href="therapies.html"><span><b>See how each treatment is done</b><small>Manual therapy, IFT, ultrasound, traction and more</small></span><i data-icon="chevron"></i></a>
 
 <div class="fab"></div>
 <nav class="dock" data-active="services"></nav>
 <script src="app.js"></script>
 <script src="../canon/published-data.js"></script>
 <script src="../canon/published.js"></script>
-<script src="kit.js"></script>
-<script src="../desktop/anatomy.js"></script>
-<script src="../desktop/scenes.js"></script>
 <script>
 const SERVICES = [
   { name: 'Spine & Back Care', tags: ['back'], helps: ['Back and neck pain', 'Slip disc and sciatica', 'Posture problems'], href: 'spine.html' },
@@ -59,8 +51,8 @@ const list = document.querySelector('[data-svcs]');
 const cards = SERVICES.map(s => {
   const a = el('a', { class: 'svc', href: s.href || '#' },
     el('div', { class: 'photo tilt', 'data-service-photo': (s.href || '').replace('.html', '') }),
-    el('div', {}, el('h2', {}, s.name), el('ul', {}, ...s.helps.map(h => el('li', {}, h))),
-      el('span', { class: 'go' }, 'See how we treat it', icon('chevron'))));
+    el('div', {}, el('h2', {}, s.name), el('ul', {}, ...s.helps.map(h => el('li', {}, h)))),
+    el('span', { class: 'go', 'aria-hidden': 'true' }, icon('chevron')));
   list.append(a); return a;
 });
 let current = 'all';
@@ -77,39 +69,10 @@ function render() {
     const show = current === 'all' || SERVICES[i].tags.includes(current);
     c.hidden = !show; if (show) { n++; c.style.animation = 'none'; void c.offsetWidth; c.style.animation = `rise .45s var(--ease) ${n * .04}s backwards`; }
   });
-  document.querySelector('[data-count]').textContent = current === 'all' ? `${n} areas of care` : `${n} matching`;
+  // only says something when a filter narrows the list
+  document.querySelector('[data-count]').textContent = current === 'all' ? '' : `${n} matching`;
 }
 render();
 
-// see how each treatment is done: tap a treatment to watch it; until then they play in turn
-const txChips = document.querySelector('[data-tx-chips]'), txHost = document.querySelector('[data-tx-host]'), txInfo = document.querySelector('[data-tx-info]');
-let tx = -1, txTimer;
-const txBtns = TREATMENTS.map((t, i) => {
-  const b = el('button', { class: 'pill', type: 'button', 'aria-pressed': 'false' }, t.name);
-  b.addEventListener('click', () => { clearInterval(txTimer); showTx(i, true); });
-  txChips.append(b); return b;
-});
-function fillTx(t) {
-  document.querySelector('[data-tx-name]').replaceChildren(t.name, ...(t.full ? [' ', el('small', {}, `· ${t.full}`)] : []));
-  document.querySelector('[data-tx-what]').textContent = t.what;
-  document.querySelector('[data-tx-feels]').textContent = t.feels;
-}
-function showTx(i, fromUser) {
-  if (i === tx) return;
-  tx = i; const t = TREATMENTS[i];
-  showScene(txHost, t.scene);
-  txBtns.forEach((b, j) => b.setAttribute('aria-pressed', String(j === i)));
-  fillTx(t);
-  txInfo.classList.remove('swap'); void txInfo.offsetWidth; txInfo.classList.add('swap');
-  const b = txBtns[i];
-  txChips.scrollTo({ left: b.offsetLeft - (txChips.clientWidth - b.offsetWidth) / 2, behavior: fromUser && !reduceMotion ? 'smooth' : 'auto' });
-}
-txChips.addEventListener('pointerdown', () => clearInterval(txTimer));
-// the description keeps the height of the longest one, so changing treatment never nudges the page below
-const fitTx = () => { txInfo.style.minHeight = ''; let h = 0; TREATMENTS.forEach(t => { fillTx(t); h = Math.max(h, txInfo.offsetHeight); }); txInfo.style.minHeight = h + 'px'; if (tx >= 0) fillTx(TREATMENTS[tx]); };
-fitTx(); addEventListener('resize', fitTx);
-showTx(0);
-const txSeen = onView(txHost);
-if (!reduceMotion) txTimer = setInterval(() => txSeen() && showTx((tx + 1) % TREATMENTS.length), 7500);
 </script>
 </body></html>

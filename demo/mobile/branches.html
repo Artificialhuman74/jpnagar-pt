@@ -10,7 +10,7 @@
 <header class="top"><img class="logo" src="../canon/logo.webp" alt="J.P. Nagar Medical & Physiotherapy Centre" width="408" height="301"></header>
 <div class="phead" data-reveal>
   <h1>Our branches</h1>
-  <p>Three clinics in South Bangalore, open <span data-open-days>Monday to Saturday</span>, all with parking.</p>
+  <p>Three clinics in South Bangalore, all with parking.</p>
 </div>
 
 <section class="locate" data-reveal>
@@ -31,17 +31,16 @@
 <script src="../canon/published.js"></script>
 <script>
 document.querySelector('[data-mapbox]').append(mapEmbed(null)); // all three branches
-const list = document.querySelector('[data-blist]'), now = nowIST();
+const list = document.querySelector('[data-blist]');
 const cards = BRANCHES.map((b, i) => {
-  const st = branchStatus(b), today = sessText(sessionsOn(b, now));
-  const dist = el('span', { 'data-dist': '' }, kmText(b) || b.landmark), tag = el('span', { class: 'near-tag', hidden: '' }, 'Nearest');
+  const st = branchStatus(b);
+  const dist = el('span', { 'data-dist': '' }, kmText(b)), tag = el('span', { class: 'near-tag', hidden: '' }, 'Nearest');
   const card = el('article', { class: 'bcard', 'data-id': b.id },
     el('div', { class: 'photo tilt', 'data-label': `Photo: ${b.short} entrance (to be shot)`, 'data-branch-photo': b.id }),
     el('div', { class: 'in' },
       el('div', { class: 'h' }, el('h2', {}, b.name), tag),
-      el('div', { class: 'meta' }, el('span', { class: 'open' + (st.open ? '' : ' closed') }, st.text), el('span', {}, '·'), dist),
+      el('div', { class: 'meta' }, el('span', { class: 'open' + (st.open ? '' : ' closed') }, st.text), dist),
       el('p', { class: 'addr' }, b.addr),
-      el('p', { class: 'addr' }, worksOn(b, now) ? `Today: ${today}` : 'Closed today'),
       el('div', { class: 'acts' },
         el('a', { href: mapsLink(b), target: '_blank', rel: 'noopener' }, icon('pin'), 'Directions'),
         el('a', { href: 'tel:' + b.phone }, icon('phone'), 'Call'),

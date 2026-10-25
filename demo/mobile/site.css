@@ -22,8 +22,6 @@
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
 /* ---------- home: hero ---------- */
-.hello{padding:0 18px 10px;font-size:15px;color:var(--ink-2)}
-.hello b{color:var(--ink)}
 .hero{margin:0 10px;border-radius:30px;overflow:hidden;position:relative;height:470px;clip-path:inset(0 round 30px)}
 .hero .photo{position:absolute;inset:0;transform:scale(1.06);transition:transform 1.6s var(--ease)}
 .motion .hero.in .photo{transform:scale(1)}
@@ -101,7 +99,13 @@
 .close-cta p{margin:6px 0 16px;color:var(--ink-2)}
 .close-cta ul{list-style:none;display:grid;gap:8px;margin-bottom:18px}
 .close-cta li{display:flex;justify-content:space-between;font-size:15px;gap:10px}
-.close-cta li span:last-child{color:var(--ink-2);text-align:right}
+.close-cta li > span:last-child{color:var(--ink-2);text-align:right}
+.close-cta h2 + ul{margin-top:14px}
+.close-cta .live{display:inline-flex;align-items:center;gap:7px;font-size:14px}
+.close-cta .live i{width:7px;height:7px;border-radius:50%;background:var(--sky);flex:none}
+.close-cta .live.closed i{background:var(--ink-3)}
+.close-cta .allhours{display:inline-flex;align-items:center;gap:4px;min-height:44px;margin:-6px 0 8px;font-size:15px;font-weight:700;color:var(--sky-ink)}
+.close-cta .allhours svg{width:16px;height:16px}
 .close-cta li .wk{display:block}
 
 /* ---------- booking page ---------- */
@@ -109,11 +113,11 @@
   padding:10px 14px 12px;border-bottom:1px solid transparent;transition:border-color .3s}
 .bhead.scrolled{border-color:var(--line)}
 .bhead .row{display:flex;align-items:center;justify-content:space-between}
-.iconbtn{width:42px;height:42px;border-radius:14px;border:0;background:var(--surface);display:grid;place-items:center;cursor:pointer;color:var(--ink)}
+.iconbtn{width:44px;height:44px;border-radius:14px;border:0;background:var(--surface);display:grid;place-items:center;cursor:pointer;color:var(--ink)}
 .iconbtn svg{width:20px;height:20px}
 .iconbtn[hidden]{visibility:hidden;display:grid}
 .bhead .title{font-weight:750;font-size:16px}
-.help{font-size:14px;font-weight:700;color:var(--sky-ink)}
+.help{display:inline-flex;align-items:center;min-height:44px;padding:0 2px;font-size:14px;font-weight:700;color:var(--sky-ink)}
 .prog{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}
 .prog span{height:4px;border-radius:2px;background:var(--line);overflow:hidden;position:relative}
 .prog span::after{content:"";position:absolute;inset:0;background:var(--act);transform:scaleX(0);transform-origin:left;transition:transform .6s var(--ease)}
@@ -373,15 +377,14 @@
 .filters{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:18px 18px 2px}
 .filters .pill{flex:0 0 auto}
 .svcs{display:grid;gap:12px;padding:14px 12px 0}
-.svc{display:grid;grid-template-columns:100px 1fr;gap:14px;padding:10px;border-radius:22px;background:var(--canvas);box-shadow:var(--shadow);align-items:start;transition:opacity .3s,transform .3s var(--ease)}
+.svc{display:grid;grid-template-columns:100px 1fr 18px;gap:14px;padding:10px;border-radius:22px;background:var(--canvas);box-shadow:var(--shadow);align-items:start;transition:opacity .3s,transform .3s var(--ease)}
 .svc[hidden]{display:none}
 .svc .photo{width:100px;height:118px;border-radius:16px}
 .svc .photo::after{display:none}
 .svc h2{font-size:17px;margin-top:4px;line-height:1.2;letter-spacing:-.01em}
 .svc ul{list-style:none;margin-top:6px;display:grid;gap:3px;font-size:13px;color:var(--ink-2)}
 .svc li::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--sky);margin:0 7px 2px 0}
-.svc .go{font-size:13px;font-weight:700;color:var(--sky-ink);margin-top:8px;display:inline-flex;align-items:center}
-.svc .go svg{width:14px;height:14px}
+.svc .go{align-self:center;display:flex;margin-right:4px;color:var(--ink-3)}
 .count{padding:10px 18px 0;font-size:13px;color:var(--ink-2)}
 
 /* ---------- service detail ---------- */
@@ -420,12 +423,13 @@
 .bcard h2{font-size:21px}
 .near-tag{font-size:11px;font-weight:800;padding:3px 7px;border-radius:6px;background:var(--sky-soft);color:var(--sky-ink)}
 .bcard .meta{display:flex;gap:8px;align-items:center;margin-top:6px;font-size:14px;color:var(--ink-2);flex-wrap:wrap}
+.bcard .meta [data-dist]:not(:empty)::before{content:"· ";margin-right:2px}
 .bcard .addr{font-size:14px;color:var(--ink-2);margin-top:8px;line-height:1.4}
 .acts{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:8px;margin-top:14px}
 .acts a{height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:700;font-size:14px;background:var(--surface)}
 .acts a.act{background:var(--act);color:#fff}
 .acts svg{width:18px;height:18px}
-.more-link{display:inline-flex;align-items:center;gap:2px;margin-top:12px;font-size:14px;font-weight:700;color:var(--sky-ink)}
+.more-link{display:inline-flex;align-items:center;gap:2px;min-height:44px;margin-top:0;font-size:14px;font-weight:700;color:var(--sky-ink)}
 .more-link svg{width:16px;height:16px}
 .mapbox{margin:14px 12px 0;height:220px;border-radius:24px;overflow:hidden;background:var(--surface)}
 .mapbox .gmap{display:block;width:100%;height:100%;border:0}
@@ -580,8 +584,8 @@
 .bm-spots{opacity:0;transition:opacity .35s var(--ease)}
 .bm-spots.on{opacity:1}
 .bm-spots.on .bm-spot{animation:spot-in .6s var(--ease) backwards}
-.bm-spots.on .bm-spot:nth-child(2){animation-delay:.08s}.bm-spots.on .bm-spot:nth-child(3){animation-delay:.16s}
-.bm-spots.on .bm-spot:nth-child(4){animation-delay:.24s}.bm-spots.on .bm-spot:nth-child(5){animation-delay:.32s}.bm-spots.on .bm-spot:nth-child(6){animation-delay:.4s}
+.bm-spots.on > :nth-child(2) .bm-spot{animation-delay:.08s}.bm-spots.on > :nth-child(3) .bm-spot{animation-delay:.16s}
+.bm-spots.on > :nth-child(4) .bm-spot{animation-delay:.24s}.bm-spots.on > :nth-child(5) .bm-spot{animation-delay:.32s}.bm-spots.on > :nth-child(6) .bm-spot{animation-delay:.4s}
 @keyframes spot-in{from{opacity:0;transform:scale(.4)}}
 .bm-spot{transform-box:fill-box;transform-origin:center}
 .bm-side{position:absolute;left:12px;bottom:10px;font-size:12px;font-weight:700;color:var(--ink-3);padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.8)}
@@ -661,9 +665,9 @@
 /* each card carries its own perspective() (carousel.js, from --gcar-persp), centred where the box's would be: Safari
    doesn't pass a parent's perspective through to the cards and drew the arc flat */
 .gcar{position:relative;height:400px;margin:0 -18px;--gcar-persp:1100px;touch-action:pan-y;user-select:none;-webkit-user-select:none;overflow-x:clip}
-/* one colour at a time from the logo's blues; it spills past the cards and fades to nothing */
+/* one still periwinkle glow behind the cards; it spills past them and fades to nothing, so it has no edge */
 .gcar-glow{position:absolute;inset:-110px -30% -70px;pointer-events:none;z-index:0}
-.gcar-glow i{position:absolute;inset:0;opacity:0;will-change:opacity;transition:opacity 1.6s cubic-bezier(.45,0,.55,1) .5s;
+.gcar-glow i{position:absolute;inset:0;opacity:0;transition:opacity 1.6s cubic-bezier(.45,0,.55,1) .5s;
   background:
     radial-gradient(40% 36% at 50% 46%,color-mix(in srgb,var(--a,#00A8EC) 50%,transparent),transparent 100%),
     radial-gradient(36% 40% at 28% 54%,color-mix(in srgb,var(--a,#00A8EC) 26%,transparent),transparent 100%),
@@ -690,7 +694,6 @@
 .gcar-cap b{font-weight:750}
 .gcar-cap span{color:var(--ink-3);font-variant-numeric:tabular-nums}
 .gcar-cap.swap{animation:capin .6s var(--ease)}
-.gal-hint{position:relative;z-index:2;text-align:center;margin-top:4px}
 @keyframes capin{from{opacity:0;transform:translateY(6px)}}
 
 /* ---------- team: tilted cards that turn over (../desktop/tilt.js) ---------- */
@@ -734,7 +737,7 @@
 .tc-back .ticks svg{width:20px;height:20px}
 .tc-back .acts-row{margin-top:auto;padding-top:16px;display:grid;grid-template-columns:1.3fr 1fr;gap:8px}
 .tc-back .btn{height:50px;padding:0 12px;font-size:15px}
-.tc-back .tc-turn{position:absolute;top:18px;right:18px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--surface);color:var(--ink-2)}
+.tc-back .tc-turn{position:absolute;top:14px;right:14px;width:44px;height:44px;flex:none;border-radius:50%;display:grid;place-items:center;background:var(--surface);color:var(--ink-2)}
 .tc-back .tc-turn svg{width:16px;height:16px}
 
 /* ---------- booking: a focused task ---------- */
@@ -760,3 +763,17 @@
 .gcar-tabs [role="tab"][aria-selected="true"]{color:var(--ink)}
 .gcar-tabs .gt-ind{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / var(--n));border-radius:12px;background:var(--canvas);box-shadow:0 1px 3px rgba(20,22,41,.12);transition:transform .55s var(--ease)}
 @media (prefers-reduced-motion:reduce){.gcar-tabs .gt-ind{transition:none}}
+
+/* declutter: the floating call/WhatsApp buttons fade aside over Book buttons and the closing panel */
+.fab{transition:opacity .25s var(--ease),transform .25s var(--ease)}
+.fab.is-away{opacity:0;transform:translateX(14px);pointer-events:none}
+/* the stage caption repeats the text under it, so it is kept for screen readers only */
+.how-cap{position:absolute;width:1px;height:1px;min-height:0;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* a branch card without its photo yet starts with the name, not an empty grey block */
+.bcard .photo:not(.is-real){display:none}
+/* services: the link to the treatments page, and the card chevron */
+.tx-link{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 12px 0;padding:16px 18px;border-radius:22px;background:var(--surface)}
+.tx-link b{display:block;font-size:17px}
+.tx-link small{display:block;margin-top:2px;font-size:14px;color:var(--ink-2)}
+.tx-link svg{width:20px;height:20px;flex:none;color:var(--ink-3)}
+.svc .go svg{width:18px;height:18px}

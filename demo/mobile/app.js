@@ -82,6 +82,17 @@ document.querySelectorAll('.fab').forEach(f => f.replaceChildren(
   el('a', { href: 'tel:+919916116625', 'aria-label': 'Call the clinic' }, icon('phone')),
   el('a', { href: 'https://wa.me/919916116625', 'aria-label': 'WhatsApp the clinic' }, icon('whatsapp'))
 ));
+// they float over the page, so they step aside while a Book button or the closing panel passes underneath them
+(() => {
+  const fab = document.querySelector('.fab'); if (!fab || !('IntersectionObserver' in window)) return;
+  // the band of screen the buttons sit in: from 60% down to just above the dock
+  const under = new Set(), io = new IntersectionObserver(es => {
+    es.forEach(e => e.isIntersecting ? under.add(e.target) : under.delete(e.target));
+    fab.classList.toggle('is-away', under.size > 0);
+  }, { rootMargin: '-60% 0px -8% 0px' });
+  // after the page's own script has built its cards
+  addEventListener('DOMContentLoaded', () => document.querySelectorAll('.btn--act, .close-cta, .bcard .acts, .tx-link').forEach(n => { if (!n.closest('.dock, .fab')) io.observe(n); }));
+})();
 
 /* ---------- reveal on scroll ---------- */
 const io = new IntersectionObserver(es => es.forEach(e => {

@@ -75,13 +75,16 @@ for (let i = 0; i < 7 && found.length < 3; i++) {
 const DOWN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 found.forEach(({ day, s, i }) => quick.append(el('a', { href: 'book.html?branch=arekere' },
   el('small', {}, i === 0 ? 'Today' : `${DOWN[day.getDay()]} ${day.getDate()}`), `${s.label} ${s.suffix}`)));
-// week with today highlighted
-const week = document.querySelector('[data-week]'), names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-names.forEach((n, i) => {
-  const dow = (i + 1) % 7, isToday = dow === d0.getDay();
-  week.append(el('div', { class: (isToday ? 'today' : '') + (worksOn(b, dow) ? '' : ' off') },
-    el('span', {}, n + (isToday ? ' · today' : '')),
-    el('span', {}, sessText(sessionsOn(b, dow)) || 'Closed')));
+// the week, with days that keep the same hours on one line (Monday to Saturday), and today's line highlighted
+const week = document.querySelector('[data-week]'), groups = [], DAY_NAME = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+[1, 2, 3, 4, 5, 6, 0].forEach(dow => {
+  const t = sessText(sessionsOn(b, dow)) || 'Closed', last = groups[groups.length - 1];
+  if (last && last.t === t) last.days.push(dow); else groups.push({ t, days: [dow] });
+});
+groups.forEach(({ t, days }) => {
+  const isToday = days.includes(d0.getDay()), n = days.length > 1 ? `${DOW_SHORT[days[0]]}–${DOW_SHORT[days[days.length - 1]]}` : DAY_NAME[days[0]];
+  week.append(el('div', { class: (isToday ? 'today' : '') + (t === 'Closed' ? ' off' : '') },
+    el('span', {}, n + (isToday ? ' · today' : '')), el('span', {}, t)));
 });
 </script>
 </body></html>

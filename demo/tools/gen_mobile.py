@@ -44,35 +44,8 @@ def page(p):
         ch1_attr = f' data-scene="assess" data-cap="{E(CAP["assess"])}"'
     note = p.get('note', 'These are examples. Do only the exercises your physiotherapist gives you.')
     therapies = p['id'] == 'therapies'
-    who = '\n'.join(f'    <a href="team.html?open={i}"><div class="photo"></div><b>{n}</b><small>{d}</small></a>' for i, (n, d) in enumerate(WHO))
-    return f'''<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{E(p['title'])} · J.P. Nagar Physio</title>
-<meta name="description" content="{E(p['desc'])}">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&amp;display=swap">
-<link rel="stylesheet" href="../canon/base.css">
-<link rel="stylesheet" href="site.css">
-</head><body class="has-sticky" data-service="{p['id']}" data-area="{p['area']}">
-<header class="top"><img class="logo" src="../canon/logo.webp" alt="J.P. Nagar Medical & Physiotherapy Centre" width="408" height="301"></header>
-<a class="backlink" href="services.html"><i data-icon="back"></i>All services</a>
-<div class="phead" data-reveal>
-  <h1>{p['h1'].replace('<br>', ' ')}</h1>
-  <p>{E(p['lead'])}</p>
-</div>
-
-<section class="where" aria-labelledby="where-h">
-  <h2 class="where-h" id="where-h">{'Treatments' if therapies else 'Helps with'}<small>{'Tap one to see how it works' if scene_mode else 'Tap one to see where it happens'}</small></h2>
-  <div class="where-stage" data-map-stage data-mode="{p['mode']}"></div>
-  <div class="where-cap" aria-live="polite"><b data-cond-name>{E(first[0])}</b><p data-cond-text>{E(first[3])}</p></div>
-  <div class="cond-row" role="group" aria-label="{'Treatments' if therapies else 'Problems we treat'}">
-{pills}
-  </div>
-</section>
-
-<section class="sec how" aria-labelledby="how-h">
-  <h2 id="how-h" data-reveal>{'How each one works' if therapies else 'How we treat it'}</h2>
+    HOW = f'''<section class="sec how" aria-labelledby="how-h">
+  <h2 id="how-h" data-reveal>How we treat it</h2>
   <div class="seg" role="tablist" aria-label="Stages">
     <button type="button" role="tab" data-goto="0" aria-selected="true"><small>1</small>{E(steps[0])}</button>
     <button type="button" role="tab" data-goto="1" aria-selected="false"><small>2</small>{E(steps[1])}</button>
@@ -101,7 +74,35 @@ def page(p):
     </div>
     <p class="how-note">{E(note)}</p>
   </div>
+</section>'''
+    who = '\n'.join(f'    <a href="team.html?open={i}"><div class="photo"></div><b>{n}</b><small>{d}</small></a>' for i, (n, d) in enumerate(WHO))
+    return f'''<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{E(p['title'])} · J.P. Nagar Physio</title>
+<meta name="description" content="{E(p['desc'])}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="../canon/base.css">
+<link rel="stylesheet" href="site.css">
+</head><body class="has-sticky" data-service="{p['id']}" data-area="{p['area']}">
+<header class="top"><img class="logo" src="../canon/logo.webp" alt="J.P. Nagar Medical & Physiotherapy Centre" width="408" height="301"></header>
+<a class="backlink" href="services.html"><i data-icon="back"></i>All services</a>
+<div class="phead" data-reveal>
+  <h1>{p['h1'].replace('<br>', ' ')}</h1>
+  <p>{E(p['lead'])}</p>
+</div>
+
+<section class="where" aria-labelledby="where-h">
+  <h2 class="where-h" id="where-h">{'Treatments' if therapies else 'Helps with'}<small>{'Tap one to see how it works' if scene_mode else 'Tap one to see where it happens'}</small></h2>
+  <div class="where-stage" data-map-stage data-mode="{p['mode']}"></div>
+  <div class="where-cap" aria-live="polite"><b data-cond-name>{E(first[0])}</b><p data-cond-text>{E(first[3])}</p></div>
+  <div class="cond-row" role="group" aria-label="{'Treatments' if therapies else 'Problems we treat'}">
+{pills}
+  </div>
 </section>
+
+{'' if therapies else HOW}
 
 <section class="sec">
   <h2 data-reveal>What to expect</h2>

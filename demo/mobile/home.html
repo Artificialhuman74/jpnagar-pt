@@ -8,25 +8,15 @@
 <link rel="stylesheet" href="site.css">
 </head><body>
 <header class="top"><img class="logo" src="../canon/logo.webp" alt="J.P. Nagar Medical & Physiotherapy Centre" width="408" height="301"></header>
-<p class="hello"><span data-greet>Hello</span> · <span data-near>3 branches in South Bangalore</span></p>
 
 <section class="hero" data-inview>
   <div class="photo" data-label="Photo: Arekere clinic (to be shot)" data-branch-photo="start"></div>
   <div class="copy">
     <div class="live" data-live><i></i><span>Checking hours…</span></div>
-    <h1>Feel better, sooner.</h1>
-    <p>Expert physiotherapy at 3 branches in South Bangalore.</p>
+    <h1 data-home-headline>Feel better, sooner.</h1>
+    <p data-home-intro>Expert physiotherapy at 3 branches in South Bangalore.</p>
     <a class="btn btn--act btn--block" href="book.html">Book a visit <i data-icon="arrow"></i></a>
   </div>
-</section>
-
-<section class="sec">
-  <h2 data-reveal>Your first visit</h2>
-  <ol class="steps" data-inview>
-    <li data-reveal><div><b>We assess you</b><span>Your history, pain and how you move.</span></div></li>
-    <li data-reveal><div><b>We plan with you</b><span>Therapy and exercises for your goals.</span></div></li>
-    <li data-reveal><div><b>You recover</b><span>Clinic sessions plus simple home exercises.</span></div></li>
-  </ol>
 </section>
 
 <section class="sec">
@@ -38,12 +28,12 @@
   </ul>
   <div class="rating" data-inview>
     <span class="stars"><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i></span>
-    <span class="small muted"><b style="color:var(--ink)">[4.x]</b> on Google · sample until the reviews widget is connected</span>
+    <span class="small muted"><b style="color:var(--ink)">[4.x]</b> on Google</span>
   </div>
   <div class="reviews" data-reviews>
-    <article class="review"><p>“Sample review. The widget shows real Google reviews from all three branches here.”</p><footer><i>A</i>Google review · Arekere · sample</footer></article>
-    <article class="review"><p>“Sample review. Short quotes read best: what hurt, and how they feel now.”</p><footer><i>J</i>Google review · JP Nagar · sample</footer></article>
-    <article class="review"><p>“Sample review. Swipe sideways for more; the dots show where you are.”</p><footer><i>B</i>Google review · Bannerghatta · sample</footer></article>
+    <article class="review"><p>“Sample review: real Google reviews appear here.”</p><footer><i>A</i>Arekere · sample</footer></article>
+    <article class="review"><p>“Sample review: what hurt, and how they feel now.”</p><footer><i>J</i>JP Nagar · sample</footer></article>
+    <article class="review"><p>“Sample review: a short, real quote.”</p><footer><i>B</i>Bannerghatta · sample</footer></article>
   </div>
   <div class="dots" aria-hidden="true"><span class="on"></span><span></span><span></span></div>
 </section>
@@ -57,13 +47,12 @@
     <button class="gcar-btn next" type="button" aria-label="Next photo" data-gcar-next><i data-icon="chevron"></i></button>
     <p class="gcar-cap" aria-live="polite"><b data-gcar-label></b><span data-gcar-count></span></p>
   </div>
-  <p class="small muted gal-hint">Swipe or use the arrows. Tap the photo in front to see it full screen.</p>
 </section>
 
 <section class="close-cta" data-reveal>
   <h2>Ready when you are.</h2>
-  <p>Three branches, open <span data-open-days>Monday to Saturday</span>.</p>
   <ul data-hours></ul>
+  <a class="allhours" href="branches.html">All branches and hours <i data-icon="chevron"></i></a>
   <a class="btn btn--act btn--block" href="book.html">Book a visit</a>
 </section>
 
@@ -82,20 +71,17 @@
 <script src="../canon/published.js"></script>
 <script src="../desktop/carousel.js"></script>
 <script>
-// greeting + live status for the closest branch
-document.querySelector('[data-greet]').textContent = greeting();
+// live status for the closest branch (JP Nagar until the visitor has shared where they are)
 const near = BRANCHES[nearestIndex()], st = branchStatus(near), nf = nextFree(near);
-if (savedKm()) document.querySelector('[data-near]').replaceChildren(el('b', {}, near.short), ' is your closest branch');
 const live = document.querySelector('[data-live]');
 live.classList.toggle('closed', !st.open);
 live.querySelector('span').textContent = st.open && nf && nf.today
   ? `${near.short} open now · next free ${nf.slot.label} ${nf.slot.suffix}`
   : `${near.short} · ${st.text.toLowerCase()}`;
 
-// branch hours in the closing section
+// each branch's status right now (the week's hours are on Branches)
 const ul = document.querySelector('[data-hours]');
-BRANCHES.forEach(b => ul.append(el('li', {}, el('span', {}, b.short),
-  el('span', {}, ...weekText(b).split('; ').map(g => el('span', { class: 'wk' }, g))))));
+BRANCHES.forEach(b => { const s = branchStatus(b); ul.append(el('li', {}, el('span', {}, b.short), el('span', { class: 'live' + (s.open ? '' : ' closed') }, el('i'), el('span', {}, s.text)))); });
 
 // reviews: dots follow the swipe
 const rv = document.querySelector('[data-reviews]'), dots = [...document.querySelectorAll('.dots span')];

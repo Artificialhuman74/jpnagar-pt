@@ -1,13 +1,13 @@
 // Gradient carousel: photos on a gentle convex arc. The front photo is full size; up to two on each side step back,
 // turn outward and fade. Arrows (in front of the cards), swipe, drag and arrow keys move it; each move slides the
-// arc round and fades the next photo into the centre. A soft glow behind takes the front photo's colour, blending
-// smoothly from one to the next. Shared by the desktop and mobile home pages; markup is .gcar (see the CSS).
+// arc round and fades the next photo into the centre. A soft periwinkle glow sits still behind it (o.tints can give
+// each photo its own colour instead, blending from one to the next). Shared by the desktop and mobile home pages; markup is .gcar (see the CSS).
 // With o.groups ([{ label, start, count }], e.g. one per branch) a row of tabs sits under it: a tab rolls the arc round
 // to that group's first photo, and the tab follows whichever group's photo is in front.
 function gradientCarousel(root, o) {
   const LABELS = o.labels, N = LABELS.length, [S1, S2] = o.step || [360, 300], DRAG = o.dragPx || 340;
-  // each photo's glow is one colour from the logo's own blues: cyan, deep sky, periwinkle, navy and light sky
-  const TINTS = o.tints || ['#00A8EC', '#5B63C9', '#0079B8', '#7C83D6', '#2B3192', '#4FC3F2'];
+  // one still colour from the logo's blues; a changing colour per photo read as busy
+  const TINTS = o.tints || ['#7C83D6'];
   const q = s => root.querySelector(s), stage = q('[data-gcar-stage]'), glows = [...root.querySelectorAll('.gcar-glow i')];
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let at = 0, drag = 0, moved = false, shown = reduced || !('IntersectionObserver' in window), auto = !reduced, timer;
@@ -62,7 +62,7 @@ function gradientCarousel(root, o) {
   // two glow layers trade places: the new colour fades in over the old one, then the old one lets go. Only opacity
   // changes, which the browser can do without repainting, so the cards keep moving smoothly
   let layer = 0;
-  const glow = first => { if (!first) { glows[layer].classList.remove('on'); layer ^= 1; } glows[layer].style.setProperty('--a', TINTS[at % TINTS.length]); glows[layer].classList.add('on'); };
+  const glow = first => { if (!first && TINTS.length === 1) return; if (!first) { glows[layer].classList.remove('on'); layer ^= 1; } glows[layer].style.setProperty('--a', TINTS[at % TINTS.length]); glows[layer].classList.add('on'); };
   function go(i) { at = ((i % N) + N) % N; place(); caption(); glow(); paintTabs(); }
   // the tabs: built once; only the selected state and the sliding marker (a transform) change
   let tabs = null, mark = null, rolling = 0;

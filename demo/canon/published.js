@@ -99,7 +99,7 @@ function publishedDocs(fallback) {
 // text and photos already on the page
 if (PUBLISHED) document.addEventListener('DOMContentLoaded', () => {
   const set = (sel, text) => { if (!text) return; document.querySelectorAll(sel).forEach(n => { n.textContent = text; }); };
-  if (PUBLISHED.home) { set('.hero .copy h1, #hero-h', PUBLISHED.home.headline); set('.hero .copy > p, .hero-copy .lead', PUBLISHED.home.intro); }
+  if (PUBLISHED.home) { set('[data-home-headline], #hero-h', PUBLISHED.home.headline); set('[data-home-intro], .hero-copy .lead', PUBLISHED.home.intro); }
   const svc = document.body.dataset.service || document.body.dataset.page, id = svc === 'home' ? 'homecare' : svc;
   if (id && PUBLISHED.services && PUBLISHED.services[id]) set('.phead > p, .svc-hero .lead', PUBLISHED.services[id]);
   document.querySelectorAll('.gcar-card .photo').forEach((p, i) => { if (clinicPhoto(i)) paintPhoto(p, clinicPhoto(i)); });

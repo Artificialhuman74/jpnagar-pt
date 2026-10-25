@@ -23,7 +23,7 @@
 <section class="step" data-step="1" aria-labelledby="s1">
   <div class="done-list" data-done-1></div>
   <h1 id="s1" tabindex="-1">Where does it hurt? <small class="opt">Optional</small></h1>
-  <p class="lead">Tap the area so your physiotherapist can prepare. You can pick more than one, or skip this.</p>
+  <p class="lead">Tap one spot or several, or skip.</p>
   <div class="mapctl">
     <div class="seg" role="radiogroup" aria-label="Show the figure as">
       <button class="on" data-gender="male" role="radio" aria-checked="true">Male</button>
@@ -154,7 +154,7 @@
       </div>
       <div class="floor" aria-hidden="true"></div>
     </div>
-    <p class="turnhint" data-hint><b>Back view</b> · swipe the body to turn it around</p>
+    <p class="turnhint" data-hint><b>Back view</b> · swipe to turn</p>
     <span class="tag" data-tag></span>
   </div>
   <div class="also">
@@ -176,7 +176,7 @@
       <button class="pill" type="button">Worse in the morning</button>
       <button class="pill" type="button">Getting worse</button>
     </div>
-    <p class="hint"><span data-count>0</span>/300 · helps your physiotherapist prepare for your visit</p>
+    <p class="hint"><span data-count>0</span>/300</p>
   </div>
   <div class="match" data-match aria-live="polite">
     <b>Matching care</b>
@@ -203,10 +203,9 @@
     <div class="docs" data-ther role="radiogroup" aria-label="Therapist"></div>
     <a class="meet" href="team.html">
       <span class="faces" aria-hidden="true"><i class="photo"></i><i class="photo"></i><i class="photo"></i></span>
-      <span><b>Not sure who to choose?</b><small>Meet the team and what each one treats</small></span>
+      <span><b>Not sure who to choose?</b><small>Meet the team</small></span>
       <i data-icon="chevron"></i>
     </a>
-    <p class="note">Sample: the clinic will confirm who works at each branch.</p>
   </div>
 </section>
 
@@ -214,13 +213,13 @@
 <section class="step" data-step="3" aria-labelledby="s3">
   <div class="done-list" data-done-3></div>
   <h1 id="s3" tabindex="-1">Your details</h1>
-  <p class="lead">No sign-up. The branch only uses these to reach you about your visit.</p>
+  <p class="lead">No sign-up. Only used to reach you about this visit.</p>
   <form data-form novalidate>
     <div class="field" data-f="name"><label for="nm">Full name</label><div class="input"><input id="nm" autocomplete="name" placeholder="e.g. Priya Raman"></div><p class="msg">Please enter your name.</p></div>
     <div class="field" data-f="phone"><label for="ph">Mobile number</label><div class="input"><span>+91</span><input id="ph" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="e.g. 98765 43210" maxlength="11"></div><p class="msg">Enter a 10-digit mobile number starting with 6, 7, 8 or 9.</p></div>
     <div class="field" data-f="email"><label for="em">Email <small>(optional)</small></label><div class="input"><input id="em" type="email" autocomplete="email" placeholder="you@example.com"></div><p class="msg">That email doesn't look right. Check it, or leave it empty.</p></div>
   </form>
-  <p class="note">Your booking goes straight to the branch. To change or cancel, call or WhatsApp +91 99161 16625.</p>
+  <p class="note">To change or cancel, call or WhatsApp +91 99161 16625.</p>
 </section>
 
 <!-- STEP 4: confirmed — a printed appointment ticket -->
@@ -366,7 +365,7 @@ function setView(v) {
     L.textContent = v === 'back' ? 'LEFT' : 'RIGHT'; R.textContent = v === 'back' ? 'RIGHT' : 'LEFT';
     L.classList.remove('fade'); R.classList.remove('fade');
   }, reduceMotion ? 0 : 450);
-  $('[data-hint]').replaceChildren(el('b', {}, v === 'back' ? 'Back view' : 'Front view'), ' · swipe the body to turn it around');
+  $('[data-hint]').replaceChildren(el('b', {}, v === 'back' ? 'Back view' : 'Front view'), ' · swipe to turn');
 }
 function setGender(g) {
   if (g === S.gender) return;
@@ -437,12 +436,12 @@ function whatText() {
 /* ---------- time picker ---------- */
 const tabs = $('[data-tabs]'), tind = tabs.querySelector('.tind');
 BRANCHES.forEach((b, i) => {
-  const t = el('button', { class: 'tab', role: 'tab' }, el('b', {}, b.short), el('small', {}, kmText(b) || (branchStatus(b).open ? 'Open now' : 'Closed now')));
+  const t = el('button', { class: 'tab', role: 'tab' }, el('b', {}, b.short), el('small', {}, kmText(b)));
   t.addEventListener('click', () => { S.b = i; S.slot = null; pickFirstDay(); renderTime(); });
   tabs.append(t);
 });
 // "Use my location": picks the nearest branch and shows how far each one is (only after the visitor asks)
-const nearBtn = el('button', { class: 'near-btn', type: 'button' }, icon('pin'), el('span', {}, savedKm() ? 'Update my location' : 'Use my location to find the nearest branch'));
+const nearBtn = el('button', { class: 'near-btn', type: 'button' }, icon('pin'), el('span', {}, savedKm() ? 'Update my location' : 'Find my nearest branch'));
 nearBtn.addEventListener('click', () => {
   nearBtn.disabled = true; nearBtn.lastChild.textContent = 'Finding you…';
   locateNearest().then(i => {
@@ -450,7 +449,7 @@ nearBtn.addEventListener('click', () => {
     nearBtn.lastChild.textContent = 'Update my location';
     if (S.b !== i) { S.b = i; S.slot = null; pickFirstDay(); renderTime(); }
     toast(`Nearest branch: ${BRANCHES[i].short}, ${savedKm()[BRANCHES[i].id] < .2 ? 'right next to you' : `${kmText(BRANCHES[i])} away`}`);
-  }, msg => { nearBtn.lastChild.textContent = 'Use my location to find the nearest branch'; toast(msg); }).finally(() => { nearBtn.disabled = false; });
+  }, msg => { nearBtn.lastChild.textContent = 'Find my nearest branch'; toast(msg); }).finally(() => { nearBtn.disabled = false; });
 });
 tabs.after(nearBtn);
 function days() { const d0 = nowIST(); return [...Array(6)].map((_, i) => { const d = new Date(d0); d.setDate(d0.getDate() + i); d.setHours(0, 0, 0, 0); return d; }); }

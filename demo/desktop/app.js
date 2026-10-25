@@ -53,23 +53,6 @@ function icon(name, fill) {
 }
 function paintIcons(root = document) { $$('[data-icon]', root).forEach(n => n.replaceChildren(icon(n.dataset.icon, n.hasAttribute('data-fill')))); }
 
-/* ---------- clinic data (same sample set as the mobile demo) ---------- */
-// Coordinates are approximate locality pins until the clinic confirms exact ones.
-const BRANCHES = [
-  { id: 'arekere', plus: '7J4VVHQR+7X', code: 'ARK', name: 'Arekere MICO Layout', short: 'Arekere', sessions: [[9, 13], [16, 21]], lat: 12.8886, lng: 77.6022,
-    addr: 'No. 129, 1st Floor, Lakshmi Nivas, 3rd Cross, near L&T South City, Bannerghatta Main Rd, Arekere MICO Layout 2nd Stage, Bengaluru 560076',
-    phone: '+918026489922', phoneText: '080 2648 9922', landmark: 'Near L&T South City' },
-  { id: 'bannerghatta', plus: '7J4VVHFV+W6', code: 'BGR', name: 'Bannerghatta Road', short: 'Bannerghatta', sessions: [[8, 12], [16, 20]], lat: 12.8775, lng: 77.5975,
-    addr: 'No. 22, 1st Floor, above Greens Vegetable Shop, behind Meenakshi Temple, Classic Orchards Layout, Kalena Agrahara, Bengaluru 560076',
-    phone: '+919916116625', phoneText: '+91 99161 16625', landmark: 'Behind Meenakshi Temple' },
-  { id: 'jpnagar', plus: '7J4VVHXJ+2X', code: 'JPN', name: 'JP Nagar 7th Phase', short: 'JP Nagar', sessions: [[9, 13], [17, 21]], lat: 12.8937, lng: 77.5855,
-    addr: 'No. 2/8, 1st Floor, Puttenahalli Rd, opp. Govt. Primary School, JP Nagar 7th Phase, Bengaluru 560078',
-    phone: '+918026656988', phoneText: '080 2665 6988', landmark: 'Opposite Govt. Primary School' }
-];
-const AREAS = [
-  ['JP Nagar', 12.9063, 77.5857, '560078'], ['Arekere', 12.8869, 77.5998, '560076'], ['Hulimavu', 12.8775, 77.6011, '560076'], ['BTM Layout', 12.9166, 77.6101, '560068'],
-  ['Bannerghatta Road', 12.8890, 77.5970, '560076'], ['Gottigere', 12.8569, 77.5880, '560083'], ['Jayanagar', 12.9299, 77.5824, '560041'], ['Bilekahalli', 12.8986, 77.6050, '560076']
-];
 const TEAM = [
   { name: 'Dr. P. Senthil (PT)', short: 'Dr. P. Senthil', first: 'Dr. P. Senthil', role: 'Founder · Chief Consultant Physiotherapist', years: '27+ years', card: 'Founder · 27+ yrs', deg: ['MPT', 'MD(A.M)', 'D.ACU', 'COMT', 'MIAP'],
     treat: ['Orthopaedic and sports injuries', 'Neurological conditions', 'Long-term and complex pain', 'Acute and chronic joint and muscle problems'],
@@ -81,10 +64,6 @@ const TEAM = [
     treat: ['Orthopaedic and post-surgery rehab', 'Sports physiotherapy', 'Neurological rehabilitation', 'Posture and work-related (ergonomic) problems'],
     bg: ['BPT, Dr. MGR Medical University', 'Head of Department at the Arekere branch', 'Focus on long-term recovery, not just temporary relief'] }
 ];
-const DEGREES = {
-  MPT: 'Master of Physiotherapy', BPT: 'Bachelor of Physiotherapy', COMT: 'Certified Orthopaedic Manual Therapist',
-  MIAP: 'Member, Indian Association of Physiotherapists', 'MD(A.M)': 'MD in Alternative Medicine', 'D.ACU': 'Diploma in Acupuncture'
-};
 // Which body areas each service treats is a sample until the clinic confirms it.
 const SERVICES = [
   { id: 'spine', name: 'Spine & Back Care', page: 'spine.html', helps: ['Back and neck pain', 'Slip disc and sciatica', 'Posture problems'], tags: ['back'], areas: ['neck', 'upper', 'lower'] },
@@ -100,22 +79,12 @@ const SERVICES = [
 ];
 const PHONE = '+91 99161 16625', PHONE_TEL = 'tel:+919916116625', WA = 'https://wa.me/919916116625';
 
-/* ---------- time in India (?t=16:40 pins the clock for demos) ---------- */
-const DEMO_T = new URLSearchParams(location.search).get('t');
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const pad = n => String(n).padStart(2, '0');
-function nowIST() {
-  const d = new Date(), ist = new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000);
-  // the pinned demo clock (?t=16:40) is ignored on WordPress, where the diary keeps the real time
-  if (DEMO_T && !window.JPN_API) { const [h, m] = DEMO_T.split(':').map(Number); ist.setHours(h, m || 0, 0, 0); }
-  return ist;
-}
 function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
-function sameDay(a, b) { return !!a && !!b && a.toDateString() === b.toDateString(); }
 function isToday(d) { return sameDay(d, nowIST()); }
 function dayISO(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
 function fromISO(s) { const m = (s || '').match(/^(\d{4})-(\d\d)-(\d\d)$/); return m ? new Date(+m[1], m[2] - 1, +m[3]) : null; }
@@ -125,7 +94,6 @@ function dayShort(d) {
   return `${DOW[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
 }
 function dayLong(d) { return `${isToday(d) ? 'Today · ' : ''}${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`; }
-function fmtHour(h) { const hh = Math.floor(h), m = Math.round((h - hh) * 60), p = hh >= 12 ? 'pm' : 'am', x = hh % 12 || 12; return m ? `${x}:${pad(m)} ${p}` : `${x} ${p}`; }
 function timeText(t) { const h = Math.floor(t), m = Math.round((t - h) * 60); return `${h % 12 || 12}:${pad(m)} ${h >= 12 ? 'pm' : 'am'}`; }
 // a day's hours (today unless given)
 function hoursText(b, d = nowIST()) { return sessText(sessionsOn(b, d)) || 'Closed'; }
@@ -137,104 +105,93 @@ function hoursNodes(b) {
     return el('span', { class: 'wk' }, el('span', { class: 'nw' }, `${days} · `), ...(hours || '').split(', ').flatMap((h, i) => [i ? ', ' : null, el('span', { class: 'nw' }, h)]));
   });
 }
-// A branch's hours on a day (Sunday is 0), as [[from, to], ...] in hours: that weekday's own hours when the clinic has
-// set them (b.week, copied in by published.js), else its usual sessions on the days it works (Mon–Sat until told).
-// Takes a date or a day number.
-function sessionsOn(b, d) {
-  const n = typeof d === 'number' ? d : d.getDay();
-  if (b.week) return b.week[n] || [];
-  return (b.days || [1, 2, 3, 4, 5, 6]).includes(n) ? b.sessions : [];
-}
-function worksOn(b, d) { return sessionsOn(b, d).length > 0; }
-const DOW_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-// the next day the branch works, as words ("tomorrow", or the weekday) and that day's first opening hour
-function nextOpen(b, d) {
-  for (let i = 1; i <= 7; i++) { const x = new Date(d); x.setDate(d.getDate() + i); const s = sessionsOn(b, x); if (s.length) return { when: i === 1 ? 'tomorrow' : DOW_SHORT[x.getDay()], at: s[0][0] }; }
-  return null;
-}
-const sessText = list => list.map(([s, e]) => `${fmtHour(s)}–${fmtHour(e)}`).join(', ');
-// the week in one line, days with the same hours grouped: "Mon–Sat · 9 am–1 pm, 4 pm–8 pm" or
-// "Mon–Fri · 9 am–1 pm, 4 pm–9 pm; Sat · 9 am–1 pm"
-function weekText(b) {
-  const groups = [];
-  [1, 2, 3, 4, 5, 6, 0].forEach(n => {
-    const s = sessionsOn(b, n), key = JSON.stringify(s), last = groups[groups.length - 1];
-    if (!s.length) return;
-    if (last && last.key === key && last.to === (n + 6) % 7) last.to = n; else groups.push({ key, from: n, to: n, s });
-  });
-  return groups.map(g => `${g.from === g.to ? DOW_SHORT[g.from] : `${DOW_SHORT[g.from]}–${DOW_SHORT[g.to]}`} · ${sessText(g.s)}`).join('; ') || 'Closed';
-}
 function worksDays(b) {
   const d = [1, 2, 3, 4, 5, 6, 0].filter(n => worksOn(b, n));
   if (d.length === 7) return 'Every day';
   if (d.length === 6 && !d.includes(0)) return 'Mon–Sat';
   return d.map(x => DOW_SHORT[x]).join(', ');
 }
-function branchStatus(b, d = nowIST()) {
-  const h = d.getHours() + d.getMinutes() / 60;
-  if (worksOn(b, d)) {
-    for (const [s, e] of sessionsOn(b, d)) if (h >= s && h < e) return { open: true, text: `Open now · till ${fmtHour(e)}` };
-    for (const [s] of sessionsOn(b, d)) if (h < s) return { open: false, text: `Opens ${fmtHour(s)} today` };
-  }
-  const nx = nextOpen(b, d);
-  return { open: false, text: nx ? `Closed · opens ${nx.when} ${fmtHour(nx.at)}` : 'Closed' };
-}
 function liveLine(b) { const st = branchStatus(b); return st.open ? `${b.short} open now · till ${st.text.split('till ')[1]}` : `${b.short} ${st.text[0].toLowerCase()}${st.text.slice(1)}`; }
-function hash(s) { let x = 0; for (const c of s) x = (x * 31 + c.charCodeAt(0)) >>> 0; return x; }
-// Slots every 30 minutes; some marked taken (sample data); past times today are left out.
-function slotsFor(b, day, si) {
-  const ss = sessionsOn(b, day); if (!ss[si]) return [];
-  const [s, e] = ss[si], now = nowIST(), today = sameDay(day, now), out = [];
-  // one time per appointment length (the clinic sets it; half an hour until it says otherwise)
-  const step = (b.slot || 30) / 60;
-  for (let t = s; t + step <= e + 1e-6; t = +(t + step).toFixed(4)) {
-    if (today && t <= now.getHours() + now.getMinutes() / 60 + .25) continue;
-    const hh = Math.floor(t) % 12 || 12, mm = String(Math.round((t % 1) * 60)).padStart(2, '0');
-    out.push({ t, label: `${hh}:${mm}`, suffix: t >= 12 ? 'pm' : 'am', taken: hash(b.id + day.toDateString() + t) % 4 === 0 });
-  }
-  return out;
-}
 function freeSlots(b, day) { return sessionsOn(b, day).flatMap((_, si) => slotsFor(b, day, si)).filter(s => !s.taken); }
+// false while the live diary is still reading that day (always true without it), so a component can show loading
+const diaryReady = (b, day) => typeof DIARY === 'undefined' || !DIARY || DIARY.ready(b.id, day);
+// A placeholder line or chip row while live times are on their way: the component keeps its shape, then fills in whole.
+const skelLine = w => el('span', { class: 'skel', 'aria-hidden': 'true', style: `display:inline-block;vertical-align:middle;width:${w};height:1em` });
+const skelChips = n => [...Array(n)].map(() => el('span', { class: 'skel tchip-skel', 'aria-hidden': 'true' }));
+/* "How we treat it" on a service page: the stage follows the chapter being read, and a chapter's treatments take turns
+   on it until one is picked. The steps come from the chapters' data-scene and data-cap, unless a page gives its own. */
+function storyStepper(steps) {
+  const host = $('[data-story-host]'), chapters = $$('.chapter'), stepBtns = $$('[data-goto]'), storySeen = onView(host);
+  // each chapter shows one scene, or one per sub-tab
+  const STEPS = steps || chapters.map(c => { const subs = $$('.subtab', c); return subs.length ? subs.map(s => [s.dataset.scene, s.dataset.cap]) : [[c.dataset.scene, c.dataset.cap]]; });
+  let step = -1, cycle;
+  const sub = STEPS.map(() => 0), picked = STEPS.map(() => false);
+  function showSub() {
+    const [name, cap] = STEPS[step][sub[step]], at = [step, sub[step]];
+    // the buttons answer first; the scene (the heavier drawing) follows once that has been drawn
+    requestAnimationFrame(() => requestAnimationFrame(() => { if (at[0] === step && at[1] === sub[step]) showScene(host, name); }));
+    $('[data-story-cap]').textContent = cap;
+    $$(`[data-subs="${step}"] .subtab`).forEach((b, j) => {
+      b.setAttribute('aria-pressed', String(j === sub[step]));
+      b.classList.remove('run'); void b.offsetWidth;
+      b.classList.toggle('run', j === sub[step] && !picked[step] && !reduceMotion);
+    });
+  }
+  function setStep(i) {
+    if (i === step) return;
+    step = i;
+    chapters.forEach((c, j) => c.classList.toggle('on', j === i));
+    stepBtns.forEach((b, j) => b.setAttribute('aria-current', j === i ? 'step' : 'false'));
+    showSub();
+    clearInterval(cycle);
+    if (STEPS[i].length > 1 && !reduceMotion) cycle = setInterval(() => {
+      if (picked[step] || !storySeen()) return;
+      sub[step] = (sub[step] + 1) % STEPS[step].length; showSub();
+    }, 7000);
+  }
+  $$('.subtab').forEach(b => b.addEventListener('click', () => {
+    const s = +b.closest('[data-subs]').dataset.subs;
+    picked[s] = true; sub[s] = +b.dataset.sub;
+    if (step !== s) setStep(s); else showSub();
+  }));
+  stepBtns.forEach((b, j) => b.addEventListener('click', () => chapters[j].scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' })));
+  const chapterIO = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) setStep(+e.target.dataset.step); }), { rootMargin: '-45% 0px -45% 0px' });
+  chapters.forEach(c => chapterIO.observe(c));
+  setStep(0);
+}
+/* "Who treats it" on a service page: each physiotherapist with their published photo, and a link to book with them */
+function whoTreats(bookHref) {
+  $('[data-who]').replaceChildren(...TEAM.map((t, i) => el('article', { class: 'mini-prof' },
+    (() => { const p = el('div', { class: 'photo', role: 'img', 'aria-label': t.photo ? `Portrait of ${t.short}` : `Portrait of ${t.short}, to be shot` }); paintPhoto(p, t.photo); return p; })(),
+    el('div', {}, el('b', {}, t.name), el('small', {}, t.card), degChips(t.deg.slice(0, 3), true),
+      el('a', { class: 'link', href: bookHref(i) }, `Book with ${t.first}`, icon('chevron'))))));
+}
+/* "Next free at …" on a service page: the line under the title and the box beside the story, at the starting branch
+   (the nearest once the visitor has shared where they are, else JP Nagar). While that day's real times are on their
+   way both show loading, and they are drawn again when the times arrive (moving on a day if it has filled up). */
+function nextFreeBlock(hrefFor) {
+  const near = BRANCHES[nearestIndex()], next = $('[data-next]'), title = $('[data-go-title]'), times = $('[data-go-times]');
+  const paint = () => {
+    const day = firstOpenDay(near), loading = !diaryReady(near, day), free = loading ? [] : freeSlots(near, day);
+    [next, title, times].forEach(n => n && n.setAttribute('aria-busy', String(loading)));
+    if (loading) {
+      if (next) next.replaceChildren(skelLine('16em'));
+      if (title) title.replaceChildren(skelLine('12em'));
+      if (times) times.replaceChildren(...skelChips(5));
+      return;
+    }
+    if (!free.length) { if (next) next.replaceChildren(); if (title) title.textContent = 'Next free times'; if (times) times.replaceChildren(); return; }
+    const href = s => hrefFor(near, day, s);
+    if (next) next.replaceChildren(`Next free at ${near.short}`, el('a', { href: href(free[0]) }, `${dayShort(day)} · ${free[0].label} ${free[0].suffix}`));
+    if (title) title.textContent = `Next free at ${near.short}, ${dayShort(day).toLowerCase().startsWith('today') ? 'today' : dayShort(day)}`;
+    if (times) times.replaceChildren(...free.slice(0, 5).map(s => el('a', { class: 'tchip', href: href(s) }, `${s.label} ${s.suffix}`)));
+  };
+  paint();
+  document.addEventListener('jpn:slots', paint);
+}
 function firstOpenDay(b) { const d0 = startOfDay(nowIST()); for (let i = 0; i < 14; i++) { const d = addDays(d0, i); if (freeSlots(b, d).length) return d; } return addDays(d0, 1); }
 /* ---------- distances: never guessed. They appear only once the visitor has said where they are (on Branches),
    and are kept for the rest of the visit ---------- */
-function savedKm() { try { return JSON.parse(sessionStorage.getItem('jp-km') || 'null'); } catch (_) { return null; } }
-function saveKm(km) { try { sessionStorage.setItem('jp-km', JSON.stringify(km)); } catch (_) {} }
-function kmText(b) { const k = savedKm(); return k && k[b.id] != null ? `${k[b.id].toFixed(1)} km` : ''; }
-// The branch booking starts at: the nearest once the visitor has shared where they are (never guessed), else JP Nagar,
-// then Bannerghatta, then Arekere.
-const PREFERRED = ['jpnagar', 'bannerghatta', 'arekere'];
-function nearestIndex() {
-  const k = savedKm();
-  if (!k) { const i = PREFERRED.map(id => BRANCHES.findIndex(b => b.id === id)).find(x => x >= 0); return i === undefined ? 0 : i; }
-  return BRANCHES.reduce((best, b, i) => (k[b.id] < k[BRANCHES[best].id] ? i : best), 0);
-}
-// Asks the browser where the visitor is (only when they tap to), keeps each branch's distance for the visit, and
-// resolves to the nearest branch's index; rejects with a message to show if it can't.
-function locateNearest() {
-  return new Promise((res, rej) => {
-    if (!navigator.geolocation) { rej('Location isn’t available on this device. Pick your branch instead.'); return; }
-    navigator.geolocation.getCurrentPosition(p => {
-      saveKm(Object.fromEntries(BRANCHES.map(b => [b.id, kmBetween(p.coords.latitude, p.coords.longitude, b.lat, b.lng)])));
-      res(nearestIndex());
-    }, e => rej(e.code === 1 ? 'Location is off for this site. Pick your branch instead.' : 'Couldn’t find where you are. Pick your branch instead.'),
-    { timeout: 10000, maximumAge: 600000 });
-  });
-}
-function kmBetween(a, b, c, d) {
-  const r = x => x * Math.PI / 180, h = Math.sin(r(c - a) / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(r(d - b) / 2) ** 2;
-  return 12742 * Math.asin(Math.sqrt(h));
-}
-// What Google Maps searches for a branch: its plus code, an exact spot (the clinic's name alone matches all three
-// branches, and some addresses still match several); without a code, the clinic's name and the branch's address.
-const mapQuery = b => b && b.plus ? b.plus : `J.P. Nagar Medical and Physiotherapy Centre, ${b ? b.addr || b.name : 'Bengaluru'}`;
-function mapsLink(b) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery(b))}`; }
-// A real Google map in the page (Google's own embed, no key needed), loaded only once it scrolls near: one branch, or
-// with none, the clinic's branches.
-function mapEmbed(b, title) {
-  return el('iframe', { class: 'gmap', src: `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery(b))}&z=${b ? 16 : 13}&output=embed`,
-    title: title || (b ? `Map: ${b.name}` : 'Map of our three branches'), loading: 'lazy', referrerpolicy: 'no-referrer-when-downgrade' });
-}
 
 // keep the pinned demo clock when moving between pages
 function withT(href) {
@@ -261,26 +218,45 @@ function paintLive(n, b) { const st = branchStatus(b); n.classList.toggle('close
 // the header shows the branch booking starts at: the nearest once shared, else JP Nagar
 $$('[data-live]').forEach(n => paintLive(n, BRANCHES[nearestIndex()]));
 
+/* ---------- dialogs (sheets, the photo viewer): while closed one can't be reached and is out of the accessibility
+   tree; while open, the rest of the page can't be reached, so aria-modal holds ---------- */
+function setModal(dialog, open) {
+  dialog.inert = !open; dialog.toggleAttribute('aria-hidden', !open);
+  if (open) {
+    dialog._inerted = [...document.body.children].filter(n => n !== dialog && !n.contains(dialog) && !n.inert && n.tagName !== 'SCRIPT' && !n.matches('.toast, .scrim'));
+    dialog._inerted.forEach(n => { n.inert = true; });
+  } else if (dialog._inerted) { dialog._inerted.forEach(n => { n.inert = false; }); dialog._inerted = null; }
+}
+
 /* ---------- dock: equal items, a sliding indicator that remembers where you came from ---------- */
 const DOCK = [['home', 'Home', 'home.html'], ['services', 'Services', 'services.html'], ['book', 'Book', 'book.html'], ['branches', 'Branches', 'branches.html'], ['team', 'Team', 'team.html']];
 $$('nav.dock').forEach(nav => {
   const idx = DOCK.findIndex(d => d[0] === nav.dataset.active);
   const ind = el('span', { class: 'ind', 'aria-hidden': 'true' });
   nav.setAttribute('aria-label', 'Main');
+  // optimistic: the highlight moves to the clicked item straight away and the page changes a beat later
   const links = DOCK.map(([k, label, href], i) => {
     const a = el('a', { href, 'aria-current': i === idx ? 'page' : null }, icon(k), el('span', {}, label));
-    a.addEventListener('click', () => { try { sessionStorage.setItem('dockFrom', String(idx)); } catch (_) {} });
+    a.addEventListener('click', e => {
+      if (i === idx || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+      e.preventDefault();
+      mark(i); place(i, !reduceMotion);
+      setTimeout(() => location.assign(a.href), reduceMotion ? 0 : 140);
+    });
     return a;
   });
   nav.replaceChildren(ind, ...links);
+  const mark = i => links.forEach((l, j) => { if (j === i) l.setAttribute('aria-current', 'page'); else l.removeAttribute('aria-current'); });
+  // the items are equal (86px), so the width is set once and the highlight only slides
   const place = (i, animate) => {
     const a = links[i]; ind.style.transition = animate ? '' : 'none';
-    ind.style.width = a.offsetWidth + 'px'; ind.style.transform = `translateX(${a.offsetLeft - 6}px)`;
+    if (!ind.style.width || !animate) ind.style.width = a.offsetWidth + 'px';
+    ind.style.transform = `translateX(${a.offsetLeft - 6}px)`;
   };
-  let from = idx;
-  try { const f = sessionStorage.getItem('dockFrom'); if (f !== null && +f >= 0) from = +f; sessionStorage.removeItem('dockFrom'); } catch (_) {}
-  requestAnimationFrame(() => { place(from, false); requestAnimationFrame(() => requestAnimationFrame(() => place(idx, !reduceMotion))); });
-  addEventListener('resize', () => place(idx, false));
+  if (idx >= 0) requestAnimationFrame(() => place(idx, false));
+  addEventListener('resize', () => idx >= 0 && place(idx, false));
+  // back to this page from the browser's memory: the highlight returns to this page's item
+  addEventListener('pageshow', e => { if (e.persisted && idx >= 0) { mark(idx); place(idx, false); } });
   // the icons swell toward the pointer, like a desktop dock
   if (!reduceMotion && canHover) {
     const svgs = links.map(a => a.querySelector('svg'));
@@ -291,6 +267,24 @@ $$('nav.dock').forEach(nav => {
     nav.addEventListener('pointerleave', () => svgs.forEach(s => { s.style.transform = ''; }));
   }
 });
+
+/* ---------- preload: the dock's pages are fetched once this page has settled, and any page as the pointer reaches its
+   link, so moving around the site doesn't wait on the network ---------- */
+(() => {
+  if (!$('nav.dock') || (navigator.connection && navigator.connection.saveData)) return;
+  const got = new Set([location.pathname]);
+  const fetchPage = href => {
+    let u; try { u = new URL(href, location.href); } catch (_) { return; }
+    if (u.origin !== location.origin || !u.pathname.endsWith('.html') || got.has(u.pathname)) return;
+    got.add(u.pathname);
+    fetch(u.pathname, { credentials: 'same-origin', priority: 'low' }).catch(() => {});
+  };
+  const ahead = () => DOCK.forEach(d => fetchPage(d[2]));
+  addEventListener('load', () => ('requestIdleCallback' in window ? requestIdleCallback(ahead, { timeout: 3000 }) : setTimeout(ahead, 1200)), { once: true });
+  const near = e => { const a = e.target.closest && e.target.closest('a[href]'); if (a) fetchPage(a.getAttribute('href')); };
+  addEventListener('pointerover', near, { passive: true });
+  addEventListener('pointerdown', near, { passive: true, capture: true });
+})();
 
 /* ---------- call and WhatsApp float in once the header's own links scroll away ---------- */
 $$('.fab').forEach(f => {
@@ -322,8 +316,11 @@ $$('[data-footer]').forEach(ft => {
 paintIcons();
 
 /* ---------- small behaviours ---------- */
+// only what starts below the screen reveals as it scrolls in; what is on screen when the page opens is simply there,
+// so arriving on a page never looks like it changed a moment later
 const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .25 });
-$$('[data-inview]').forEach(n => io.observe(n));
+const showSettled = n => { n.classList.add('in', 'no-motion'); requestAnimationFrame(() => requestAnimationFrame(() => n.classList.remove('no-motion'))); };
+$$('[data-inview]').forEach(n => (n.getBoundingClientRect().top < innerHeight ? showSettled(n) : io.observe(n)));
 function tilt(c, max = 8) {
   if (reduceMotion || !canHover) return;
   c.addEventListener('pointermove', e => {
@@ -403,46 +400,6 @@ function calendar(root, { selected, isOpen, onPick, works = d => d.getDay() !== 
 function saveBooking(b) { try { sessionStorage.setItem('jp-booking', JSON.stringify(b)); } catch (_) {} }
 function loadBooking() { try { return JSON.parse(sessionStorage.getItem('jp-booking') || 'null'); } catch (_) { return null; } }
 
-/* ---------- the body figure (2D, front and back; male and female) ---------- */
-const FIG_DEFS = `
-<linearGradient id="skin" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="480"><stop offset="0" stop-color="#F1F3F9"/><stop offset="1" stop-color="#D9DDEA"/></linearGradient>
-<linearGradient id="hair" gradientUnits="userSpaceOnUse" x1="0" y1="10" x2="0" y2="96"><stop offset="0" stop-color="#C3C8D9"/><stop offset="1" stop-color="#AEB4C9"/></linearGradient>
-<filter id="vol" x="-15%" y="-8%" width="130%" height="116%" color-interpolation-filters="sRGB">
-<feOffset in="SourceAlpha" dx="-7" dy="-5"/><feGaussianBlur stdDeviation="7" result="ob"/>
-<feComposite in="SourceAlpha" in2="ob" operator="out" result="shadeMask"/>
-<feFlood flood-color="#2B3192" flood-opacity=".2"/><feComposite in2="shadeMask" operator="in" result="shade"/>
-<feOffset in="SourceAlpha" dx="5" dy="4"/><feGaussianBlur stdDeviation="5" result="hb"/>
-<feComposite in="SourceAlpha" in2="hb" operator="out" result="hiMask"/>
-<feFlood flood-color="#FFFFFF" flood-opacity=".9"/><feComposite in2="hiMask" operator="in" result="hi"/>
-<feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="shade"/><feMergeNode in="hi"/></feMerge>
-</filter>
-<g id="m-body"><ellipse cx="120" cy="42" rx="22" ry="28"/><ellipse cx="97.5" cy="45" rx="4" ry="7"/><ellipse cx="142.5" cy="45" rx="4" ry="7"/><path d="M110 64 L130 64 L133 88 L107 88 Z"/><path d="M107 86 C96 89 80 91 72 98 C66 104 66 114 70 124 L77 148 C81 164 85 174 86 182 C84 196 81 210 82 224 L120 246 L158 224 C159 210 156 196 154 182 C155 174 159 164 163 148 L170 124 C174 114 174 104 168 98 C160 91 144 89 133 86 Z"/><path d="M70 101 C60 114 56 140 56 170 C54 196 51 218 48 240 L61 242 C64 220 67 198 70 176 C73 152 77 132 80 122 Z"/><path d="M170 101 C180 114 184 140 184 170 C186 196 189 218 192 240 L179 242 C176 220 173 198 170 176 C167 152 163 132 160 122 Z"/><ellipse cx="54" cy="256" rx="8.5" ry="16" transform="rotate(8 54 256)"/><ellipse cx="186" cy="256" rx="8.5" ry="16" transform="rotate(-8 186 256)"/><path d="M82 216 C78 262 82 298 86 330 C88 362 90 396 92 428 L106 428 C106 396 108 362 110 330 C114 300 119 276 119 244 Z"/><path d="M158 216 C162 262 158 298 154 330 C152 362 150 396 148 428 L134 428 C134 396 132 362 130 330 C126 300 121 276 121 244 Z"/></g>
-<path id="m-hair" d="M97 44 C95 12 145 12 143 44 C143 56 139 65 133 70 L107 70 C101 65 97 56 97 44 Z"/>
-<path id="m-fringe" d="M98 40 C97 13 143 13 142 40 C137 29 129 25 120 25 C111 25 103 29 98 40 Z"/>
-<g id="f-body"><ellipse cx="120" cy="43" rx="20" ry="27"/><ellipse cx="100" cy="46" rx="3.5" ry="6"/><ellipse cx="140" cy="46" rx="3.5" ry="6"/><path d="M112 64 L128 64 L130 88 L110 88 Z"/><path d="M110 86 C100 89 88 91 81 98 C76 104 76 114 79 124 L85 148 C89 162 92 170 92 178 C89 194 80 208 78 222 L120 248 L162 222 C160 208 151 194 148 178 C148 170 151 162 155 148 L161 124 C164 114 164 104 159 98 C152 91 140 89 130 86 Z"/><path d="M79 101 C70 116 66 142 66 170 C64 196 61 218 58 240 L70 242 C73 220 76 198 78 176 C81 152 84 134 87 122 Z"/><path d="M161 101 C170 116 174 142 174 170 C176 196 179 218 182 240 L170 242 C167 220 164 198 162 176 C159 152 156 134 153 122 Z"/><ellipse cx="63" cy="256" rx="7.5" ry="14.5" transform="rotate(8 63 256)"/><ellipse cx="177" cy="256" rx="7.5" ry="14.5" transform="rotate(-8 177 256)"/><path d="M78 218 C73 264 79 300 87 332 C89 364 92 398 94 428 L106 428 C106 398 108 364 110 332 C114 302 119 280 119 248 Z"/><path d="M162 218 C167 264 161 300 153 332 C151 364 148 398 146 428 L134 428 C134 398 132 364 130 332 C126 302 121 280 121 248 Z"/></g>
-<path id="f-hair" d="M99 44 C97 13 143 13 141 44 C142 62 146 80 149 92 C146 99 135 102 120 102 C105 102 94 99 91 92 C94 80 98 62 99 44 Z"/>
-<path id="f-fringe" d="M100 42 C99 15 141 15 140 42 C136 31 130 27 122 27 C114 30 106 33 100 42 Z"/>`;
-function ensureFigDefs() {
-  if ($('#fig-defs')) return;
-  document.body.prepend(svgEl({ id: 'fig-defs', width: '0', height: '0', 'aria-hidden': 'true', focusable: 'false', style: 'position:absolute' }, `<defs>${FIG_DEFS}</defs>`));
-}
-const LINES = 'fill="none" stroke="#B2B8CC" stroke-width="1.5" stroke-linecap="round"';
-const FIG = {
-  male: {
-    front: `<use filter="url(#vol)" fill="url(#hair)" href="#m-hair"/><g filter="url(#vol)" fill="url(#skin)"><use href="#m-body"/><ellipse cx="97" cy="438" rx="13" ry="9"/><ellipse cx="143" cy="438" rx="13" ry="9"/></g><use filter="url(#vol)" fill="url(#hair)" href="#m-fringe"/><g ${LINES}><path d="M104 93 C96 96 86 97 79 99"/><path d="M136 93 C144 96 154 97 161 99"/><path d="M90 130 C100 142 113 142 119 135"/><path d="M150 130 C140 142 127 142 121 135"/><path d="M120 150 L120 176"/><path d="M92 214 C104 226 114 238 120 244"/><path d="M148 214 C136 226 126 238 120 244"/><path d="M92 327 C95 320 104 320 106 328"/><path d="M148 327 C145 320 136 320 134 328"/></g>`,
-    back: `<g filter="url(#vol)" fill="url(#skin)"><use href="#m-body"/><ellipse cx="99" cy="434" rx="9" ry="8"/><ellipse cx="141" cy="434" rx="9" ry="8"/></g><use filter="url(#vol)" fill="url(#hair)" href="#m-hair"/><g ${LINES}><path d="M120 90 L120 210" stroke-dasharray="2 5"/><path d="M96 110 C91 122 93 136 104 144"/><path d="M144 110 C149 122 147 136 136 144"/><path d="M120 218 L120 240"/><path d="M88 236 C95 249 111 251 119 243"/><path d="M152 236 C145 249 129 251 121 243"/><path d="M93 334 C97 337 103 337 107 334"/><path d="M147 334 C143 337 137 337 133 334"/></g>`
-  },
-  female: {
-    front: `<use filter="url(#vol)" fill="url(#hair)" href="#f-hair"/><g filter="url(#vol)" fill="url(#skin)"><use href="#f-body"/><ellipse cx="99" cy="438" rx="11" ry="8"/><ellipse cx="141" cy="438" rx="11" ry="8"/></g><use filter="url(#vol)" fill="url(#hair)" href="#f-fringe"/><g ${LINES}><path d="M108 93 C100 96 92 97 86 99"/><path d="M132 93 C140 96 148 97 154 99"/><path d="M93 130 C98 145 112 147 118 138"/><path d="M147 130 C142 145 128 147 122 138"/><path d="M90 214 C103 228 114 240 120 248"/><path d="M150 214 C137 228 126 240 120 248"/><path d="M93 329 C96 322 104 322 106 330"/><path d="M147 329 C144 322 136 322 134 330"/></g>`,
-    back: `<g filter="url(#vol)" fill="url(#skin)"><use href="#f-body"/><ellipse cx="100" cy="434" rx="8" ry="7"/><ellipse cx="140" cy="434" rx="8" ry="7"/></g><use filter="url(#vol)" fill="url(#hair)" href="#f-hair"/><g ${LINES}><path d="M120 104 L120 210" stroke-dasharray="2 5"/><path d="M100 112 C96 122 98 134 106 142"/><path d="M140 112 C144 122 142 134 134 142"/><path d="M120 220 L120 243"/><path d="M84 236 C92 252 110 254 119 246"/><path d="M156 236 C148 252 130 254 121 246"/><path d="M94 336 C98 339 103 339 107 336"/><path d="M146 336 C142 339 137 339 133 336"/></g>`
-  }
-};
-// hotspots: [type, viewer side]; "a" is the viewer's left
-const REGIONS = [['neck'], ['shoulder', 'a'], ['shoulder', 'b'], ['upper'], ['lower'], ['elbow', 'a'], ['elbow', 'b'], ['hand', 'a'], ['hand', 'b'], ['hip', 'a'], ['hip', 'b'], ['knee', 'a'], ['knee', 'b'], ['foot', 'a'], ['foot', 'b']];
-const POS = {
-  male: { neck: [120, 78], shoulder: [74, 106], upper: [120, 134], lower: [120, 194], elbow: [58, 174], hand: [54, 256], hip: [94, 226], knee: [97, 328], foot: [98, 434] },
-  female: { neck: [120, 78], shoulder: [82, 106], upper: [120, 136], lower: [120, 196], elbow: [67, 174], hand: [63, 256], hip: [90, 228], knee: [98, 330], foot: [99, 434] }
-};
 const TYPE = { neck: 'neck', shoulder: 'shoulder', upper: 'upper back', lower: 'lower back', elbow: 'elbow', hand: 'wrist & hand', hip: 'hip', knee: 'knee', foot: 'ankle & foot' };
 const TORSO = { front: { upper: 'Chest', lower: 'Stomach' }, back: { upper: 'Upper back', lower: 'Lower back' } };
 // From the back the viewer's left is the person's left; from the front it is their right.
@@ -456,7 +413,6 @@ function labelOf(key) {
   const name = TYPE[type];
   return side ? `${side[0].toUpperCase() + side.slice(1)} ${name} (${face})` : `${name[0].toUpperCase() + name.slice(1)} (${face})`;
 }
-function spotXY(gender, type, pos) { let [x, y] = POS[gender][type]; if (pos === 'b') x = 240 - x; return [x, y]; }
 function keyXY(gender, key) {
   const [base, face] = key.split('~'), [type, side] = base.split('-');
   if (!side) return spotXY(gender, type);
@@ -483,24 +439,8 @@ const CARE = {
 };
 const REASON = { surgery: 'After surgery', neuro: 'Stroke or nerve problem', child: 'For my child', elder: 'For an elderly parent', women: 'Pregnancy or after delivery' };
 
-/* ---------- ticket bits shared by the booking preview and the printed ticket ---------- */
-function bookingId(b, day, t) { const h = Math.floor(t), m = Math.round((t % 1) * 60); return `JP-${b.code}-${pad(day.getDate())}${pad(day.getMonth() + 1)}-${pad(h)}${pad(m)}`; }
 function arriveBy(t) { return timeText(t - 1 / 6); }
 // fits the ticket's side notches onto its perforations
 // (only when a notch has actually moved: the notches are the ticket's mask, and resetting it makes Safari redraw the
 // whole ticket, shadow and all, on every change)
 function fitNotches(tk) { $$('.tk-perf', tk).forEach((p, i) => { const k = `--n${i + 1}`, v = (p.offsetTop + 1) + 'px'; if (tk.style.getPropertyValue(k) !== v) tk.style.setProperty(k, v); }); }
-// Code 128 (set B), so the stub carries a real barcode of the booking ID
-const C128 = ['212222','222122','222221','121223','121322','131222','122213','122312','132212','221213','221312','231212','112232','122132','122231','113222','123122','123221','223211','221132','221231','213212','223112','312131','311222','321122','321221','312212','322112','322211','212123','212321','232121','111323','131123','131321','112313','132113','132311','211313','231113','231311','112133','112331','132131','113123','113321','133121','313121','211331','231131','213113','213311','213131','311123','311321','331121','312113','312311','332111','314111','221411','431111','111224','111422','121124','121421','141122','141221','112214','112412','122114','122411','142112','142211','241211','221114','413111','241112','134111','111242','121142','121241','114212','124112','124211','411212','421112','421211','212141','214121','412121','111143','111341','131141','114113','114311','411113','411311','113141','114131','311141','411131','211412','211214','211232','2331112'];
-function drawBarcode(svg, text) {
-  const vals = [104, ...[...text].map(c => c.charCodeAt(0) - 32)];
-  const check = vals.reduce((sum, v, i) => sum + v * (i || 1), 0) % 103;
-  const widths = [...vals, check, 106].map(v => C128[v]).join(''), quiet = 10, bars = [];
-  let x = quiet;
-  [...widths].forEach((w, i) => {
-    if (i % 2 === 0) { const r = document.createElementNS(NS, 'rect'); [['x', x], ['y', 0], ['width', +w], ['height', 48]].forEach(([k, v]) => r.setAttribute(k, v)); bars.push(r); }
-    x += +w;
-  });
-  svg.setAttribute('viewBox', `0 0 ${x + quiet} 48`); svg.setAttribute('preserveAspectRatio', 'none');
-  svg.replaceChildren(...bars);
-}

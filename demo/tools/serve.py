@@ -7,7 +7,7 @@ With JPN_WP set (bash start.sh --wp), the demo talks to a real WordPress running
 own paths are passed through on this same address (so the browser sees one site and its login cookie just works), the
 pages load the plugin's published file in place of canon/published-data.js, and the demo's own publish endpoint is off.
 usage: python3 tools/serve.py [port]"""
-import http.client, http.server, json, os, re, sys, urllib.parse
+import http.client, http.server, json, os, re, sys, tempfile, urllib.parse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, 'canon', 'published-data.js')
@@ -15,10 +15,15 @@ MAX = 25 * 1024 * 1024  # photos are WebP, but leave room for a few
 WP = urllib.parse.urlsplit(os.environ['JPN_WP']) if os.environ.get('JPN_WP') else None
 WP_PATHS = ('/wp-json/', '/wp-content/', '/wp-includes/', '/wp-admin', '/wp-login.php')
 API = '/?rest_route=/jpnagar/v1'
+# WordPress over https when JPN_WP says so, so browser cookies passed through never travel unencrypted
+CONN = http.client.HTTPSConnection if WP and WP.scheme == 'https' else http.client.HTTPConnection
 HOP = {'connection', 'keep-alive', 'transfer-encoding', 'te', 'trailer', 'upgrade', 'proxy-authorization', 'proxy-authenticate'}
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
+    # a client that stops sending halfway gives up its thread after this long instead of holding it
+    timeout = 30
+
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=ROOT, **kw)
 
@@ -35,9 +40,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def proxy(self, path=None):
         """Passes the request to WordPress as it came (same Host, cookies, body) and its answer back as it went."""
         n = int(self.headers.get('Content-Length') or 0)
+        if n < 0 or n > MAX:
+            return self.send_error(413)
         body = self.rfile.read(n) if n else None
         headers = {k: v for k, v in self.headers.items() if k.lower() not in HOP}
-        conn = http.client.HTTPConnection(WP.hostname, WP.port or 80, timeout=60)
+        conn = CONN(WP.hostname, WP.port, timeout=60)
         try:
             conn.request(self.command, path or self.path, body=body, headers=headers)
             r = conn.getresponse()
@@ -57,7 +64,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def published_from_wordpress(self):
         """canon/published-data.js, but the plugin's published file, plus where the plugin's API is."""
-        conn = http.client.HTTPConnection(WP.hostname, WP.port or 80, timeout=30)
+        conn = CONN(WP.hostname, WP.port, timeout=30)
         try:
             conn.request('GET', '/wp-content/uploads/jpnagar/site-data.js', headers={'Host': self.headers.get('Host', '')})
             r = conn.getresponse()
@@ -128,10 +135,17 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             data = json.loads(self.rfile.read(n))
         except ValueError:
             return self.send_error(400)
-        tmp = DATA + '.tmp'
-        with open(tmp, 'w', encoding='utf-8') as f:
-            f.write('window.PUBLISHED_DATA = ' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n')
-        os.replace(tmp, DATA)
+        # each publish writes its own temporary file, then swaps it in whole, so two at once can't mix
+        fd, tmp = tempfile.mkstemp(prefix='published-data.', suffix='.tmp', dir=os.path.dirname(DATA))
+        try:
+            with os.fdopen(fd, 'w', encoding='utf-8') as f:
+                f.write('window.PUBLISHED_DATA = ' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n')
+            os.chmod(tmp, 0o644)
+            os.replace(tmp, DATA)
+        except OSError:
+            if os.path.exists(tmp):
+                os.unlink(tmp)
+            return self.send_error(500)
         body = b'{"ok":true}'
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')

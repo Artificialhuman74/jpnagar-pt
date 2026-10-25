@@ -38,6 +38,8 @@
 
 <div class="fab"></div>
 <nav class="dock" data-active="team"></nav>
+<script src="../canon/clinic.js"></script>
+<script src="../canon/figure.js"></script>
 <script src="app.js"></script>
 <script src="../canon/published-data.js"></script>
 <script src="../canon/published.js"></script>
@@ -68,7 +70,7 @@ TEAM.forEach((t, i) => {
     el('div', { class: 'tilted-card__shadow', 'aria-hidden': 'true' }),
     el('div', { class: 'tilted-card__body' },
       el('div', { class: 'tilted-card__face tilted-card__front' },
-        el('div', { class: 'tilted-card__img photo' + (t.photo ? ' is-real' : ''), style: `--tc-depth:-20${t.photo ? `;background:center/cover url("${t.photo}")` : ''}`, role: 'img', 'aria-label': t.photo ? `Portrait of ${t.short}` : `Portrait of ${t.short}, to be shot`, 'data-label': 'Portrait (to be shot)' }),
+        el('div', { class: 'tilted-card__img photo', style: '--tc-depth:-20', role: 'img', 'aria-label': `Portrait of ${t.short}, to be shot`, 'data-label': 'Portrait (to be shot)' }),
         el('div', { class: 'tc-scrim', 'aria-hidden': 'true' }),
         el('div', { class: 'tilted-card__layer', style: '--tc-depth:24' },
           el('div', { class: 'tc-name' }, el('h2', {}, t.name), el('p', {}, role), el('span', { class: 'deg' }, ...t.deg.map(d => el('em', { title: DEGREES[d] || d }, d))), el('button', { class: 'tc-flip', type: 'button', 'data-flip': '' }, icon('turn'), 'Turn over for details'))),
@@ -83,6 +85,7 @@ TEAM.forEach((t, i) => {
           el('div', { class: 'acts-row' }, el('a', { class: 'btn btn--act', href: 'book.html?ther=' + encodeURIComponent(t.short) }, 'Book'), more)),
         ...shine())));
   more.addEventListener('click', () => openSheet(i, more));
+  if (t.photo) paintPhoto(card.querySelector('.tilted-card__img'), t.photo); // pulses until the portrait has arrived
   grid.append(card);
 });
 
@@ -106,10 +109,11 @@ function openSheet(i, from) {
   list('[data-sh-treat]', t.treat); list('[data-sh-bg]', t.bg);
   const bk = document.querySelector('[data-sh-book]');
   bk.textContent = `Book with ${t.short}`; bk.href = 'book.html?ther=' + encodeURIComponent(t.short);
-  sheet.classList.add('is-open'); scrim.classList.add('is-open'); sheet.scrollTop = 0;
+  sheet.classList.add('is-open'); scrim.classList.add('is-open'); setModal(sheet, true); sheet.scrollTop = 0;
   document.querySelector('[data-close]').focus();
 }
-function closeSheet() { sheet.classList.remove('is-open'); scrim.classList.remove('is-open'); opener && opener.focus(); }
+function closeSheet() { sheet.classList.remove('is-open'); scrim.classList.remove('is-open'); setModal(sheet, false); opener && opener.focus(); }
+setModal(sheet, false);
 document.querySelector('[data-close]').addEventListener('click', closeSheet);
 scrim.addEventListener('click', closeSheet);
 addEventListener('keydown', e => { if (e.key === 'Escape' && sheet.classList.contains('is-open')) closeSheet(); });

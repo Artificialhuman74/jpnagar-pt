@@ -35,11 +35,25 @@ if (PUBLISHED) {
       photo: d.photo, branches: d.branches, care: careOf(d.treats) })));
 }
 // puts a published photo on a placeholder (and takes it off again when there is none)
+// A photo goes in only once it has fully arrived: until then the grey placeholder stays (and pulses), so the block is
+// never empty. Putting the picture in straight away left it transparent while loading, which in a 3D team card let
+// Safari show the card's back through the front.
 function paintPhoto(node, src) {
   if (!node) return;
-  node.classList.toggle('is-real', !!src);
   const lab = node.getAttribute('aria-label'); if (lab && src) node.setAttribute('aria-label', lab.replace(/,? \(?to be shot\)?$/, ''));
-  node.style.backgroundImage = src ? `url("${src}")` : ''; node.style.backgroundSize = src ? 'cover' : ''; node.style.backgroundPosition = src ? 'center' : '';
+  const put = () => {
+    if (node._src !== src) return; // a newer photo was asked for meanwhile
+    node.classList.toggle('is-real', !!src); node.classList.remove('is-loading');
+    node.style.backgroundImage = src ? `url("${src}")` : ''; node.style.backgroundSize = src ? 'cover' : ''; node.style.backgroundPosition = src ? 'center' : '';
+  };
+  node._src = src;
+  if (!src) { put(); return; }
+  const im = new Image();
+  im.src = src;
+  if (im.complete) { put(); return; }
+  node.classList.add('is-loading');
+  im.onload = put;
+  im.onerror = () => { if (node._src === src) node.classList.remove('is-loading'); }; // the placeholder stays
 }
 // the gallery's photos in branch order (JP Nagar, then Bannerghatta, then Arekere), each branch's main photo first
 const GALLERY_ORDER = ['jpnagar', 'bannerghatta', 'arekere'];
@@ -131,7 +145,12 @@ const DIARY = window.JPN_API ? (() => {
     const key = `${branch}|${date}`, n = (asked.get(key) || 0) + 1;
     asked.set(key, n); if (!days.has(key)) days.set(key, undefined);
     fetch(url('/slots', { branch, date }), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null).then(j => {
-      if (!j || asked.get(key) !== n) return;
+      if (asked.get(key) !== n) return;
+      // no answer: the day stops "loading" (its times show, checked again when booking), and is asked again next time
+      if (!j) {
+        if (days.get(key) === undefined) { days.set(key, null); document.dispatchEvent(new CustomEvent('jpn:slots', { detail: { branch, date, failed: true } })); }
+        return;
+      }
       const next = new Map((j.times || []).map(x => [x.t, x.doctors])), prev = days.get(key);
       days.set(key, next);
       if (!prev || JSON.stringify([...prev]) !== JSON.stringify([...next])) document.dispatchEvent(new CustomEvent('jpn:slots', { detail: { branch, date } }));
@@ -145,12 +164,20 @@ const DIARY = window.JPN_API ? (() => {
     isoOf,
     // the doctor the visitor has picked (an id), or null for "Any available": times that doctor isn't free count as taken
     want: null,
-    // minute of the day -> free doctor ids, or undefined while the day is still on its way
+    // minute of the day -> free doctor ids; undefined while the day is still on its way, null if it couldn't be read
     free(branch, day) {
       const date = isoOf(day), key = `${branch}|${date}`;
       if (!days.has(key)) load(branch, date);
-      return days.get(key);
+      return days.get(key) || undefined;
     },
+    // false while the day's real times are still on their way, so the page shows them loading
+    ready(branch, day) {
+      const key = `${branch}|${isoOf(day)}`;
+      if (!days.has(key)) load(branch, isoOf(day));
+      return days.get(key) !== undefined;
+    },
+    // asks for days the visitor is likely to open next, so tapping one shows its times at once
+    ahead(branch, list) { list.forEach(d => { const date = isoOf(d); if (!days.has(`${branch}|${date}`)) load(branch, date); }); },
     // keep this day fresh while it is on screen
     watch(branch, day) {
       const w = [branch, isoOf(day)];

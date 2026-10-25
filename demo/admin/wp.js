@@ -71,6 +71,18 @@ const WP = window.JPN_API ? (() => {
   const bookingIn = r => ({ id: +r.id, name: r.name, phone: r.phone, branch: r.branch, doc: r.doctor, date: r.slot_date, t: H(+r.slot_time),
     problem: r.problem, note: r.note, status: r.status, source: r.source, reason: r.reason });
 
+  // the next draft save, after any still on its way; resolves true once the server has the current draft
+  function pushDraft() {
+    pushing = pushing.catch(() => false).then(async () => {
+      const body = contentOut(S.content), json = JSON.stringify(body);
+      if (json === pushed) return true;
+      const r = await call('PUT', '/admin/content', body);
+      if (!r.ok) { fail(r); return false; }
+      pushed = json; return true;
+    });
+    return pushing;
+  }
+
   /* ---------- loading ---------- */
   async function load() {
     const r = await call('GET', '/admin/state');
@@ -85,32 +97,43 @@ const WP = window.JPN_API ? (() => {
     pushed = JSON.stringify(contentOut(S.content));
     return true;
   }
-  async function loadDay(date) {
-    const r = await call('GET', '/admin/bookings', undefined, { date });
-    if (!r.ok) { fail(r); return; }
-    S.bookings = S.bookings.filter(x => x.date !== date).concat(r.data.map(bookingIn));
-    days.add(date);
+  // a day's bookings from the server; asking again while one request is on its way shares it. Resolves true when the
+  // day's list changed (or arrived for the first time).
+  const loading = new Map();
+  function loadDay(date) {
+    if (loading.has(date)) return loading.get(date);
+    const sig = () => JSON.stringify(S.bookings.filter(x => x.date === date)), was = days.has(date) ? sig() : null;
+    const p = call('GET', '/admin/bookings', undefined, { date }).then(r => {
+      if (!r.ok) { fail(r); return false; }
+      S.bookings = S.bookings.filter(x => x.date !== date).concat(r.data.map(bookingIn));
+      days.add(date);
+      return sig() !== was;
+    }).finally(() => loading.delete(date));
+    loading.set(date, p);
+    return p;
   }
 
   return {
     async boot() { await getNonce(); S.bookings = []; return load(); },
     load, loadDay, hasDay: date => days.has(date),
+    // the calendar: { 'YYYY-MM-DD': standing bookings } for a month (YYYY-MM), for one branch or all of them
+    async month(ym, branch) {
+      const r = await call('GET', '/admin/bookings/month', undefined, branch ? { month: ym, branch } : { month: ym });
+      if (!r.ok) { fail(r); return null; }
+      return r.data || {};
+    },
     // reloads every day already on screen, after something that can change bookings on several days
     async reloadDays() { for (const d of [...days]) await loadDay(d); },
-    // the content draft is saved a moment after the last edit; publishing waits for it
+    // The content draft is saved a moment after the last edit. Saves go one at a time, in order, each sending the
+    // draft as it is when its turn comes, so an older draft can never land after a newer one; publishing waits its turn.
     saveDraft() {
-      const body = contentOut(S.content), json = JSON.stringify(body);
-      if (json === pushed) return;
+      if (JSON.stringify(contentOut(S.content)) === pushed) return;
       clearTimeout(pushTimer);
-      pushTimer = setTimeout(() => {
-        pushing = call('PUT', '/admin/content', body).then(r => { if (r.ok) pushed = json; else fail(r); return r.ok; });
-      }, 400);
+      pushTimer = setTimeout(() => { pushDraft(); }, 400);
     },
     async publish() {
       clearTimeout(pushTimer);
-      const body = contentOut(S.content), json = JSON.stringify(body);
-      if (json !== pushed) { const r = await call('PUT', '/admin/content', body); if (!r.ok) { fail(r); return false; } pushed = json; }
-      await pushing;
+      if (!await pushDraft()) return false;
       const r = await call('POST', '/admin/publish', {});
       if (!r.ok) { fail(r); return false; }
       return load();

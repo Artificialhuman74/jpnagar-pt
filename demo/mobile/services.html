@@ -30,6 +30,7 @@
 
 <div class="fab"></div>
 <nav class="dock" data-active="services"></nav>
+<script src="../canon/clinic.js"></script>
 <script src="app.js"></script>
 <script src="../canon/published-data.js"></script>
 <script src="../canon/published.js"></script>
@@ -62,17 +63,18 @@ FILTERS.forEach(([k, label]) => {
   p.addEventListener('click', () => { current = k; render(); });
   fbar.append(p);
 });
-function render() {
+function render(first) {
   [...fbar.children].forEach((p, i) => { const on = FILTERS[i][0] === current; p.classList.toggle('on', on); p.setAttribute('aria-checked', on); });
   let n = 0;
   cards.forEach((c, i) => {
     const show = current === 'all' || SERVICES[i].tags.includes(current);
-    c.hidden = !show; if (show) { n++; c.style.animation = 'none'; void c.offsetWidth; c.style.animation = `rise .45s var(--ease) ${n * .04}s backwards`; }
+    // the cards rise in when a filter changes the list, not when the page opens
+    c.hidden = !show; if (show) { n++; c.style.animation = 'none'; if (!first) { void c.offsetWidth; c.style.animation = `rise .45s var(--ease) ${n * .04}s backwards`; } }
   });
   // only says something when a filter narrows the list
   document.querySelector('[data-count]').textContent = current === 'all' ? '' : `${n} matching`;
 }
-render();
+render(true);
 
 </script>
 </body></html>

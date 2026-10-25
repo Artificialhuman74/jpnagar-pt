@@ -2,15 +2,19 @@
 
 /* ---------- motion helpers: content is visible by default; motion only when JS allows it ---------- */
 :root{--ease:cubic-bezier(.16,1,.3,1)}
+/* nothing may widen the page sideways, not even for the moment a step slides in: a phone zooms the whole page out
+   to fit anything wider than the screen, then snaps back (clip, unlike hidden, keeps sticky elements working) */
+body{overflow-x:clip}
 .motion [data-reveal]{opacity:0;transform:translateY(18px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
 .motion [data-reveal].in{opacity:1;transform:none}
 
 /* ---------- dock with a sliding indicator ---------- */
 .dock{isolation:isolate}
 .dock .ind{position:absolute;z-index:-1;top:6px;left:6px;height:56px;border-radius:20px;background:rgba(43,49,146,.07);
-  transition:transform .55s var(--ease),width .55s var(--ease)}
+  transition:transform .45s var(--ease)}
 .dock .ind::before{content:"";position:absolute;top:-6px;left:50%;width:28px;height:3px;margin-left:-14px;border-radius:0 0 3px 3px;background:var(--sky)}
 .dock a[aria-current="page"]{color:var(--act)}
+.dock a{transition:color .2s}
 .dock a:active svg{transform:scale(.88)}
 .dock svg{transition:transform .25s var(--ease)}
 .dock a.pop svg{animation:pop .5s var(--ease)}
@@ -208,7 +212,7 @@
 @keyframes squash{50%{transform:scaleX(.5) scaleY(.8);opacity:.55}}
 .hsl{position:absolute;inset:0;isolation:isolate}
 .hs{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;padding:0;border:0;border-radius:50%;background:none;cursor:pointer;
-  transition:left .5s var(--ease),top .5s var(--ease);-webkit-tap-highlight-color:transparent}
+  -webkit-tap-highlight-color:transparent}
 .hs::before{content:"";position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;
   background:var(--sky);opacity:.5;transition:transform .3s var(--ease),opacity .3s,box-shadow .3s}
 .hs::after{content:"";position:absolute;z-index:-1;left:50%;top:50%;width:76px;height:76px;margin:-38px 0 0 -38px;border-radius:50%;
@@ -455,6 +459,7 @@
 .quick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .quick a{height:58px;border-radius:14px;border:1.5px solid var(--line);display:grid;place-items:center;align-content:center;font-weight:700;font-variant-numeric:tabular-nums}
 .quick a small{font-size:11px;color:var(--ink-2);font-weight:600}
+.quick .skel{height:58px;border-radius:14px}
 .landmarks{list-style:none;display:grid;gap:8px;font-size:15px}
 .landmarks li{display:flex;gap:10px;align-items:flex-start}
 .landmarks svg{width:18px;height:18px;color:var(--sky);flex:0 0 auto;margin-top:2px}
@@ -620,7 +625,7 @@
 .seg button[aria-selected="true"]{color:var(--act)}
 .seg button[aria-selected="true"] small{color:var(--sky-ink)}
 .seg-ind{position:absolute;z-index:-1;top:4px;left:0;bottom:4px;border-radius:14px;background:#fff;box-shadow:0 1px 2px rgba(20,22,41,.08),0 6px 16px -8px rgba(20,22,41,.3);
-  transition:transform .5s var(--ease),width .5s var(--ease)}
+  transition:transform .45s var(--ease)}
 .how-stage{margin:12px -8px 0;border-radius:26px;background:var(--surface);padding:6px 4px 14px;touch-action:pan-y}
 .how-cap{padding:0 14px;font-size:14px;font-weight:650;color:var(--ink-2);text-align:center;min-height:42px}
 /* a stage's treatments: one slim track under the animation, the highlight sliding from one to the next */
@@ -629,7 +634,8 @@
   overflow-x:auto;scrollbar-width:none;counter-reset:sub}
 .sub-slot .subtabs::-webkit-scrollbar{display:none}
 .sub-ind{position:absolute;z-index:0;top:3px;left:0;height:32px;border-radius:999px;background:var(--act);box-shadow:0 4px 10px -4px rgba(43,49,146,.6);
-  transition:transform .55s var(--ease),width .55s var(--ease);will-change:transform}
+  opacity:0;transition:opacity .3s var(--ease)}
+.sub-ind.on{opacity:1}
 .sub-slot .subtab{position:relative;z-index:1;flex:none;min-height:32px;padding:0 11px 0 5px;border:0;border-radius:999px;background:none;display:inline-flex;align-items:center;gap:5px;
   counter-increment:sub;overflow:visible;color:var(--ink-2);transition:color .35s var(--ease)}
 .sub-slot .subtab::before{content:counter(sub);width:20px;height:20px;border-radius:50%;display:grid;place-items:center;flex:none;font-size:10.5px;font-weight:800;
@@ -725,7 +731,7 @@
 .tilted-card__img::after{top:30px;right:30px}
 .tilted-card__layer{position:absolute;inset:0}
 .tilted-card__img,.tilted-card__layer{transform:translate3d(calc(var(--tc-px,0) * var(--tc-depth,0) * 1px),calc(var(--tc-py,0) * var(--tc-depth,0) * 1px),0)}
-.tilted-card__glare{position:absolute;inset:0;z-index:5;pointer-events:none;mix-blend-mode:screen;
+.tilted-card__glare{position:absolute;inset:0;z-index:5;pointer-events:none;
   background:radial-gradient(farthest-corner circle at var(--tc-gx,50%) var(--tc-gy,50%),rgba(255,255,255,calc(var(--tc-glare,0) * .34)) 0%,rgba(255,255,255,calc(var(--tc-glare,0) * .285)) 18%,rgba(255,255,255,calc(var(--tc-glare,0) * .108)) 36%,rgba(255,255,255,calc(var(--tc-glare,0) * .003)) 54%,rgba(255,255,255,0) 60%)}
 .tilted-card__rim{position:absolute;inset:0;z-index:6;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),inset 0 1px 0 rgba(255,255,255,.18)}
 .tilted-card__edge{position:absolute;inset:0;z-index:7;box-sizing:border-box;padding:1px;border-radius:inherit;pointer-events:none;
@@ -740,8 +746,7 @@
 .tc-name .deg em{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.22)}
 .tc-flip,.tc-turn{font:inherit;cursor:pointer}
 .tc-turn{border:0}
-.tc-flip{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);font-size:13px;font-weight:700;color:#fff;
-  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.tc-flip{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);font-size:13px;font-weight:700;color:#fff;}
 .tc-flip svg{width:15px;height:15px}
 .tc-back{display:flex;flex-direction:column;height:100%;padding:24px 20px 20px}
 .tc-back h3{font-size:22px;letter-spacing:-.02em;line-height:1.15;padding-right:44px}
@@ -780,15 +785,40 @@
 @media (prefers-reduced-motion:reduce){.gcar-tabs .gt-ind{transition:none}}
 
 /* declutter: the floating call/WhatsApp buttons fade aside over Book buttons and the closing panel */
-.fab{transition:opacity .25s var(--ease),transform .25s var(--ease)}
+.fab{transition:opacity .3s var(--ease),transform .3s var(--ease);will-change:opacity,transform}
 .fab.is-away{opacity:0;transform:translateX(14px);pointer-events:none}
 /* the stage caption repeats the text under it, so it is kept for screen readers only */
 .how-cap{position:absolute;width:1px;height:1px;min-height:0;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 /* a branch card without its photo yet starts with the name, not an empty grey block */
-.bcard .photo:not(.is-real){display:none}
+.bcard .photo:not(.is-real):not(.is-loading){display:none}
 /* services: the link to the treatments page, and the card chevron */
 .tx-link{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 12px 0;padding:16px 18px;border-radius:22px;background:var(--surface)}
 .tx-link b{display:block;font-size:17px}
 .tx-link small{display:block;margin-top:2px;font-size:14px;color:var(--ink-2)}
 .tx-link svg{width:20px;height:20px;flex:none;color:var(--ink-3)}
 .svc .go svg{width:18px;height:18px}
+
+/* taps answer at once: small controls press in slightly (transform only) */
+.pill,.chip,.tab,.day,.sessions button,.slot,.gcar-tabs [role="tab"]{transition:transform .15s var(--ease)}
+.pill:active,.chip:active,.tab:active,.day:active,.sessions button:active,.slot:active,.gcar-tabs [role="tab"]:active,.seg button:active,.sub-slot .subtab:active{transform:scale(.96)}
+/* moving between pages: a short crossfade instead of a blank flash, where the browser supports it */
+@view-transition{navigation:auto}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.2s}
+@media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}
+/* loading placeholders */
+.nf-skel{display:flex;flex-wrap:wrap;gap:8px}
+.nf-skel span{width:86px;height:44px;border-radius:999px}
+/* A portrait on its way. Nothing may animate inside the 3D card: in Safari an opacity change there shows the back
+   face through the front, and a moving layer escapes the card's rounded clip. So the skeleton is a flat overlay of
+   the card's own shape on top of it (outside the 3D body), and a light band sweeps across that (transform only). */
+.tilted-card__img.photo.is-loading{animation:none}
+.tilted-card__skel{position:absolute;inset:0;z-index:3;display:none;border-radius:var(--tc-radius,30px);clip-path:inset(0 round var(--tc-radius,30px));pointer-events:none}
+.tilted-card:has(.tilted-card__front .is-loading) .tilted-card__skel{display:block}
+.tilted-card__skel i{position:absolute;inset:0;background:linear-gradient(100deg,rgba(255,255,255,0) 25%,rgba(255,255,255,.45) 50%,rgba(255,255,255,0) 75%);
+  transform:translateX(-100%);animation:tc-sweep 1.3s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes tc-sweep{to{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){.tilted-card__skel i{animation:none;transform:none;background:rgba(255,255,255,.2)}}
+/* everything still works without motion: animations and transitions finish at once */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}

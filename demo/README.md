@@ -7,30 +7,24 @@ Plain HTML, CSS and JavaScript. Nothing to install apart from Python 3, which co
 From this `demo` folder:
 
 ```bash
-python3 -m http.server 8080
+bash start.sh        # the demo on its own (data kept in the browser)
+bash start.sh --wp   # talking to a local WordPress running the clinic plugin (needs Docker)
 ```
 
-Then open <http://localhost:8080> in your browser. Stop the server with Ctrl+C.
+It opens <http://localhost:8080> (the hub) and prints the address for a phone on the same Wi-Fi. Stop it with Ctrl+C.
 
-- Mobile app: <http://localhost:8080/mobile/index.html> (one phone frame) or <http://localhost:8080/mobile/home.html> (full screen)
+- Phone site: <http://localhost:8080/mobile/home.html>, or `/mobile/index.html` for one phone frame
 - Desktop site: <http://localhost:8080/desktop/home.html?t=16:40>
-- Earlier desktop layout, for comparison: <http://localhost:8080/desktop-v1/home.html>
+- The earlier desktop layout, kept in the repository for comparison (not part of the build): <http://localhost:8080/desktop-v1/home.html>
 
-## Try the mobile app on your phone
+## Try it on your phone
 
-Your phone and Mac must be on the same Wi-Fi.
+Your phone and Mac must be on the same Wi-Fi. `start.sh` prints the phone address (`http://<your Mac>:8080/m`). Stop
+the server when you're done, because anyone on the same Wi-Fi can open it while it runs.
 
-```bash
-python3 -m http.server 8080 --bind 0.0.0.0
-```
-
-Find your Mac's address:
-
-```bash
-ipconfig getifaddr en0
-```
-
-On the phone, open `http://<that address>:8080/mobile/home.html`. Stop the server when you're done, because anyone on the same Wi-Fi can open it while it runs.
+That address is plain `http`, and browsers only share a location with secure (`https`) pages, so **"Use my location"
+can't be tested this way**: the phone falls back to typing an area or pincode. To test the nearest branch from a
+phone's location, use the staging site, which is served over `https`.
 
 ## Notes
 

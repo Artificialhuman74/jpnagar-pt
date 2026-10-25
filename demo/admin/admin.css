@@ -52,7 +52,7 @@ body.admin{background:var(--surface);padding-bottom:calc(120px + env(safe-area-i
 .notice{margin:0 12px 12px;padding:12px 14px;border-radius:16px;background:var(--act-soft);color:var(--act);font-size:14px;font-weight:650;display:flex;gap:10px;align-items:center}
 .notice svg{width:20px;height:20px;flex:none}
 .notice > span{flex:1}
-.notice .chipbtn2{min-height:40px;padding:0 14px;flex:none}
+.notice .chipbtn2{min-height:44px;padding:0 14px;flex:none}
 /* a day someone is on leave: marked, and tappable to take the leave off */
 .days .day.is-leave{background:#FDECEC;border-color:#F3C4C4;color:#9B1C1C}
 .days .day.is-leave small{color:#9B1C1C}
@@ -104,7 +104,6 @@ body.admin:has(.bigact.pinned)::after{content:"";position:fixed;left:0;right:0;b
 .wk-copy[hidden]{display:none}
 .wk-copy{display:block;margin:10px 0 0 60px;border:0;background:none;padding:10px 0;min-height:44px;font:inherit;font-size:14px;font-weight:750;color:var(--act);cursor:pointer;text-align:left}
 .wk-hint{margin:8px 0 0 60px;font-size:13px;color:var(--ink-3)}
-@media (prefers-reduced-motion:no-preference){.wk-block{transition:outline-color .15s}}
 .slen{display:flex;gap:6px;flex-wrap:wrap}
 .slen .pill{min-height:44px}
 .slen .pill[aria-pressed="true"]{background:var(--act);border-color:var(--act);color:#fff}
@@ -123,7 +122,7 @@ body.admin:has(.bigact.pinned)::after{content:"";position:fixed;left:0;right:0;b
 .chipbtn2.icon svg{width:18px;height:18px}
 
 /* ---------- sheets ---------- */
-.asheet{max-height:92vh;padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+.asheet{max-height:92vh;max-height:92dvh;padding-bottom:calc(28px + env(safe-area-inset-bottom))}
 .asheet h2{font-size:24px;letter-spacing:-.02em;padding-right:48px}
 .asheet .lead2{font-size:15px;color:var(--ink-2);margin-top:4px}
 .asheet .facts{display:grid;gap:12px;margin-top:18px}
@@ -160,7 +159,7 @@ body.admin:has(.bigact.pinned)::after{content:"";position:fixed;left:0;right:0;b
 .chipadd .input{flex:1;height:48px}
 .chipadd .chipbtn2{min-height:48px}
 .taglist{display:flex;flex-wrap:wrap;gap:6px}
-.taglist .pill{min-height:40px;padding:6px 8px 6px 12px;display:inline-flex;align-items:center;gap:6px;background:var(--sky-soft);border-color:transparent;color:var(--sky-ink)}
+.taglist .pill{min-height:44px;padding:6px 8px 6px 12px;display:inline-flex;align-items:center;gap:6px;background:var(--sky-soft);border-color:transparent;color:var(--sky-ink)}
 .taglist .pill svg{width:14px;height:14px}
 
 /* ---------- content tab ---------- */
@@ -185,6 +184,9 @@ body.admin:has(.bigact.pinned)::after{content:"";position:fixed;left:0;right:0;b
 .asheet .picks + .gallery{margin-top:14px}
 
 /* ---------- publish bar: unpublished website changes ---------- */
+/* on Today, where "Add a booking" is pinned in the same place, the bar sits just above it, so both stay tappable */
+body.has-pub:has(.bigact.pinned) .pubbar{bottom:calc(166px + env(safe-area-inset-bottom))}
+body.admin.has-pub:has(.bigact.pinned){padding-bottom:calc(250px + env(safe-area-inset-bottom))}
 .pubbar{position:fixed;left:12px;right:12px;bottom:calc(98px + env(safe-area-inset-bottom));z-index:29;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;
   border-radius:20px;background:rgba(255,255,255,.92);box-shadow:0 0 0 1px rgba(20,22,41,.06),0 16px 30px -14px rgba(20,22,41,.4);
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}

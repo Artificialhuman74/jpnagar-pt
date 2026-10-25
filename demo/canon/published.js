@@ -35,18 +35,25 @@ if (PUBLISHED) {
       photo: d.photo, branches: d.branches, care: careOf(d.treats) })));
 }
 // puts a published photo on a placeholder (and takes it off again when there is none)
+// A photo goes in only once it has fully arrived: until then the grey placeholder stays (and pulses), so the block is
+// never empty. Putting the picture in straight away left it transparent while loading, which in a 3D team card let
+// Safari show the card's back through the front.
 function paintPhoto(node, src) {
   if (!node) return;
-  node.classList.toggle('is-real', !!src);
   const lab = node.getAttribute('aria-label'); if (lab && src) node.setAttribute('aria-label', lab.replace(/,? \(?to be shot\)?$/, ''));
-  node.style.backgroundImage = src ? `url("${src}")` : ''; node.style.backgroundSize = src ? 'cover' : ''; node.style.backgroundPosition = src ? 'center' : '';
-  // the grey block pulses until the picture has arrived (at once when it is already in the browser's cache)
-  node.classList.remove('is-loading');
-  if (src) {
-    const im = new Image();
-    im.src = src;
-    if (!im.complete) { node.classList.add('is-loading'); im.onload = im.onerror = () => node.classList.remove('is-loading'); }
-  }
+  const put = () => {
+    if (node._src !== src) return; // a newer photo was asked for meanwhile
+    node.classList.toggle('is-real', !!src); node.classList.remove('is-loading');
+    node.style.backgroundImage = src ? `url("${src}")` : ''; node.style.backgroundSize = src ? 'cover' : ''; node.style.backgroundPosition = src ? 'center' : '';
+  };
+  node._src = src;
+  if (!src) { put(); return; }
+  const im = new Image();
+  im.src = src;
+  if (im.complete) { put(); return; }
+  node.classList.add('is-loading');
+  im.onload = put;
+  im.onerror = () => { if (node._src === src) node.classList.remove('is-loading'); }; // the placeholder stays
 }
 // the gallery's photos in branch order (JP Nagar, then Bannerghatta, then Arekere), each branch's main photo first
 const GALLERY_ORDER = ['jpnagar', 'bannerghatta', 'arekere'];

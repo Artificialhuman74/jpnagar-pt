@@ -1060,10 +1060,13 @@ a.tchip,a.pill{display:inline-flex;align-items:center}
 ::view-transition-old(root),::view-transition-new(root){animation-duration:.2s}
 @media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}
 
-/* a portrait on its way, inside a 3D card: a light band sweeps across it (transform only; an opacity pulse here would
-   let Safari show the card's back face through the front) */
+/* A portrait on its way. Nothing may animate inside the 3D card: in Safari an opacity change there shows the back
+   face through the front, and a moving layer escapes the card's rounded clip. So the skeleton is a flat overlay of
+   the card's own shape on top of it (outside the 3D body), and a light band sweeps across that (transform only). */
 .tilted-card__img.photo.is-loading{animation:none}
-.tilted-card__img.photo.is-loading::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.5) 50%,rgba(255,255,255,0) 70%);
+.tilted-card__skel{position:absolute;inset:0;z-index:3;display:none;border-radius:var(--tc-radius,30px);clip-path:inset(0 round var(--tc-radius,30px));pointer-events:none}
+.tilted-card:has(.tilted-card__front .is-loading) .tilted-card__skel{display:block}
+.tilted-card__skel i{position:absolute;inset:0;background:linear-gradient(100deg,rgba(255,255,255,0) 25%,rgba(255,255,255,.45) 50%,rgba(255,255,255,0) 75%);
   transform:translateX(-100%);animation:tc-sweep 1.3s cubic-bezier(.45,0,.55,1) infinite}
 @keyframes tc-sweep{to{transform:translateX(100%)}}
-@media (prefers-reduced-motion:reduce){.tilted-card__img.photo.is-loading::before{animation:none;transform:none;background:rgba(255,255,255,.25)}}
+@media (prefers-reduced-motion:reduce){.tilted-card__skel i{animation:none;transform:none;background:rgba(255,255,255,.2)}}

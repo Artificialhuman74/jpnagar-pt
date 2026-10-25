@@ -791,7 +791,7 @@ body{overflow-x:clip}
 /* the stage caption repeats the text under it, so it is kept for screen readers only */
 .how-cap{position:absolute;width:1px;height:1px;min-height:0;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 /* a branch card without its photo yet starts with the name, not an empty grey block */
-.bcard .photo:not(.is-real){display:none}
+.bcard .photo:not(.is-real):not(.is-loading){display:none}
 /* services: the link to the treatments page, and the card chevron */
 .tx-link{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 12px 0;padding:16px 18px;border-radius:22px;background:var(--surface)}
 .tx-link b{display:block;font-size:17px}
@@ -809,13 +809,16 @@ body{overflow-x:clip}
 /* loading placeholders */
 .nf-skel{display:flex;flex-wrap:wrap;gap:8px}
 .nf-skel span{width:86px;height:44px;border-radius:999px}
-/* a portrait on its way, inside a 3D card: a light band sweeps across it (transform only; an opacity pulse here would
-   let Safari show the card's back face through the front) */
+/* A portrait on its way. Nothing may animate inside the 3D card: in Safari an opacity change there shows the back
+   face through the front, and a moving layer escapes the card's rounded clip. So the skeleton is a flat overlay of
+   the card's own shape on top of it (outside the 3D body), and a light band sweeps across that (transform only). */
 .tilted-card__img.photo.is-loading{animation:none}
-.tilted-card__img.photo.is-loading::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.5) 50%,rgba(255,255,255,0) 70%);
+.tilted-card__skel{position:absolute;inset:0;z-index:3;display:none;border-radius:var(--tc-radius,30px);clip-path:inset(0 round var(--tc-radius,30px));pointer-events:none}
+.tilted-card:has(.tilted-card__front .is-loading) .tilted-card__skel{display:block}
+.tilted-card__skel i{position:absolute;inset:0;background:linear-gradient(100deg,rgba(255,255,255,0) 25%,rgba(255,255,255,.45) 50%,rgba(255,255,255,0) 75%);
   transform:translateX(-100%);animation:tc-sweep 1.3s cubic-bezier(.45,0,.55,1) infinite}
 @keyframes tc-sweep{to{transform:translateX(100%)}}
-@media (prefers-reduced-motion:reduce){.tilted-card__img.photo.is-loading::before{animation:none;transform:none;background:rgba(255,255,255,.25)}}
+@media (prefers-reduced-motion:reduce){.tilted-card__skel i{animation:none;transform:none;background:rgba(255,255,255,.2)}}
 /* everything still works without motion: animations and transitions finish at once */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}

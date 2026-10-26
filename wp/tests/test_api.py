@@ -40,6 +40,11 @@ def book(t, doctor=None, branch='arekere', **kw):
     b.update(kw)
     return call('POST', '/bookings', b)
 
+# ---- the website file, from the moment the plugin is switched on
+js = subprocess.run(['curl','-s',SITE + '/wp-content/uploads/jpnagar/site-data.js'], capture_output=True, text=True).stdout
+check('snapshot: written on activation, before any Publish', 'window.PUBLISHED_DATA = {' in js, js[:200])
+check('snapshot: tells the pages where the API is', js.startswith('window.JPN_API = "/?rest_route=/jpnagar/v1";'), js[:120])
+
 # ---- public: slots
 s, r = call('GET', f'/slots?branch=arekere&date={DAY}')
 check('slots: arekere has times with Dr Jeya', s == 200 and r['times'] and r['times'][0]['t'] == 540 and r['times'][0]['doctors'] == ['jeya'], (s, r))
@@ -90,11 +95,15 @@ check('race: the rest told it is taken (409), none broke', all(x[0] in (200, 409
 
 # ---- rate limits
 reset_limits()
-p = phone(); codes = [book(660 + 30 * i, phone=p)[0] for i in range(4)]
-check('limit: 4th booking from one phone in a day refused', codes[:3] == [200, 200, 200] and codes[3] == 429, codes)
+p = phone(); codes = [book(t, phone=p)[0] for t in (570, 660, 690, 720, 750, 960)]
+check('limit: 6th booking from one phone in a day refused', codes[:5] == [200] * 5 and codes[5] == 429, codes)
+s, r = book(1110, phone=p)
+check('limit: the phone limit says so (not "too many from here")', s == 429 and 'mobile number already has 5 bookings' in r.get('message', ''), (s, r))
 reset_limits()
 codes = [book(990 + 30 * i)[0] for i in range(6)]
 check('limit: 6th booking from one address in 10 min refused', codes[:5] == [200] * 5 and codes[5] == 429, codes)
+s, r = book(1140)
+check('limit: the connection limit says so', s == 429 and 'from this connection' in r.get('message', ''), (s, r))
 reset_limits()
 codes = [book(540)[0] for i in range(6)]  # all taken -> 409, should not count
 check('limit: failed attempts are not counted', codes == [409] * 6 and book(1170)[0] == 200, codes)
@@ -166,6 +175,22 @@ check('snapshot: .gz matches .js, no temp files left', 'same' in gz and '.tmp' n
 s, r = call('GET', f'/slots?branch=arekere&date={DAY}')
 check('timings: 20:00 slot now exists, 20:30 does not', any(x['t'] == 1200 for x in r['times']) and not any(x['t'] == 1230 for x in r['times']), r)
 
+# ---- hours that differ by day
+week = {'1': [[540, 780]], '2': [[600, 720], [690, 900]], '3': []}  # Mon mornings; Tue overlapping (second dropped); Wed closed
+s, r = call('PUT', '/admin/schedule/arekere', {'timings': {'week': week, 'slot': 60}}, owner=True)
+check('week: per-day hours saved', s == 200 and r.get('days') == [1, 2], (s, r))
+tue = r['week'].get('2') if isinstance(r.get('week'), dict) else (r.get('week') or [None, None, None])[2]
+check('week: overlapping hours cleaned up', s == 200 and tue == [[600, 720]], r.get('week'))
+s, r = call('GET', f'/slots?branch=arekere&date={DAY}')
+mon = [x['t'] for x in r['times']]
+check('week: Monday offers 9-12 on the hour only', bool(mon) and set(mon) <= {540, 600, 660, 720}, r)
+s, r = call('GET', f'/slots?branch=arekere&date={TUESDAY}')
+check('week: Tuesday follows its own hours', s == 200 and all(600 <= x['t'] < 720 for x in r['times']) and r['times'], r)
+js = subprocess.run(['curl','-s', SITE + '/wp-content/uploads/jpnagar/site-data.js'], capture_output=True, text=True).stdout
+check('week: website file has each day and the slot length', '"week":{"1":[[9,13]],"2":[[10,12]]}' in js and '"slot":60' in js, js[js.find('"arekere"'):js.find('"arekere"') + 300])
+s, r = call('PUT', '/admin/schedule/arekere', {'timings': {'days': [1, 2, 3, 4, 5, 6], 'sessions': [[540, 780], [960, 1230]], 'slot': 30}}, owner=True)
+check('week: older one-set-of-hours timings still accepted', s == 200 and r.get('days') == [1, 2, 3, 4, 5, 6], (s, r))
+
 # ---- content draft + publish
 s, st8 = call('GET', '/admin/state', owner=True)
 draft = st8.get('draft') or st8.get('content') or {}
@@ -201,8 +226,8 @@ check('email: sent to the branch address', s == 200 and 'TO: jpnagarmedicalandph
 check('email: date reads like "' + nice + '"', ('When: ' + nice) in mail and nice in mail.split('\n')[1], mail)
 
 # ---- photos
-def upload(path, mime):
-    out = subprocess.run(['curl','-s','-u','admin:' + APP_PASS,'-F','kind=portrait','-F','photo=@' + path + ';type=' + mime, BASE + '/admin/photos'], capture_output=True, text=True).stdout
+def upload(path, mime, kind='portrait'):
+    out = subprocess.run(['curl','-s','-u','admin:' + APP_PASS,'-F','kind=' + kind,'-F','photo=@' + path + ';type=' + mime, BASE + '/admin/photos'], capture_output=True, text=True).stdout
     try: return json.loads(out)
     except Exception: return out
 tmp = subprocess.run(['mktemp','-d'], capture_output=True, text=True).stdout.strip()
@@ -213,14 +238,93 @@ check('photo: uploaded', isinstance(r, dict) and r.get('id'), r)
 if isinstance(r, dict) and r.get('url'):
     info = subprocess.run(['docker','compose','exec','-T','wp','php','-r','$p="/var/www/html/wp-content/uploads/".substr(parse_url($argv[1],PHP_URL_PATH),strlen("/wp-content/uploads/"));$s=getimagesize($p);echo $s[0],"x",$s[1]," ",$s["mime"];', r['url']], cwd=D, capture_output=True, text=True).stdout
     check('photo: WebP, shrunk to 800x1000', info.startswith('800x1000 image/webp'), info)
+# a photo already smaller than the card (a close crop) used to fail: WordPress won't "resize" it
+subprocess.run(['docker','compose','exec','-T','wp','php','-r','$i=imagecreatetruecolor(500,625);imagefill($i,0,0,imagecolorallocate($i,90,140,200));imagewebp($i,"/tmp/small.webp",82);'], cwd=D)
+subprocess.run(['docker','compose','cp','wp:/tmp/small.webp', tmp + '/small.webp'], cwd=D, capture_output=True)
+r = upload(tmp + '/small.webp', 'image/webp')
+check('photo: smaller than the card uploads as is', isinstance(r, dict) and r.get('id'), r)
+# over PHP's upload limit: refused with the reason and the limit, not "no photo arrived"
+subprocess.run(['docker','compose','exec','-T','wp','php','-r','$w=1600;$h=2000;$i=imagecreatetruecolor($w,$h);for($y=0;$y<$h;$y+=2)for($x=0;$x<$w;$x+=2)imagefilledrectangle($i,$x,$y,$x+1,$y+1,imagecolorallocate($i,mt_rand(0,255),mt_rand(0,255),mt_rand(0,255)));imagepng($i,"/tmp/huge.png");'], cwd=D)
+subprocess.run(['docker','compose','cp','wp:/tmp/huge.png', tmp + '/huge.png'], cwd=D, capture_output=True)
+r = upload(tmp + '/huge.png', 'image/png')
+check('photo: over the server limit says so, with the limit', 'too big for the server' in str(r) and 'MB' in str(r), r)
+log = subprocess.run(['docker','compose','exec','-T','wp','sh','-c','grep -c "photo upload failed" /var/www/html/wp-content/debug.log || true'], cwd=D, capture_output=True, text=True).stdout.strip()
+check('photo: every refused upload is logged with its cause', log.isdigit() and int(log) >= 1, log)
 open(tmp + '/bad.jpg', 'w').write('<?php echo 1; ?>')
 r = upload(tmp + '/bad.jpg', 'image/jpeg')
 check('photo: a PHP file pretending to be a jpeg is refused', 'jpn_file' in str(r), r)
 s, r = call('POST', '/admin/photos', {'kind':'portrait'})
 check('photo: no login refused', s in (401, 403), (s, r))
 
+# ---- clinic photos by branch (more than the old six), and a photo per service
+ids = [upload(tmp + '/small.webp', 'image/webp', 'clinic').get('id') for _ in range(8)]
+svc = upload(tmp + '/small.webp', 'image/webp', 'service')
+check('photos: clinic and service photos upload', all(ids) and isinstance(svc, dict) and svc.get('id'), (ids, svc))
+s, st8 = call('GET', '/admin/state', owner=True)
+draft = st8['draft']
+draft['photos'] = [{'id': ids[i], 'label': '', 'branch': ['jpnagar', 'arekere', 'bannerghatta', 'nowhere'][i % 4]} for i in range(8)]
+draft['service_photos'] = {'spine': svc['id'], 'ortho': 999999}
+s, r = call('PUT', '/admin/content', draft, owner=True)
+check('photos: all eight kept (no six-photo cap), each with its branch', s == 200 and len(r['photos']) == 8 and r['photos'][0]['branch'] == 'jpnagar', (s, r.get('photos')))
+check('photos: an unknown branch is dropped to none', s == 200 and r['photos'][3]['branch'] is None, r.get('photos'))
+check('photos: a service photo is kept, a made-up id is not', s == 200 and r['service_photos'] == {'spine': svc['id']}, r.get('service_photos'))
+s, r = call('POST', '/admin/publish', {}, owner=True)
+js = subprocess.run(['curl','-s', SITE + '/wp-content/uploads/jpnagar/site-data.js'], capture_output=True, text=True).stdout
+check('photos: website file has branch photos and the service photo', s == 200 and js.count('"branch":"jpnagar"') == 2 and '"service_photos":{"spine":"' in js, js[js.find('"photos"'):js.find('"photos"') + 200])
+s, st8 = call('GET', '/admin/state', owner=True)
+check('photos: the admin gets every photo\'s address back', str(svc['id']) in st8['photo_urls'] and all(str(i) in st8['photo_urls'] for i in ids), list(st8['photo_urls'])[:12])
+
+# ---- the home page's own photo
+hp = upload(tmp + '/small.webp', 'image/webp', 'home')
+s, st8 = call('GET', '/admin/state', owner=True); draft = st8['draft']
+draft['home']['photo'] = hp.get('id')
+s, r = call('PUT', '/admin/content', draft, owner=True)
+check('home photo: kept in the draft', s == 200 and r['home']['photo'] == hp.get('id'), (s, r.get('home')))
+s, r = call('POST', '/admin/publish', {}, owner=True)
+js = subprocess.run(['curl','-s', SITE + '/wp-content/uploads/jpnagar/site-data.js'], capture_output=True, text=True).stdout
+check('home photo: on the website after Publish', s == 200 and ('"home":{' in js and hp['url'].split('/')[-1] in js), js[js.find('"home"'):js.find('"home"') + 220])
+draft['home']['photo'] = 424242
+s, r = call('PUT', '/admin/content', draft, owner=True)
+check('home photo: an id that isn\'t one of our photos is dropped', s == 200 and r['home']['photo'] == 0, r.get('home'))
+
+check('photos: the website file names photos by path, not by one of the site\'s addresses', '"photo":"/wp-content/uploads/' in js and 'localhost' not in js, js[js.find('"home"'):js.find('"home"') + 160])
+
+# ---- the admin's calendar: how many bookings stand on each day of a month
+M = DAY[:7]
+s, r = call('GET', f'/admin/bookings/month?month={M}', owner=True)
+check('calendar: counts the day\'s standing bookings', s == 200 and r.get(DAY, 0) >= 1, (s, r))
+_, day = call('GET', f'/admin/bookings?date={DAY}', owner=True)
+check('calendar: the count matches the day, cancelled ones left out', r.get(DAY) == len([b for b in day if b['status'] != 'cancelled']), (r.get(DAY), [b['status'] for b in day]))
+s, r = call('GET', f'/admin/bookings/month?month={M}&branch=jpnagar', owner=True)
+check('calendar: one branch counts only its own', s == 200 and DAY not in r, (s, r))
+s, r = call('GET', f'/admin/bookings/month?month={M}')
+check('calendar: no login refused', s in (401, 403), s)
+s, r = call('GET', '/admin/bookings/month?month=2026-13', owner=True)
+check('calendar: a bad month refused', s == 400, (s, r))
+s, r = call('GET', f'/admin/bookings/month?month={M}&branch=nowhere', owner=True)
+check('calendar: an unknown branch refused', s == 400, (s, r))
+
+# ---- the clinic admin on its own address (admin.<site>), served by this same WordPress
+ADMIN_HOST, VISIT_HOST = 'admin.localhost:' + PORT, 'localhost:' + PORT
+def on_host(host, path):
+    p = subprocess.run(['curl','-s','-D','-','-H','Host: ' + host, SITE + path], capture_output=True, text=True).stdout
+    head, _, body = p.partition('\n\n')  # text mode has already turned \r\n into \n
+    return head.lower(), body
+def home_on(host):
+    try: return json.loads(on_host(host, '/?rest_route=/')[1]).get('home')
+    except ValueError: return None
+check('admin address: WordPress uses it for its own links there', home_on(ADMIN_HOST) == 'http://' + ADMIN_HOST, home_on(ADMIN_HOST))
+head, _ = on_host(ADMIN_HOST, '/?s=x')
+check('admin address: told not to be indexed', 'x-robots-tag: noindex, nofollow' in head, head[:400])
+head, body = on_host(ADMIN_HOST, '/wp-login.php')
+check('admin address: the login form posts back to the admin address', 'action="http://' + ADMIN_HOST + '/wp-login.php"' in body, body[body.find('<form'):body.find('<form') + 200])
+head, _ = on_host(ADMIN_HOST, '/?s=x')
+check('admin address: a visitor page there goes to the visitors\' address (never drawn or cached there)', head.startswith('http/1.1 302') and 'location: http://' + VISIT_HOST + '/?s=x' in head, head[:300])
+head, _ = on_host(VISIT_HOST, '/?s=x')
+check('admin address: the visitors\' address is unchanged', home_on(VISIT_HOST) == 'http://' + VISIT_HOST and 'x-robots-tag' not in head, home_on(VISIT_HOST))
+
 # ---- no PHP warnings or notices anywhere in the run
-log = subprocess.run(['docker','compose','exec','-T','wp','sh','-c','grep -v "booking email for" /var/www/html/wp-content/debug.log 2>/dev/null || true'], cwd=D, capture_output=True, text=True).stdout.strip()
+log = subprocess.run(['docker','compose','exec','-T','wp','sh','-c','grep -v -E "J.P. Nagar Clinic: (booking email for|photo upload failed)" /var/www/html/wp-content/debug.log 2>/dev/null || true'], cwd=D, capture_output=True, text=True).stdout.strip()
 check('no PHP warnings, notices or errors logged', log == '', log[:600])
 
 print('\n%d failed' % len(fails)); sys.exit(1 if fails else 0)

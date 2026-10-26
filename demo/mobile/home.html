@@ -7,26 +7,17 @@
 <link rel="stylesheet" href="../canon/base.css">
 <link rel="stylesheet" href="site.css">
 </head><body>
-<header class="top"><img class="logo" src="../canon/logo.webp" alt="J.P. Nagar Medical & Physiotherapy Centre" width="408" height="301"></header>
-<p class="hello"><span data-greet>Hello</span> · <span data-near>3 branches in South Bangalore</span></p>
+<header class="top"><img class="logo" src="../canon/logo.webp" alt="J.P. Nagar Medical & Physiotherapy Centre" width="408" height="301"><p class="top-live" data-live><i></i><span>Checking hours…</span></p></header>
 
-<section class="hero" data-inview>
-  <div class="photo" data-label="Photo: Arekere clinic (to be shot)"></div>
-  <div class="copy">
-    <div class="live" data-live><i></i><span>Checking hours…</span></div>
-    <h1>Feel better, sooner.</h1>
-    <p>Expert physiotherapy at 3 branches in South Bangalore.</p>
-    <a class="btn btn--act btn--block" href="book.html">Book a visit <i data-icon="arrow"></i></a>
+<section class="hero hero--band" data-inview>
+  <div class="hero-pic">
+    <div class="photo" data-label="Photo: Arekere clinic (to be shot)" data-branch-photo="start"></div>
+    <div class="copy">
+      <p data-home-intro>Expert physiotherapy at 3 branches in South Bangalore.</p>
+      <a class="btn btn--act btn--block" href="book.html">Book a visit <i data-icon="arrow"></i></a>
+    </div>
   </div>
-</section>
-
-<section class="sec">
-  <h2 data-reveal>Your first visit</h2>
-  <ol class="steps" data-inview>
-    <li data-reveal><div><b>We assess you</b><span>Your history, pain and how you move.</span></div></li>
-    <li data-reveal><div><b>We plan with you</b><span>Therapy and exercises for your goals.</span></div></li>
-    <li data-reveal><div><b>You recover</b><span>Clinic sessions plus simple home exercises.</span></div></li>
-  </ol>
+  <h1 class="hero-line" data-home-headline>Feel better, sooner.</h1>
 </section>
 
 <section class="sec">
@@ -38,12 +29,12 @@
   </ul>
   <div class="rating" data-inview>
     <span class="stars"><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i></span>
-    <span class="small muted"><b style="color:var(--ink)">[4.x]</b> on Google · sample until the reviews widget is connected</span>
+    <span class="small muted"><b style="color:var(--ink)">[4.x]</b> on Google</span>
   </div>
   <div class="reviews" data-reviews>
-    <article class="review"><p>“Sample review. The widget shows real Google reviews from all three branches here.”</p><footer><i>A</i>Google review · Arekere · sample</footer></article>
-    <article class="review"><p>“Sample review. Short quotes read best: what hurt, and how they feel now.”</p><footer><i>J</i>Google review · JP Nagar · sample</footer></article>
-    <article class="review"><p>“Sample review. Swipe sideways for more; the dots show where you are.”</p><footer><i>B</i>Google review · Bannerghatta · sample</footer></article>
+    <article class="review"><p>“Sample review: real Google reviews appear here.”</p><footer><i>A</i>Arekere · sample</footer></article>
+    <article class="review"><p>“Sample review: what hurt, and how they feel now.”</p><footer><i>J</i>JP Nagar · sample</footer></article>
+    <article class="review"><p>“Sample review: a short, real quote.”</p><footer><i>B</i>Bannerghatta · sample</footer></article>
   </div>
   <div class="dots" aria-hidden="true"><span class="on"></span><span></span><span></span></div>
 </section>
@@ -57,13 +48,12 @@
     <button class="gcar-btn next" type="button" aria-label="Next photo" data-gcar-next><i data-icon="chevron"></i></button>
     <p class="gcar-cap" aria-live="polite"><b data-gcar-label></b><span data-gcar-count></span></p>
   </div>
-  <p class="small muted gal-hint">Swipe or use the arrows. Tap the photo in front to see it full screen.</p>
 </section>
 
 <section class="close-cta" data-reveal>
   <h2>Ready when you are.</h2>
-  <p>Three branches, open Monday to Saturday.</p>
   <ul data-hours></ul>
+  <a class="allhours" href="branches.html">All branches and hours <i data-icon="chevron"></i></a>
   <a class="btn btn--act btn--block" href="book.html">Book a visit</a>
 </section>
 
@@ -77,25 +67,22 @@
 
 <div class="fab"></div>
 <nav class="dock" data-active="home"></nav>
+<script src="../canon/clinic.js"></script>
 <script src="app.js"></script>
 <script src="../canon/published-data.js"></script>
 <script src="../canon/published.js"></script>
 <script src="../desktop/carousel.js"></script>
 <script>
-// greeting + live status for the closest branch
-document.querySelector('[data-greet]').textContent = greeting();
-const near = BRANCHES[nearestIndex()], st = branchStatus(near), nf = nextFree(near);
-if (savedKm()) document.querySelector('[data-near]').replaceChildren(el('b', {}, near.short), ' is your closest branch');
+// live status for the closest branch (JP Nagar until the visitor has shared where they are), beside the logo
+const near = BRANCHES[nearestIndex()], st = branchStatus(near);
 const live = document.querySelector('[data-live]');
 live.classList.toggle('closed', !st.open);
-live.querySelector('span').textContent = st.open && nf && nf.today
-  ? `${near.short} open now · next free ${nf.slot.label} ${nf.slot.suffix}`
-  : `${near.short} · ${st.text.toLowerCase()}`;
+// the grey dot already says closed, so a closed branch shows only when it opens: one line beside the logo
+live.querySelector('span').textContent = `${near.short} · ${st.text.replace(/^Closed · /, '').toLowerCase()}`;
 
-// branch hours in the closing section
+// each branch's status right now (the week's hours are on Branches)
 const ul = document.querySelector('[data-hours]');
-BRANCHES.forEach(b => ul.append(el('li', {}, el('span', {}, b.short),
-  el('span', {}, b.sessions.map(([s, e]) => `${fmtHour(s)}–${fmtHour(e)}`).join(', ')))));
+BRANCHES.forEach(b => { const s = branchStatus(b); ul.append(el('li', {}, el('span', {}, b.short), el('span', { class: 'live' + (s.open ? '' : ' closed') }, el('i'), el('span', {}, s.text)))); });
 
 // reviews: dots follow the swipe
 const rv = document.querySelector('[data-reviews]'), dots = [...document.querySelectorAll('.dots span')];
@@ -105,17 +92,18 @@ rv.addEventListener('scroll', () => {
 }, { passive: true });
 
 // gallery: photos on a convex arc with a glow in the front photo's colour (../desktop/carousel.js); tap to open full screen
-const LABELS = ['Arekere · treatment room', 'JP Nagar · reception', 'Bannerghatta · exercise area', 'Equipment · traction', 'Team at work', 'Arekere · waiting area'];
+const LABELS = galleryLabels(['JP Nagar · reception', 'JP Nagar · treatment room', 'Bannerghatta · exercise area', 'Bannerghatta · traction', 'Arekere · treatment room', 'Arekere · waiting area']);
 const vw = document.querySelector('[data-viewer]'), frame = vw.querySelector('.frame'), count = vw.querySelector('.count');
 let cur = 0, lastFocus;
 function show(i) { cur = (i + LABELS.length) % LABELS.length; frame.dataset.label = LABELS[cur]; count.textContent = `${cur + 1} / ${LABELS.length}`; paintPhoto(frame, clinicPhoto(cur)); }
-function openViewer(i) { lastFocus = document.activeElement; show(i); vw.classList.add('is-open'); vw.querySelector('.close').focus(); }
-function closeViewer() { vw.classList.remove('is-open'); lastFocus && lastFocus.focus(); }
+function openViewer(i) { lastFocus = document.activeElement; show(i); vw.classList.add('is-open'); setModal(vw, true); vw.querySelector('.close').focus(); }
+function closeViewer() { vw.classList.remove('is-open'); setModal(vw, false); lastFocus && lastFocus.focus(); }
+setModal(vw, false);
 vw.querySelector('.close').onclick = closeViewer;
 vw.querySelector('.prev').onclick = () => show(cur - 1);
 vw.querySelector('.next').onclick = () => show(cur + 1);
 vw.addEventListener('click', e => { if (e.target === vw) closeViewer(); });
-gradientCarousel(document.querySelector('[data-gcar]'), { labels: LABELS, step: [178, 128], dragPx: 200, onOpen: i => openViewer(i) });
+gradientCarousel(document.querySelector('[data-gcar]'), { labels: LABELS, groups: galleryGroups(LABELS), step: [178, 128], dragPx: 200, onOpen: i => openViewer(i) });
 addEventListener('keydown', e => { if (!vw.classList.contains('is-open')) return; if (e.key === 'Escape') closeViewer(); if (e.key === 'ArrowRight') show(cur + 1); if (e.key === 'ArrowLeft') show(cur - 1); });
 let sx = null;
 frame.addEventListener('pointerdown', e => { sx = e.clientX; });

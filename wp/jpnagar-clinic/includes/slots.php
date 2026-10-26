@@ -37,11 +37,13 @@ function jpn_is_closed( $branch, $date ) {
 function jpn_doctor_times( $branch, $doctor, DateTimeImmutable $day ) {
 	$date = $day->format( 'Y-m-d' );
 	$t    = jpn_timings_for( $branch, $doctor );
-	if ( ! $t || jpn_is_closed( $branch, $date ) || jpn_on_leave( $doctor, $branch, $date ) || ! in_array( (int) $day->format( 'w' ), $t['days'], true ) ) {
+	if ( ! $t || jpn_is_closed( $branch, $date ) || jpn_on_leave( $doctor, $branch, $date ) ) {
 		return array();
 	}
-	$out = array();
-	foreach ( $t['sessions'] as $s ) {
+	// that weekday's own hours (none on a day off)
+	$week = jpn_week_of( $t );
+	$out  = array();
+	foreach ( $week[ (int) $day->format( 'w' ) ] ?? array() as $s ) {
 		for ( $m = $s[0]; $m + $t['slot'] <= $s[1]; $m += $t['slot'] ) {
 			$out[] = $m;
 		}

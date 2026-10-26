@@ -17,6 +17,21 @@ function jpn_strlen( $s ) {
 	return function_exists( 'mb_strlen' ) ? mb_strlen( $s, 'UTF-8' ) : count( jpn_chars( $s ) );
 }
 
+/**
+ * A Google plus code (Open Location Code), the exact spot Maps opens for a branch: a full code such as 7J4VVHQR+7X, or
+ * a short one with its place (VHQR+7X Bengaluru). Anything else is dropped, and the address is used instead.
+ */
+function jpn_clean_plus( $code ) {
+	$code = strtoupper( trim( sanitize_text_field( (string) $code ) ) );
+	return preg_match( '/^[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2,3}( [A-Z ,.-]{2,60})?$/', $code ) ? $code : '';
+}
+
+/** An attachment id only if it is a photo this plugin made (images.php), else 0. */
+function jpn_own_photo( $id ) {
+	$id = absint( $id );
+	return $id && get_post_meta( $id, '_jpn_photo', true ) ? $id : 0;
+}
+
 function jpn_branches() {
 	return (array) get_option( 'jpn_branches', array() );
 }
@@ -95,30 +110,87 @@ function jpn_clean_phone( $phone ) {
 	return preg_match( '/^[6-9]\d{9}$/', $digits ) ? $digits : null;
 }
 
-/** Timings: days 0-6 (Sunday is 0), up to three sessions in minutes from midnight, a slot length the admin offers. */
+/**
+ * Timings: each weekday's own sessions (Sunday is 0; up to three, in minutes from midnight) and a slot length the
+ * admin offers. Timings saved before hours could differ by day (one set of sessions on chosen days) read as those
+ * sessions on each of those days. Stored as the week plus two summaries: the days worked and the most common day's
+ * sessions (for places that show one line of hours).
+ */
 function jpn_clean_timings( $t ) {
 	if ( ! is_array( $t ) ) {
 		return null;
-	}
-	$days = array_values( array_unique( array_filter( array_map( 'intval', (array) ( $t['days'] ?? array() ) ), function ( $d ) {
-		return $d >= 0 && $d <= 6;
-	} ) ) );
-	sort( $days );
-	$sessions = array();
-	foreach ( array_slice( (array) ( $t['sessions'] ?? array() ), 0, 3 ) as $s ) {
-		$a = (int) ( $s[0] ?? -1 );
-		$b = (int) ( $s[1] ?? -1 );
-		if ( $a >= 0 && $b <= 1440 && $b > $a ) {
-			$sessions[] = array( $a, $b );
-		}
 	}
 	$slot = (int) ( $t['slot'] ?? 30 );
 	if ( ! in_array( $slot, array( 15, 20, 30, 45, 60 ), true ) ) {
 		return null;
 	}
+	return jpn_timings_shape( jpn_week_of( $t, true ), $slot );
+}
+
+/** Up to three sessions inside the day, in order, none overlapping the one before; anything else is dropped. */
+function jpn_clean_sessions( $list ) {
+	$out = array();
+	foreach ( (array) $list as $s ) {
+		$a = (int) ( $s[0] ?? -1 );
+		$b = (int) ( $s[1] ?? -1 );
+		if ( $a >= 0 && $b <= 1440 && $b > $a ) {
+			$out[] = array( $a, $b );
+		}
+	}
+	usort(
+		$out,
+		function ( $x, $y ) {
+			return $x[0] - $y[0];
+		}
+	);
+	$kept = array();
+	foreach ( $out as $s ) {
+		if ( count( $kept ) < 3 && ( ! $kept || $s[0] >= $kept[ count( $kept ) - 1 ][1] ) ) {
+			$kept[] = $s;
+		}
+	}
+	return $kept;
+}
+
+/**
+ * Weekday => sessions for timings in either shape; days off are left out.
+ * @param bool $clean Check every session (input from the admin) rather than trust stored timings.
+ */
+function jpn_week_of( $t, $clean = false ) {
+	$week = array();
+	if ( isset( $t['week'] ) && ( is_array( $t['week'] ) || is_object( $t['week'] ) ) ) {
+		$given = (array) $t['week'];
+		foreach ( range( 0, 6 ) as $d ) {
+			$list = $given[ $d ] ?? array();
+			$list = $clean ? jpn_clean_sessions( $list ) : (array) $list;
+			if ( $list ) {
+				$week[ $d ] = $list;
+			}
+		}
+		return $week;
+	}
+	$sessions = $clean ? jpn_clean_sessions( $t['sessions'] ?? array() ) : (array) ( $t['sessions'] ?? array() );
+	foreach ( (array) ( $t['days'] ?? array() ) as $d ) {
+		$d = (int) $d;
+		if ( $d >= 0 && $d <= 6 && $sessions ) {
+			$week[ $d ] = $sessions;
+		}
+	}
+	ksort( $week );
+	return $week;
+}
+
+function jpn_timings_shape( array $week, $slot ) {
+	$count = array();
+	foreach ( $week as $list ) {
+		$k           = wp_json_encode( $list );
+		$count[ $k ] = ( $count[ $k ] ?? 0 ) + 1;
+	}
+	arsort( $count );
 	return array(
-		'days'     => $days,
-		'sessions' => $sessions,
+		'days'     => array_keys( $week ),
+		'sessions' => $count ? json_decode( (string) key( $count ), true ) : array(),
+		'week'     => $week,
 		'slot'     => $slot,
 	);
 }
@@ -171,22 +243,35 @@ function jpn_clean_content( $c ) {
 		'home'     => array(
 			'headline' => jpn_substr( sanitize_text_field( (string) ( $c['home']['headline'] ?? '' ) ), 0, 60 ),
 			'intro'    => jpn_substr( sanitize_text_field( (string) ( $c['home']['intro'] ?? '' ) ), 0, 160 ),
+			// the big photo on the home page (an attachment this plugin made); 0 for none, then the branch's photo shows
+			'photo'    => jpn_own_photo( $c['home']['photo'] ?? 0 ),
 		),
 		'services' => array(),
 		'photos'   => array(),
+		// one photo per service page, shown on its card on the Services page
+		'service_photos' => array(),
 		'branches' => array(),
 		'doctors'  => array(),
 	);
 	foreach ( (array) ( $c['services'] ?? array() ) as $id => $text ) {
 		$out['services'][ sanitize_key( $id ) ] = jpn_substr( sanitize_textarea_field( (string) $text ), 0, 220 );
 	}
-	foreach ( array_slice( (array) ( $c['photos'] ?? array() ), 0, 6 ) as $p ) {
+	// clinic photos, as many as the owner likes (a high cap keeps the website file small), each at one branch; a
+	// branch's first photo is its main one
+	foreach ( array_slice( (array) ( $c['photos'] ?? array() ), 0, 200 ) as $p ) {
 		$id = absint( is_array( $p ) ? ( $p['id'] ?? 0 ) : $p );
 		if ( $id && get_post_meta( $id, '_jpn_photo', true ) ) {
 			$out['photos'][] = array(
-				'id'    => $id,
-				'label' => jpn_substr( sanitize_text_field( (string) ( $p['label'] ?? '' ) ), 0, 60 ),
+				'id'     => $id,
+				'label'  => jpn_substr( sanitize_text_field( (string) ( $p['label'] ?? '' ) ), 0, 60 ),
+				'branch' => jpn_clean_branch( $p['branch'] ?? '' ),
 			);
+		}
+	}
+	foreach ( (array) ( $c['service_photos'] ?? array() ) as $sid => $pid ) {
+		$pid = absint( $pid );
+		if ( $pid && get_post_meta( $pid, '_jpn_photo', true ) ) {
+			$out['service_photos'][ sanitize_key( $sid ) ] = $pid;
 		}
 	}
 	foreach ( jpn_branches() as $id => $b ) {
@@ -196,6 +281,7 @@ function jpn_clean_content( $c ) {
 			'phone'    => jpn_substr( preg_replace( '/[^0-9+ ]/', '', (string) ( $in['phone'] ?? $b['phone'] ) ), 0, 20 ),
 			'addr'     => jpn_substr( sanitize_textarea_field( (string) ( $in['addr'] ?? $b['addr'] ) ), 0, 240 ),
 			'landmark' => jpn_substr( sanitize_text_field( (string) ( $in['landmark'] ?? $b['landmark'] ) ), 0, 60 ),
+			'plus'     => jpn_clean_plus( $in['plus'] ?? ( $b['plus'] ?? '' ) ),
 		);
 	}
 	$seen = array();

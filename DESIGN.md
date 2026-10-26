@@ -252,7 +252,7 @@ Cool neutrals tinted toward the logo's navy, one navy for action, one cyan for m
 - **Clinic Red** (err) on **Red Wash** (err-soft): Field errors, cancelled status, leave and cancel actions, the inline confirm band (text #7A1A12 on the wash). Destructive actions are a soft red wash with red text, never a solid red fill.
 
 ### Named Rules
-**The Navy Presses Rule.** If it is navy, it is an action or the current choice. Navy never decorates a heading, an icon in a list or a background panel.
+**The Navy Presses Rule.** If it is navy, it is an action or the current choice. Navy never decorates a heading, an icon in a list or a background panel. One deliberate exception, chosen by the owner: the phone home hero's tagline band ("Feel better, sooner.") is a deep navy band joined under the photo; its Book button above it stays the action.
 
 **The Cyan Is a Mark Rule.** Cyan appears as dots, 2-3px lines, ticks, tags and halos. It is never a button fill, never a large surface, and never body text (use sky-ink for cyan text).
 

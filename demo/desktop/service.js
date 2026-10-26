@@ -44,55 +44,12 @@ const mapSeen = onView(mapStage);
 if (!reduceMotion) condTimer = setInterval(() => mapSeen() && setCond(conds[(conds.indexOf(cond) + 1) % conds.length]), mapStage.dataset.mode === 'scene' ? 7000 : 3400);
 
 /* ---------- the next free time, straight into booking ---------- */
-const near = BRANCHES[0], day = firstOpenDay(near), free = freeSlots(near, day), area = document.body.dataset.area || '';
-const slotHref = s => `book.html?branch=${near.id}&day=${dayISO(day)}&slot=${s.t}&service=${svcId}${area ? `&area=${area}` : ''}`;
-if (free.length) {
-  $('[data-next]').replaceChildren(`Next free at ${near.short}`, el('a', { href: slotHref(free[0]) }, `${dayShort(day)} · ${free[0].label} ${free[0].suffix}`));
-  $('[data-go-title]').textContent = `Next free at ${near.short}, ${dayShort(day).toLowerCase().startsWith('today') ? 'today' : dayShort(day)}`;
-  $('[data-go-times]').replaceChildren(...free.slice(0, 5).map(s => el('a', { class: 'tchip', href: slotHref(s) }, `${s.label} ${s.suffix}`)));
-}
+const area = document.body.dataset.area || '';
+nextFreeBlock((b, day, s) => `book.html?branch=${b.id}&day=${dayISO(day)}&slot=${s.t}&service=${svcId}${area ? `&area=${area}` : ''}`);
 
 /* ---------- how we treat it: the stage follows the chapter you're reading ---------- */
-const host = $('[data-story-host]'), chapters = $$('.chapter'), stepBtns = $$('[data-goto]'), storySeen = onView(host);
-// each chapter shows one scene, or one per sub-tab
-const STEPS = chapters.map(c => { const subs = $$('.subtab', c); return subs.length ? subs.map(s => [s.dataset.scene, s.dataset.cap]) : [[c.dataset.scene, c.dataset.cap]]; });
-let step = -1, cycle;
-const sub = STEPS.map(() => 0), picked = STEPS.map(() => false);
-function showSub() {
-  const [name, cap] = STEPS[step][sub[step]];
-  showScene(host, name);
-  $('[data-story-cap]').textContent = cap;
-  $$(`[data-subs="${step}"] .subtab`).forEach((b, j) => {
-    b.setAttribute('aria-pressed', String(j === sub[step]));
-    b.classList.remove('run'); void b.offsetWidth;
-    b.classList.toggle('run', j === sub[step] && !picked[step] && !reduceMotion);
-  });
-}
-function setStep(i) {
-  if (i === step) return;
-  step = i;
-  chapters.forEach((c, j) => c.classList.toggle('on', j === i));
-  stepBtns.forEach((b, j) => b.setAttribute('aria-current', j === i ? 'step' : 'false'));
-  showSub();
-  clearInterval(cycle);
-  if (STEPS[i].length > 1 && !reduceMotion) cycle = setInterval(() => {
-    if (picked[step] || !storySeen()) return;
-    sub[step] = (sub[step] + 1) % STEPS[step].length; showSub();
-  }, 7000);
-}
-$$('.subtab').forEach(b => b.addEventListener('click', () => {
-  const s = +b.closest('[data-subs]').dataset.subs;
-  picked[s] = true; sub[s] = +b.dataset.sub;
-  if (step !== s) setStep(s); else showSub();
-}));
-stepBtns.forEach((b, j) => b.addEventListener('click', () => chapters[j].scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' })));
-const chapterIO = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) setStep(+e.target.dataset.step); }), { rootMargin: '-45% 0px -45% 0px' });
-chapters.forEach(c => chapterIO.observe(c));
-setStep(0);
+storyStepper();
 
 /* ---------- who treats it ---------- */
-$('[data-who]').replaceChildren(...TEAM.map((t, i) => el('article', { class: 'mini-prof' },
-  (() => { const p = el('div', { class: 'photo', role: 'img', 'aria-label': t.photo ? `Portrait of ${t.short}` : `Portrait of ${t.short}, to be shot` }); paintPhoto(p, t.photo); return p; })(),
-  el('div', {}, el('b', {}, t.name), el('small', {}, t.card), degChips(t.deg.slice(0, 3), true),
-    el('a', { class: 'link', href: `book.html?therapist=${i}&service=${svcId}${area ? `&area=${area}` : ''}` }, `Book with ${t.first}`, icon('chevron'))))));
+whoTreats(i => `book.html?therapist=${i}&service=${svcId}${area ? `&area=${area}` : ''}`);
 paintIcons();

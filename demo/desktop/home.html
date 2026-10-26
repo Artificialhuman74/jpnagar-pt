@@ -29,7 +29,7 @@
     <section class="hero" aria-labelledby="hero-h">
       <div class="hero-copy">
         <h1 class="display" id="hero-h" data-seq style="--d:0">Feel better,<br>sooner.</h1>
-        <p class="lead" data-seq style="--d:1">Expert physiotherapy at 3 branches in South Bangalore. Open mornings and evenings, Monday to Saturday.</p>
+        <p class="lead" data-seq style="--d:1">Expert physiotherapy at 3 branches in South Bangalore. Open mornings and evenings, <span data-open-days>Monday to Saturday</span>.</p>
 
         <div class="qb" data-qb data-seq style="--d:2">
           <div class="qb-row">
@@ -54,12 +54,7 @@
       </div>
 
       <div class="hero-art" data-seq style="--d:2">
-        <div class="photo" data-label="Photo: Arekere clinic (to be shot)"></div>
-        <a class="founder" href="team.html">
-          <span class="photo av" role="img" aria-label="Photo of Dr. P. Senthil (to be shot)"></span>
-          <span><b>Dr. P. Senthil (PT)</b><small>Founder · 27+ years</small></span>
-          <span class="deg"><em data-tip="Master of Physiotherapy">MPT</em><em data-tip="Certified Orthopaedic Manual Therapist">COMT</em><em data-tip="Member, Indian Association of Physiotherapists">MIAP</em></span>
-        </a>
+        <div class="photo" data-label="Photo: Arekere clinic (to be shot)" data-branch-photo="start"></div>
       </div>
     </section>
 
@@ -89,7 +84,7 @@
         <li><i class="draw" data-icon="tick"></i><b>Assessed on your first visit</b><span>We find the cause, not just the pain.</span></li>
         <li><i class="draw" data-icon="tick"></i><b>A plan made for you</b><span>Exercises and therapy for your goals.</span></li>
         <li><i class="draw" data-icon="tick"></i><b>Senior physiotherapists</b><span>Led by Dr. P. Senthil, MPT, 27+ years.</span></li>
-        <li><i class="draw" data-icon="tick"></i><b>Two sessions a day</b><span>Mornings and evenings, Monday to Saturday.</span></li>
+        <li><i class="draw" data-icon="tick"></i><b>Two sessions a day</b><span>Mornings and evenings, <span data-open-days>Monday to Saturday</span>.</span></li>
       </ul>
       <div class="reviews">
         <article class="review"><p>“Sample review. The widget shows real Google reviews from all three branches here.”</p><footer><i>A</i>Google review · Arekere · sample</footer></article>
@@ -117,7 +112,7 @@
     <section class="ready" aria-labelledby="ready-h">
       <div>
         <h2 class="h2" id="ready-h">Ready when you are.</h2>
-        <p class="lead">Three branches, open Monday to Saturday, all with parking.</p>
+        <p class="lead">Three branches, open <span data-open-days>Monday to Saturday</span>, all with parking.</p>
         <a class="btn btn--act btn--lg" href="book.html"><span>Book a visit</span><i class="arrow" data-icon="arrow"></i></a>
       </div>
       <ul class="ready-list" data-ready></ul>
@@ -128,6 +123,8 @@
 <footer class="ft" data-footer></footer>
 <div class="fab"></div>
 <nav class="dock" data-active="home"></nav>
+<script src="../canon/clinic.js"></script>
+<script src="../canon/figure.js"></script>
 <script src="app.js"></script>
 <script src="../canon/published-data.js"></script>
 <script src="../canon/published.js"></script>

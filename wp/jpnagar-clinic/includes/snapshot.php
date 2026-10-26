@@ -16,15 +16,27 @@ function jpn_snapshot_dir() {
 	);
 }
 
+/**
+ * Where the pages find the clinic API, as a path on this site. The query form works with or without pretty
+ * permalinks, and the pages add their own parameters after it with "&".
+ */
+function jpn_api_base() {
+	return wp_make_link_relative( home_url( '/' ) ) . '?rest_route=/jpnagar/v1';
+}
+
 /** The snapshot's public URL, versioned so browsers and Cloudflare fetch the new one after each publish. */
 function jpn_snapshot_url() {
 	$d = jpn_snapshot_dir();
 	return $d['url'] . '/site-data.js?v=' . rawurlencode( (string) get_option( 'jpn_snapshot_version', '0' ) );
 }
 
+/**
+ * A photo's address as a path on this site (/wp-content/uploads/...), so the website file is the same whichever of
+ * the site's addresses (the visitors' or the admin's) the owner published from.
+ */
 function jpn_photo_url( $id ) {
 	$url = $id ? wp_get_attachment_url( $id ) : '';
-	return $url ? $url : null;
+	return $url ? wp_make_link_relative( $url ) : null;
 }
 
 /** Content (the live copy unless given) plus the current timings, in the shape the pages read. */
@@ -32,22 +44,31 @@ function jpn_build_snapshot( $content = null ) {
 	$c        = null === $content ? jpn_content( 'live' ) : $content;
 	$schedule = jpn_schedule();
 	$branches = array();
+	// the pages work in hours (9.5 = 9:30 am)
+	$hours = function ( $list ) {
+		return array_map(
+			function ( $s ) {
+				return array( $s[0] / 60, $s[1] / 60 );
+			},
+			(array) $list
+		);
+	};
 	foreach ( jpn_branches() as $id => $b ) {
-		$info              = $c['branches'][ $id ] ?? array();
-		$sc                = $schedule[ $id ] ?? array( 'days' => array(), 'sessions' => array() );
-		$branches[ $id ]   = array(
+		$info            = $c['branches'][ $id ] ?? array();
+		$sc              = $schedule[ $id ] ?? array( 'days' => array(), 'sessions' => array() );
+		$week            = jpn_week_of( $sc );
+		$branches[ $id ] = array(
 			'name'     => $b['name'],
 			'phone'    => $info['phone'] ?? $b['phone'],
 			'addr'     => $info['addr'] ?? $b['addr'],
 			'landmark' => $info['landmark'] ?? $b['landmark'],
-			// the pages work in hours (9.5 = 9:30 am)
-			'sessions' => array_map(
-				function ( $s ) {
-					return array( $s[0] / 60, $s[1] / 60 );
-				},
-				$sc['sessions']
-			),
-			'days'     => $sc['days'],
+			'plus'     => $info['plus'] ?? ( $b['plus'] ?? '' ),
+			'sessions' => $hours( $sc['sessions'] ),
+			'days'     => array_keys( $week ),
+			// each weekday's own hours, so the website shows a day's real times
+			'week'     => (object) array_map( $hours, $week ),
+			// minutes per appointment, so the pages draw the same times the diary offers
+			'slot'     => (int) ( $sc['slot'] ?? 30 ),
 		);
 	}
 	$doctors = array();
@@ -69,17 +90,26 @@ function jpn_build_snapshot( $content = null ) {
 		$url = jpn_photo_url( $p['id'] );
 		if ( $url ) {
 			$photos[] = array(
-				'src'   => $url,
-				'label' => $p['label'],
+				'src'    => $url,
+				'label'  => $p['label'],
+				'branch' => $p['branch'] ?? null,
 			);
+		}
+	}
+	$service_photos = array();
+	foreach ( (array) ( $c['service_photos'] ?? array() ) as $sid => $pid ) {
+		$url = jpn_photo_url( $pid );
+		if ( $url ) {
+			$service_photos[ $sid ] = $url;
 		}
 	}
 	return array(
 		'v'        => 1,
 		'at'       => (int) round( microtime( true ) * 1000 ),
-		'home'     => $c['home'] ?? new stdClass(),
+		'home'     => isset( $c['home'] ) ? array_merge( $c['home'], array( 'photo' => jpn_photo_url( $c['home']['photo'] ?? 0 ) ) ) : new stdClass(),
 		'services' => (object) ( $c['services'] ?? array() ),
 		'photos'   => $photos,
+		'service_photos' => (object) $service_photos,
 		'branches' => $branches,
 		'doctors'  => $doctors,
 	);
@@ -95,7 +125,8 @@ function jpn_write_snapshot( $content = null ) {
 		return new WP_Error( 'jpn_write', __( 'Could not create the uploads folder for the website file.', 'jpnagar-clinic' ), array( 'status' => 500 ) );
 	}
 	$json = wp_json_encode( jpn_build_snapshot( $content ), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
-	$body = 'window.PUBLISHED_DATA = ' . $json . ";\n";
+	// the file also tells the pages where the API is, so they need nothing else from the server
+	$body = 'window.JPN_API = ' . wp_json_encode( jpn_api_base(), JSON_UNESCAPED_SLASHES ) . ";\nwindow.PUBLISHED_DATA = " . $json . ";\n";
 	$file = $dir['path'] . '/site-data.js';
 	$fail = new WP_Error( 'jpn_write', __( 'Could not save the website file.', 'jpnagar-clinic' ), array( 'status' => 500 ) );
 	$gz   = function_exists( 'gzencode' ) ? gzencode( $body, 9 ) : false;

@@ -16,6 +16,8 @@
 
   function tiltedCard(figure, o = {}) {
     const body = figure.querySelector('.tilted-card__body'), shade = figure.querySelector('.tilted-card__shadow'), caption = figure.querySelector('.tilted-card__caption');
+    // the loading overlay (shown by CSS while the portrait is on its way): flat, on top, outside the 3D body
+    if (!figure.querySelector('.tilted-card__skel')) { const sk = document.createElement('span'); sk.className = 'tilted-card__skel'; sk.setAttribute('aria-hidden', 'true'); figure.append(sk); }
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const set = {
       amplitude: lim(o.rotateAmplitude ?? 10, 0, 60), scale: o.scaleOnHover ?? 1.03, smoothness: lim(o.smoothness ?? .6, 0, 1), glare: lim(o.glare ?? .45, 0, 1),
@@ -27,8 +29,21 @@
     let flipped = false, opacity = 1, entered = true, introAt = -1, focused = false, raf = 0, last = 0, visible = true;
     // the card turns over from its own buttons (one on each face), so the links and buttons on the back stay usable
     const flips = [...figure.querySelectorAll('[data-flip]')];
+    // iOS Safari can draw a card flat (both faces in one plane, the back on top, mirrored), so the face turned away is
+    // hidden outright rather than left to backface-visibility. The swap happens edge-on, where neither face shows.
+    const faceFront = figure.querySelector('.tilted-card__front'), faceBack = figure.querySelector('.tilted-card__back');
+    let backShown = false;
+    const showFace = (turn, force) => {
+      const b = Math.cos(turn * Math.PI / 180) < 0;
+      if (!faceBack || (!force && b === backShown)) return;
+      backShown = b; faceFront.style.visibility = b ? 'hidden' : ''; faceBack.style.visibility = b ? '' : 'hidden';
+    };
+    showFace(0, true);
     if (set.flippable) { figure.toggleAttribute('data-interactive', true); flips.forEach(b => b.setAttribute('aria-expanded', 'false')); }
-    if (set.intro && !reduced) { entered = false; opacity = 0; S.rx = 16; S.ty = 22; body.style.opacity = '0'; }
+    // the intro (fade and tilt in) only for a card that starts below the screen; one already on screen is just there
+    // The fade is on the card's outer frame, never on its 3D body: opacity on anything inside the 3D card makes Safari
+    // draw both faces, so the back would show through the front while it fades in.
+    if (set.intro && !reduced && figure.getBoundingClientRect().top >= innerHeight) { entered = false; opacity = 0; S.rx = 16; S.ty = 22; figure.style.opacity = '0'; }
 
     const frame = now => {
       raf = 0;
@@ -51,7 +66,8 @@
       figure.toggleAttribute('data-active', lifted > 0 || S.lift > .01);
       const scale = 1 + (set.scale - 1) * S.lift - .02 * S.press, rx = S.rx, ry = S.ry, rX = rx * Math.PI / 180, rY = ry * Math.PI / 180;
       body.style.transform = `translate3d(0, ${S.ty.toFixed(2)}px, 0) rotateX(${rx.toFixed(3)}deg) rotateY(${(ry + S.flip).toFixed(3)}deg) scale(${scale.toFixed(4)})`;
-      body.style.opacity = opacity < 1 ? smoother(opacity).toFixed(3) : '';
+      showFace(ry + S.flip);
+      figure.style.opacity = opacity < 1 ? smoother(opacity).toFixed(3) : '';
       body.style.setProperty('--tc-px', (Math.sin(rY) * set.parallax).toFixed(4));
       body.style.setProperty('--tc-py', (-Math.sin(rX) * set.parallax).toFixed(4));
       const reach = Math.max(amp, 1);
@@ -119,6 +135,7 @@
     }
     new IntersectionObserver(es => {
       visible = es.some(e => e.isIntersecting);
+      figure.classList.toggle('is-away', !visible); // the loading pulse rests while the card is off screen
       if (visible && !entered && introAt < 0) introAt = performance.now() + set.introDelay;
       wake();
     }).observe(figure);

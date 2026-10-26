@@ -598,7 +598,7 @@ async function applyLeave(docId, b, date) {
     const r = await WP.leave(true, docId, b, date); if (!r) return;
     hit = r.cancelled; redraw();
     if (r.failed.length) warn.push(`${r.failed.length} booking${r.failed.length === 1 ? '' : 's'} couldn’t be cancelled. Check the Today list.`);
-    if (!r.current) warn.push('The booking list couldn’t be refreshed: reload the page to see it.');
+    if (!r.current) warn.push('The latest bookings and schedule couldn’t be loaded: reload the page before making more changes.');
   } else {
     hit = S.bookings.filter(x => x.doc === docId && x.branch === b && x.date === date && x.status === 'booked');
     hit.forEach(x => { x.status = 'cancelled'; x.reason = 'leave'; });
@@ -622,7 +622,7 @@ async function removeLeave(docId, b, date) {
   if (WP) {
     const r = await WP.leave(false, docId, b, date); redraw();
     if (!r) return '';
-    return restoredText(r.notRestored.length, 'Leave undone') + (r.current ? '' : ' The booking list couldn’t be refreshed: reload the page to see it.');
+    return restoredText(r.notRestored.length, 'Leave undone') + (r.current ? '' : ' The latest bookings and schedule couldn’t be loaded: reload the page before making more changes.');
   }
   const l = S.leave.find(x => x.doc === docId && x.branch === b && x.date === date); if (!l) return '';
   // the doctor is back first; then each booking returns only if it still fits (an "any doctor" one needs a free doctor
@@ -739,7 +739,7 @@ function openCloseDay(b) {
       go.disabled = true; const r = await WP.closed(true, b, date, rs.value.trim()); go.disabled = false; if (!r) return;
       hit = r.cancelled; renderSchedule(); closeSheet();
       if (r.failed.length) warn.push(`${r.failed.length} booking${r.failed.length === 1 ? '' : 's'} couldn’t be cancelled. Check the Today list.`);
-      if (!r.current) warn.push('The booking list couldn’t be refreshed: reload the page to see it.');
+      if (!r.current) warn.push('The latest bookings and schedule couldn’t be loaded: reload the page before making more changes.');
     } else {
       hit = S.bookings.filter(x => x.branch === b && x.date === date && x.status === 'booked');
       hit.forEach(x => { x.status = 'cancelled'; x.reason = 'closed'; });
@@ -762,7 +762,7 @@ function openCloseDay(b) {
 async function reopenDay(c) {
   if (WP) {
     const r = await WP.closed(false, c.branch, c.date); renderSchedule(); if (!r) return;
-    toast(restoredText(r.notRestored.length, `${BR(c.branch).short} reopened on ${longDate(fromIso(c.date))}`) + (r.current ? '' : ' The booking list couldn’t be refreshed: reload the page to see it.'));
+    toast(restoredText(r.notRestored.length, `${BR(c.branch).short} reopened on ${longDate(fromIso(c.date))}`) + (r.current ? '' : ' The latest bookings and schedule couldn’t be loaded: reload the page before making more changes.'));
     return;
   }
   S.bookings.forEach(x => { if ((c.cancelled || []).includes(x.id) && x.status === 'cancelled') { x.status = 'booked'; delete x.reason; } });

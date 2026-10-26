@@ -117,10 +117,9 @@ function freeSlots(b, day) { return sessionsOn(b, day).flatMap((_, si) => slotsF
 // diary hasn't read yet counts as open when the branch works that day; the day picked is then read as usual.
 function looksOpen(b, day) {
   if (typeof DIARY !== 'undefined' && DIARY && DIARY.peek(b.id, day) === undefined) {
-    if (!worksOn(b, day)) return false;
-    if (!isToday(day)) return true;
-    const now = nowIST(), h = now.getHours() + now.getMinutes() / 60;
-    return sessionsOn(b, day).some(([, e]) => e - (b.slot || 30) / 60 > h + .25); // the same cut-off slotsFor uses
+    // the times the booking page would offer (today's past ones dropped), none taken until the diary reads the day:
+    // published.js marks a time taken only from the diary, never from the sample flags
+    return worksOn(b, day) && sessionsOn(b, day).some((_, si) => slotTimes(b, day, si).length > 0);
   }
   return freeSlots(b, day).length > 0;
 }

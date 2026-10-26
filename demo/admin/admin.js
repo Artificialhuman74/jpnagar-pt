@@ -175,7 +175,7 @@ function freshDay() {
   todayCal.sync(true);
   if (!WP) return;
   const date = iso(addDays(today(), V.day));
-  WP.loadDay(date).then(changed => { if (changed && (location.hash || '#today') === '#today' && iso(addDays(today(), V.day)) === date) renderToday(); });
+  WP.loadDay(date).then(r => { if (r.changed && (location.hash || '#today') === '#today' && iso(addDays(today(), V.day)) === date) renderToday(); });
 }
 
 /* ---------- the calendar on Today: every day of the month, the days with bookings in the accent with how many ---------- */
@@ -593,11 +593,12 @@ function anySurplus(b, date) {
 // the doctor goes on leave: their bookings at this branch that day are cancelled, and the patients are listed to call
 async function applyLeave(docId, b, date) {
   if (onLeave(docId, b, date)) return;
-  let hit;
+  let hit; const warn = [];
   if (WP) {
     const r = await WP.leave(true, docId, b, date); if (!r) return;
     hit = r.cancelled; redraw();
-    if (r.failed.length) toast(`${r.failed.length} booking${r.failed.length === 1 ? '' : 's'} couldn’t be cancelled. Check the Today list.`);
+    if (r.failed.length) warn.push(`${r.failed.length} booking${r.failed.length === 1 ? '' : 's'} couldn’t be cancelled. Check the Today list.`);
+    if (!r.current) warn.push('The latest bookings and schedule couldn’t be loaded: reload the page before making more changes.');
   } else {
     hit = S.bookings.filter(x => x.doc === docId && x.branch === b && x.date === date && x.status === 'booked');
     hit.forEach(x => { x.status = 'cancelled'; x.reason = 'leave'; });
@@ -610,14 +611,19 @@ async function applyLeave(docId, b, date) {
     save(); redraw();
   }
   const doc = docById(docId), d = fromIso(date);
-  if (!hit.length) { toast(`${shortName(doc)} is on leave ${dayLabel(d).toLowerCase()}. No bookings to move.`); return; }
+  if (!hit.length) { toast([`${shortName(doc)} is on leave ${dayLabel(d).toLowerCase()}. No bookings to move.`, ...warn].join(' ')); return; }
   showAffected(`${shortName(doc)} is on leave`, `${dayLabel(d)} at ${BR(b).short}. These ${hit.length} booking${hit.length === 1 ? ' was' : 's were'} cancelled. Let them know:`, hit,
+    ...warn.map(w => notice(w)),
     btn('Undo leave', 'btn--line btn--block', async () => { const msg = await removeLeave(docId, b, date); closeSheet(); toast(msg); }));
 }
 // undoing leave or a closed day puts back the bookings it cancelled, unless the slot has gone or the day is still off
 const restoredText = (n, what) => n ? `${what}. ${n} booking${n === 1 ? '' : 's'} couldn’t be put back: the time is taken or still off.` : `${what}. Bookings restored.`;
 async function removeLeave(docId, b, date) {
-  if (WP) { const r = await WP.leave(false, docId, b, date); redraw(); return r ? restoredText(r.notRestored.length, 'Leave undone') : ''; }
+  if (WP) {
+    const r = await WP.leave(false, docId, b, date); redraw();
+    if (!r) return '';
+    return restoredText(r.notRestored.length, 'Leave undone') + (r.current ? '' : ' The latest bookings and schedule couldn’t be loaded: reload the page before making more changes.');
+  }
   const l = S.leave.find(x => x.doc === docId && x.branch === b && x.date === date); if (!l) return '';
   // the doctor is back first; then each booking returns only if it still fits (an "any doctor" one needs a free doctor
   // at its time, and others may have been booked since). Those that don't stay cancelled, to be called.
@@ -728,18 +734,19 @@ function openCloseDay(b) {
   let pick = null; const rs = el('input', { placeholder: 'e.g. Diwali', maxlength: '40' });
   const dayBox = el('div', { class: 'days' }), go = btn('Close the branch', 'btn--danger btn--block', async () => {
     if (!pick) return;
-    const date = iso(pick); let hit;
+    const date = iso(pick); let hit; const warn = [];
     if (WP) {
       go.disabled = true; const r = await WP.closed(true, b, date, rs.value.trim()); go.disabled = false; if (!r) return;
       hit = r.cancelled; renderSchedule(); closeSheet();
-      if (r.failed.length) toast(`${r.failed.length} booking${r.failed.length === 1 ? '' : 's'} couldn’t be cancelled. Check the Today list.`);
+      if (r.failed.length) warn.push(`${r.failed.length} booking${r.failed.length === 1 ? '' : 's'} couldn’t be cancelled. Check the Today list.`);
+      if (!r.current) warn.push('The latest bookings and schedule couldn’t be loaded: reload the page before making more changes.');
     } else {
       hit = S.bookings.filter(x => x.branch === b && x.date === date && x.status === 'booked');
       hit.forEach(x => { x.status = 'cancelled'; x.reason = 'closed'; });
       S.closed.push({ branch: b, date, reason: rs.value.trim(), cancelled: hit.map(x => x.id) }); save(); renderSchedule(); closeSheet();
     }
-    if (hit.length) showAffected(`${BR(b).short} closed ${dayLabel(pick).toLowerCase()}`, `These ${hit.length} booking${hit.length === 1 ? ' was' : 's were'} cancelled. Let them know:`, hit);
-    else toast(`${BR(b).short} closed on ${longDate(pick)}`);
+    if (hit.length) showAffected(`${BR(b).short} closed ${dayLabel(pick).toLowerCase()}`, `These ${hit.length} booking${hit.length === 1 ? ' was' : 's were'} cancelled. Let them know:`, hit, ...warn.map(w => notice(w)));
+    else toast([`${BR(b).short} closed on ${longDate(pick)}`, ...warn].join(' '));
   });
   go.disabled = true;
   const paint = () => dayBox.replaceChildren(...[...Array(30)].map((_, i) => {
@@ -753,7 +760,11 @@ function openCloseDay(b) {
     el('div', { class: 'field' }, el('label', {}, 'Day'), dayBox), el('div', { class: 'field' }, el('label', {}, 'Reason (optional)'), el('div', { class: 'input' }, rs)), go);
 }
 async function reopenDay(c) {
-  if (WP) { const r = await WP.closed(false, c.branch, c.date); renderSchedule(); if (r) toast(restoredText(r.notRestored.length, `${BR(c.branch).short} reopened on ${longDate(fromIso(c.date))}`)); return; }
+  if (WP) {
+    const r = await WP.closed(false, c.branch, c.date); renderSchedule(); if (!r) return;
+    toast(restoredText(r.notRestored.length, `${BR(c.branch).short} reopened on ${longDate(fromIso(c.date))}`) + (r.current ? '' : ' The latest bookings and schedule couldn’t be loaded: reload the page before making more changes.'));
+    return;
+  }
   S.bookings.forEach(x => { if ((c.cancelled || []).includes(x.id) && x.status === 'cancelled') { x.status = 'booked'; delete x.reason; } });
   S.closed = S.closed.filter(x => x !== c); save(); renderSchedule(); toast(`${BR(c.branch).short} reopened on ${longDate(fromIso(c.date))}`);
 }

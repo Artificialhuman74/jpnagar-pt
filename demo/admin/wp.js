@@ -95,8 +95,13 @@ const WP = window.JPN_API ? (() => {
   }
 
   /* ---------- loading ---------- */
+  // Each read of the state has a number: an answer overtaken by a newer read is dropped (and reports false), so after
+  // two quick changes the older answer can't land last and show itself as current.
+  let loads = 0;
   async function load() {
+    const n = ++loads;
     const r = await call('GET', '/admin/state');
+    if (n !== loads) return false;
     if (!r.ok) { fail(r); return false; }
     const s = r.data, urls = s.photo_urls || {};
     S.schedule = Object.fromEntries(Object.entries(s.schedule).map(([b, sc]) => [b, { ...timingsIn(sc), own: Object.fromEntries(Object.entries(sc.own || {}).map(([d, t]) => [d, timingsIn(t)])) }]));

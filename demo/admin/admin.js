@@ -156,7 +156,13 @@ function route(first) {
 }
 addEventListener('hashchange', () => { closeSheet(); route(false); });
 // draws the tab on screen again after a change made from a sheet or a notice
-const redraw = () => { const k = (location.hash || '#today').slice(1); ({ today: renderToday, schedule: renderSchedule, doctors: renderDoctors, content: renderContent }[k] || renderToday)(); };
+const redraw = () => {
+  const k = (location.hash || '#today').slice(1);
+  if (k === 'schedule') return renderSchedule();
+  if (k === 'doctors') return renderDoctors();
+  if (k === 'content') return renderContent();
+  return renderToday();
+};
 
 const head = (small, title, extra) => el('header', { class: 'ahead' }, small ? el('div', { class: 'ahead-top' }, el('small', {}, small), extra || '') : '', el('h1', {}, title));
 function branchTabs(cur, withAll, onPick) {

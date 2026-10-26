@@ -618,7 +618,11 @@ async function applyLeave(docId, b, date) {
 // undoing leave or a closed day puts back the bookings it cancelled, unless the slot has gone or the day is still off
 const restoredText = (n, what) => n ? `${what}. ${n} booking${n === 1 ? '' : 's'} couldn’t be put back: the time is taken or still off.` : `${what}. Bookings restored.`;
 async function removeLeave(docId, b, date) {
-  if (WP) { const r = await WP.leave(false, docId, b, date); redraw(); return r ? restoredText(r.notRestored.length, 'Leave undone') : ''; }
+  if (WP) {
+    const r = await WP.leave(false, docId, b, date); redraw();
+    if (r && !r.current) toast('Leave undone. The booking list couldn’t be refreshed: reload the page to see it.');
+    return r ? restoredText(r.notRestored.length, 'Leave undone') : '';
+  }
   const l = S.leave.find(x => x.doc === docId && x.branch === b && x.date === date); if (!l) return '';
   // the doctor is back first; then each booking returns only if it still fits (an "any doctor" one needs a free doctor
   // at its time, and others may have been booked since). Those that don't stay cancelled, to be called.
@@ -755,7 +759,11 @@ function openCloseDay(b) {
     el('div', { class: 'field' }, el('label', {}, 'Day'), dayBox), el('div', { class: 'field' }, el('label', {}, 'Reason (optional)'), el('div', { class: 'input' }, rs)), go);
 }
 async function reopenDay(c) {
-  if (WP) { const r = await WP.closed(false, c.branch, c.date); renderSchedule(); if (r) toast(restoredText(r.notRestored.length, `${BR(c.branch).short} reopened on ${longDate(fromIso(c.date))}`)); return; }
+  if (WP) {
+    const r = await WP.closed(false, c.branch, c.date); renderSchedule(); if (!r) return;
+    toast(restoredText(r.notRestored.length, `${BR(c.branch).short} reopened on ${longDate(fromIso(c.date))}`) + (r.current ? '' : ' The booking list couldn’t be refreshed: reload the page to see it.'));
+    return;
+  }
   S.bookings.forEach(x => { if ((c.cancelled || []).includes(x.id) && x.status === 'cancelled') { x.status = 'booked'; delete x.reason; } });
   S.closed = S.closed.filter(x => x !== c); save(); renderSchedule(); toast(`${BR(c.branch).short} reopened on ${longDate(fromIso(c.date))}`);
 }

@@ -119,7 +119,8 @@ const WP = window.JPN_API ? (() => {
     const n = (asked.get(date) || 0) + 1; asked.set(date, n);
     const sig = () => JSON.stringify(S.bookings.filter(x => x.date === date)), was = days.has(date) ? sig() : null;
     const p = call('GET', '/admin/bookings', undefined, { date }).then(r => {
-      if (asked.get(date) !== n) return { ok: true, changed: false, stale: true }; // a newer request answers for this day
+      // a newer request answers for this day: this one reports that one's result when it settles
+      if (asked.get(date) !== n) return loading.get(date) || { ok: true, changed: false };
       if (!r.ok) { fail(r); return { ok: false, changed: false }; }
       S.bookings = S.bookings.filter(x => x.date !== date).concat(r.data.map(bookingIn));
       days.add(date);

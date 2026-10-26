@@ -283,6 +283,8 @@ def page(p):
 <footer class="ft" data-footer></footer>
 <div class="fab"></div>
 <nav class="dock" data-active="services"></nav>
+<script src="../canon/clinic.js"></script>
+<script src="../canon/figure.js"></script>
 <script src="app.js"></script>
 <script src="../canon/published-data.js"></script>
 <script src="../canon/published.js"></script>

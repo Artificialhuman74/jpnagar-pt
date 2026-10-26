@@ -48,6 +48,7 @@ function jpn_register_routes() {
 		array( '/admin/state', WP_REST_Server::READABLE, 'jpn_rest_state' ),
 		array( '/admin/bookings', WP_REST_Server::READABLE, 'jpn_rest_day' ),
 		array( '/admin/bookings', WP_REST_Server::CREATABLE, 'jpn_rest_desk_booking' ),
+		array( '/admin/bookings/month', WP_REST_Server::READABLE, 'jpn_rest_month' ),
 		array( '/admin/bookings/(?P<id>\d+)/status', WP_REST_Server::CREATABLE, 'jpn_rest_status' ),
 		array( '/admin/schedule/(?P<branch>[a-z]+)', WP_REST_Server::EDITABLE, 'jpn_rest_branch_timings' ),
 		array( '/admin/schedule/(?P<branch>[a-z]+)/own/(?P<doctor>[a-z0-9_-]+)', WP_REST_Server::EDITABLE, 'jpn_rest_own_timings' ),
@@ -111,22 +112,24 @@ function jpn_client_ip() {
 }
 
 /**
- * At most 5 bookings per address every 10 minutes and 3 per mobile number a day, so the form can't fill the diary.
- * Only bookings that succeed are counted: a patient who meets a taken slot or a typo isn't locked out.
+ * At most 5 bookings per mobile number a day (enough for a family booking together) and 5 per address every 10
+ * minutes, so the form can't fill the diary. Only bookings that succeed are counted: a patient who meets a taken slot
+ * or a typo isn't locked out. The number is checked first, so when both are reached the message is about the number.
  */
 function jpn_limit_keys( $phone ) {
 	return array(
-		array( 'jpn_rl_ip_' . md5( jpn_client_ip() ), 5, 10 * MINUTE_IN_SECONDS ),
-		array( 'jpn_rl_ph_' . md5( (string) $phone ), 3, DAY_IN_SECONDS ),
+		'phone' => array( 'jpn_rl_ph_' . md5( (string) $phone ), 5, DAY_IN_SECONDS ),
+		'ip'    => array( 'jpn_rl_ip_' . md5( jpn_client_ip() ), 5, 10 * MINUTE_IN_SECONDS ),
 	);
 }
+/** Which limit a new booking would pass ('phone' or 'ip'), or null when it is within both. */
 function jpn_rate_limited( $phone ) {
-	foreach ( jpn_limit_keys( $phone ) as $k ) {
+	foreach ( jpn_limit_keys( $phone ) as $which => $k ) {
 		if ( (int) get_transient( $k[0] ) >= $k[1] ) {
-			return true;
+			return $which;
 		}
 	}
-	return false;
+	return null;
 }
 function jpn_count_booking( $phone ) {
 	foreach ( jpn_limit_keys( $phone ) as $k ) {
@@ -162,8 +165,13 @@ function jpn_rest_book( WP_REST_Request $req ) {
 	// under the lock, two bookings at once can't both slip under the limit
 	$row = jpn_locked(
 		function () use ( $b ) {
-			if ( jpn_rate_limited( $b['phone'] ) ) {
-				return new WP_Error( 'jpn_slow', __( 'Too many bookings from here just now. Please call the clinic.', 'jpnagar-clinic' ), array( 'status' => 429 ) );
+			// say which limit, so a patient knows it isn't the time that's full
+			$limit = jpn_rate_limited( $b['phone'] );
+			if ( 'phone' === $limit ) {
+				return new WP_Error( 'jpn_slow', __( 'This mobile number already has 5 bookings today. To book another visit, please call or WhatsApp the clinic.', 'jpnagar-clinic' ), array( 'status' => 429 ) );
+			}
+			if ( 'ip' === $limit ) {
+				return new WP_Error( 'jpn_slow', __( 'Several bookings were just made from this connection. Please wait 10 minutes, or call the clinic.', 'jpnagar-clinic' ), array( 'status' => 429 ) );
 			}
 			$b['source'] = 'online';
 			$row         = jpn_create_booking( $b );
@@ -271,7 +279,7 @@ function jpn_rest_state() {
 	// content stores photos by attachment id; the admin also needs to show them
 	$photos = array();
 	foreach ( array( $draft, $live ) as $c ) {
-		$ids = array_merge( wp_list_pluck( (array) ( $c['doctors'] ?? array() ), 'photo' ), wp_list_pluck( (array) ( $c['photos'] ?? array() ), 'id' ) );
+		$ids = array_merge( wp_list_pluck( (array) ( $c['doctors'] ?? array() ), 'photo' ), wp_list_pluck( (array) ( $c['photos'] ?? array() ), 'id' ), array_values( (array) ( $c['service_photos'] ?? array() ) ), array( $c['home']['photo'] ?? 0 ) );
 		foreach ( array_filter( array_map( 'absint', $ids ) ) as $id ) {
 			$photos[ $id ] = jpn_photo_url( $id );
 		}
@@ -284,6 +292,8 @@ function jpn_rest_state() {
 		'draft'      => $draft,
 		'live'       => $live,
 		'photo_urls' => (object) $photos,
+		// the admin shrinks photos below this before sending them
+		'upload_max' => jpn_upload_limit(),
 		'published'  => (string) get_option( 'jpn_snapshot_version', '' ),
 	);
 }
@@ -302,6 +312,34 @@ function jpn_rest_day( WP_REST_Request $req ) {
 		$args[] = $branch;
 	}
 	return $wpdb->get_results( $wpdb->prepare( $sql . ' ORDER BY slot_time, branch', $args ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- built from fixed fragments above
+}
+
+/**
+ * The admin's calendar: how many bookings stand on each day of a month (month=YYYY-MM, optionally one branch), as
+ * { "2026-10-27": 3, ... }. Cancelled bookings don't count; days with none are left out.
+ */
+function jpn_rest_month( WP_REST_Request $req ) {
+	global $wpdb;
+	$month = (string) $req['month'];
+	$first = preg_match( '/^(20[2-9]\d)-(0[1-9]|1[0-2])$/', $month ) ? DateTimeImmutable::createFromFormat( '!Y-m-d', $month . '-01', wp_timezone() ) : false;
+	if ( ! $first ) {
+		return new WP_Error( 'jpn_month', 'Bad month.', array( 'status' => 400 ) );
+	}
+	$branch = $req['branch'] ? jpn_clean_branch( $req['branch'] ) : null;
+	if ( $req['branch'] && ! $branch ) {
+		return new WP_Error( 'jpn_branch', 'Unknown branch.', array( 'status' => 400 ) );
+	}
+	$sql    = 'SELECT slot_date, COUNT(*) AS n FROM ' . jpn_bookings_table() . " WHERE slot_date BETWEEN %s AND %s AND status <> 'cancelled'";
+	$args   = array( $first->format( 'Y-m-d' ), $first->format( 'Y-m-t' ) );
+	if ( $branch ) {
+		$sql   .= ' AND branch = %s';
+		$args[] = $branch;
+	}
+	$out = array();
+	foreach ( (array) $wpdb->get_results( $wpdb->prepare( $sql . ' GROUP BY slot_date', $args ), ARRAY_A ) as $row ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- built from fixed fragments above
+		$out[ $row['slot_date'] ] = (int) $row['n'];
+	}
+	return (object) $out;
 }
 
 function jpn_rest_desk_booking( WP_REST_Request $req ) {
@@ -562,6 +600,9 @@ function jpn_rest_photo( WP_REST_Request $req ) {
 	$kind = sanitize_key( (string) $req->get_param( 'kind' ) );
 	$id   = jpn_save_photo( $kind );
 	if ( is_wp_error( $id ) ) {
+		// every failed upload is logged with its cause, so "it didn't upload" can always be traced
+		$f = $_FILES['photo'] ?? array(); // phpcs:ignore WordPress.Security.NonceVerification -- REST route, nonce checked by WordPress
+		error_log( sprintf( 'J.P. Nagar Clinic: photo upload failed: %s: %s (sent %s, %s bytes)', $id->get_error_code(), $id->get_error_message(), sanitize_mime_type( (string) ( $f['type'] ?? '?' ) ), (int) ( $f['size'] ?? 0 ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
 		return $id;
 	}
 	return array(

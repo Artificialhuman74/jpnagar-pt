@@ -24,7 +24,7 @@
 <section class="step" data-step="1" aria-labelledby="s1">
   <div class="done-list" data-done-1></div>
   <h1 id="s1" tabindex="-1">Where does it hurt? <small class="opt">Optional</small></h1>
-  <p class="lead">Tap the area so your physiotherapist can prepare. You can pick more than one, or skip this.</p>
+  <p class="lead">Tap one spot or several, or skip.</p>
   <div class="mapctl">
     <div class="seg" role="radiogroup" aria-label="Show the figure as">
       <button class="on" data-gender="male" role="radio" aria-checked="true">Male</button>
@@ -155,7 +155,7 @@
       </div>
       <div class="floor" aria-hidden="true"></div>
     </div>
-    <p class="turnhint" data-hint><b>Back view</b> · swipe the body to turn it around</p>
+    <p class="turnhint" data-hint><b>Back view</b> · swipe to turn</p>
     <span class="tag" data-tag></span>
   </div>
   <div class="also">
@@ -177,7 +177,7 @@
       <button class="pill" type="button">Worse in the morning</button>
       <button class="pill" type="button">Getting worse</button>
     </div>
-    <p class="hint"><span data-count>0</span>/300 · helps your physiotherapist prepare for your visit</p>
+    <p class="hint"><span data-count>0</span>/300</p>
   </div>
   <div class="match" data-match aria-live="polite">
     <b>Matching care</b>
@@ -204,10 +204,9 @@
     <div class="docs" data-ther role="radiogroup" aria-label="Therapist"></div>
     <a class="meet" href="team.html">
       <span class="faces" aria-hidden="true"><i class="photo"></i><i class="photo"></i><i class="photo"></i></span>
-      <span><b>Not sure who to choose?</b><small>Meet the team and what each one treats</small></span>
+      <span><b>Not sure who to choose?</b><small>Meet the team</small></span>
       <i data-icon="chevron"></i>
     </a>
-    <p class="note">Sample: the clinic will confirm who works at each branch.</p>
   </div>
 </section>
 
@@ -215,14 +214,14 @@
 <section class="step" data-step="3" aria-labelledby="s3">
   <div class="done-list" data-done-3></div>
   <h1 id="s3" tabindex="-1">Your details</h1>
-  <p class="lead">No sign-up. The branch only uses these to reach you about your visit.</p>
+  <p class="lead">No sign-up. Only used to reach you about this visit.</p>
   <form data-form novalidate>
     <div class="field" data-f="name"><label for="nm">Full name</label><div class="input"><input id="nm" autocomplete="name" placeholder="e.g. Priya Raman"></div><p class="msg">Please enter your name.</p></div>
     <div class="field" data-f="phone"><label for="ph">Mobile number</label><div class="input"><span>+91</span><input id="ph" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="e.g. 98765 43210" maxlength="11"></div><p class="msg">Enter a 10-digit mobile number starting with 6, 7, 8 or 9.</p></div>
     <div class="field" data-f="email"><label for="em">Email <small>(optional)</small></label><div class="input"><input id="em" type="email" autocomplete="email" placeholder="you@example.com"></div><p class="msg">That email doesn't look right. Check it, or leave it empty.</p></div>
     <label class="jpn-wa-consent" for="wa-consent"><input id="wa-consent" type="checkbox"><span>Send my booking confirmation on WhatsApp (optional).</span></label>
   </form>
-  <p class="note">Your booking goes straight to the branch. To change or cancel, call or WhatsApp +91 99161 16625.</p>
+  <p class="note">To change or cancel, call or WhatsApp +91 99161 16625.</p>
 </section>
 
 <!-- STEP 4: confirmed — a printed appointment ticket -->
@@ -283,6 +282,8 @@
 </div>
 <nav class="dock" data-active="book"></nav>
 
+<script src="../canon/clinic.js"></script>
+<script src="../canon/figure.js"></script>
 <script src="app.js"></script>
 <script src="../canon/published-data.js"></script>
 <script src="../canon/published.js"></script>
@@ -304,12 +305,6 @@ const REASON = { surgery: 'After surgery', neuro: 'Stroke or nerve problem', chi
 S.gender = 'male';
 const tag = $('[data-tag]'), turn = $('[data-turn]'), fig = $('[data-figure]'), tilt = $('[data-tilt]');
 let sx = null, dragged = false;
-const REGIONS = [['neck'], ['shoulder', 'a'], ['shoulder', 'b'], ['upper'], ['lower'], ['elbow', 'a'], ['elbow', 'b'], ['hand', 'a'], ['hand', 'b'], ['hip', 'a'], ['hip', 'b'], ['knee', 'a'], ['knee', 'b'], ['foot', 'a'], ['foot', 'b']];
-// hotspot centres in the 240×480 figure per body type; "a" is the viewer's left
-const POS = {
-  male: { neck: [120, 78], shoulder: [74, 106], upper: [120, 134], lower: [120, 194], elbow: [58, 174], hand: [54, 256], hip: [94, 226], knee: [97, 328], foot: [98, 434] },
-  female: { neck: [120, 78], shoulder: [82, 106], upper: [120, 136], lower: [120, 196], elbow: [67, 174], hand: [63, 256], hip: [90, 228], knee: [98, 330], foot: [99, 434] }
-};
 const NAMES = { front: { upper: 'Chest', lower: 'Stomach' }, back: { upper: 'Upper back', lower: 'Lower back' } };
 // From the back the viewer's left is the person's left; from the front it is their right.
 function sideOf(face, pos) { if (!pos) return ''; return (face === 'back') === (pos === 'a') ? 'left' : 'right'; }
@@ -342,11 +337,16 @@ const HS = { front: [], back: [] };
     layer.append(h); HS[face].push(h);
   });
 });
-function placeSpots() {
+// A spot jumps to its new place and glides there with a transform (moving left/top would lay the page out every frame)
+function placeSpots(animate) {
   const P = POS[S.gender];
   ['front', 'back'].forEach(face => HS[face].forEach(h => {
     let [x, y] = P[h.dataset.type]; if (h.dataset.pos === 'b') x = 240 - x;
+    const was = animate && !reduceMotion && h.getBoundingClientRect();
     h.style.left = (x / 240 * 100) + '%'; h.style.top = (y / 480 * 100) + '%';
+    if (!was || !was.width) return;
+    const now = h.getBoundingClientRect(), dx = was.left - now.left, dy = was.top - now.top;
+    if (dx || dy) h.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: 'none' }], { duration: 500, easing: 'cubic-bezier(.16,1,.3,1)' });
   }));
 }
 function paintMap() {
@@ -368,14 +368,14 @@ function setView(v) {
     L.textContent = v === 'back' ? 'LEFT' : 'RIGHT'; R.textContent = v === 'back' ? 'RIGHT' : 'LEFT';
     L.classList.remove('fade'); R.classList.remove('fade');
   }, reduceMotion ? 0 : 450);
-  $('[data-hint]').replaceChildren(el('b', {}, v === 'back' ? 'Back view' : 'Front view'), ' · swipe the body to turn it around');
+  $('[data-hint]').replaceChildren(el('b', {}, v === 'back' ? 'Back view' : 'Front view'), ' · swipe to turn');
 }
 function setGender(g) {
   if (g === S.gender) return;
   S.gender = g; turn.dataset.g = g;
   $$('[data-gender]').forEach(b => { b.classList.toggle('on', b.dataset.gender === g); b.setAttribute('aria-checked', b.dataset.gender === g); });
   turn.classList.remove('swapping'); void turn.offsetWidth; turn.classList.add('swapping');
-  placeSpots();
+  placeSpots(true);
 }
 $$('[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $$('[data-gender]').forEach(b => b.addEventListener('click', () => setGender(b.dataset.gender)));
@@ -439,14 +439,27 @@ function whatText() {
 /* ---------- time picker ---------- */
 const tabs = $('[data-tabs]'), tind = tabs.querySelector('.tind');
 BRANCHES.forEach((b, i) => {
-  const t = el('button', { class: 'tab', role: 'tab' }, el('b', {}, b.short), el('small', {}, kmText(b) || (branchStatus(b).open ? 'Open now' : 'Closed now')));
+  const t = el('button', { class: 'tab', role: 'tab' }, el('b', {}, b.short), el('small', {}, kmText(b)));
   t.addEventListener('click', () => { S.b = i; S.slot = null; pickFirstDay(); renderTime(); });
   tabs.append(t);
 });
+// "Use my location": picks the nearest branch and shows how far each one is (only after the visitor asks)
+const nearBtn = el('button', { class: 'near-btn', type: 'button' }, icon('pin'), el('span', {}, savedKm() ? 'Update my location' : 'Find my nearest branch'));
+nearBtn.addEventListener('click', () => {
+  nearBtn.disabled = true; nearBtn.lastChild.textContent = 'Finding you…';
+  locateNearest().then(i => {
+    [...tabs.querySelectorAll('.tab small')].forEach((s, j) => { s.textContent = kmText(BRANCHES[j]); });
+    nearBtn.lastChild.textContent = 'Update my location';
+    if (S.b !== i) { S.b = i; S.slot = null; pickFirstDay(); renderTime(); }
+    toast(`Nearest branch: ${BRANCHES[i].short}, ${savedKm()[BRANCHES[i].id] < .2 ? 'right next to you' : `${kmText(BRANCHES[i])} away`}`);
+  }, msg => { nearBtn.lastChild.textContent = 'Find my nearest branch'; toast(msg); }).finally(() => { nearBtn.disabled = false; });
+});
+tabs.after(nearBtn);
 function days() { const d0 = nowIST(); return [...Array(6)].map((_, i) => { const d = new Date(d0); d.setDate(d0.getDate() + i); d.setHours(0, 0, 0, 0); return d; }); }
-function hasSlots(day) { const b = BRANCHES[S.b]; return day.getDay() !== 0 && b.sessions.some((_, si) => slotsFor(b, day, si).some(s => !s.taken)); }
+const sessName = ([s]) => s < 12 ? 'Morning' : s < 16 ? 'Afternoon' : 'Evening';
+function hasSlots(day) { const b = BRANCHES[S.b]; return sessionsOn(b, day).some((_, si) => slotsFor(b, day, si).some(s => !s.taken)); }
 function pickFirstDay() { S.day = days().find(hasSlots) || days()[1]; pickSession(); }
-function pickSession() { const b = BRANCHES[S.b]; const i = b.sessions.findIndex((_, si) => slotsFor(b, S.day, si).some(s => !s.taken)); S.sess = i < 0 ? 0 : i; }
+function pickSession() { const b = BRANCHES[S.b]; const i = sessionsOn(b, S.day).findIndex((_, si) => slotsFor(b, S.day, si).some(s => !s.taken)); S.sess = i < 0 ? 0 : i; }
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DOCS = publishedDocs([
   { name: 'Any available', role: 'Gets you the earliest slot', deg: [], any: true },
@@ -460,52 +473,81 @@ const DOCS = publishedDocs([
 let dayBtns, sessBtns, docBtns, timesKey = '';
 function renderTime() {
   const b = BRANCHES[S.b];
+  // the times follow the physiotherapist picked (only times they are free count), and the day stays fresh on screen
+  if (DIARY) {
+    const doc = DOCS.find(d => d.name === S.ther && !d.any), want = doc ? doc.id : null;
+    DIARY.watch(b.id, S.day);
+    if (want !== DIARY.want) { DIARY.want = want; slotGone(`isn’t free with ${S.ther}`); }
+  }
   [...tabs.querySelectorAll('.tab')].forEach((t, i) => { t.classList.toggle('is-on', i === S.b); t.setAttribute('aria-selected', i === S.b); });
   const on = tabs.querySelectorAll('.tab')[S.b];
   tind.style.width = on.offsetWidth + 'px'; tind.style.transform = `translateX(${on.offsetLeft - 4}px)`;
   const st = branchStatus(b); const so = $('[data-status]'); so.textContent = st.text; so.classList.toggle('closed', !st.open);
+  $('[data-dir]').href = mapsLink(b); // directions to the branch on screen, not the clinic in general
   if (!dayBtns) {
     const today = nowIST().toDateString();
     dayBtns = days().map(d => {
-      const off = d.getDay() === 0;
-      const n = el('button', { class: 'day' + (off ? ' is-off' : ''), 'aria-label': d.toDateString() + (off ? ', closed' : '') },
+      const n = el('button', { class: 'day' },
         el('small', {}, d.toDateString() === today ? 'Today' : DOW[d.getDay()]), el('b', {}, String(d.getDate())));
-      if (off) n.disabled = true;
       n._d = d;
       n.addEventListener('click', () => { if (d.toDateString() === S.day.toDateString()) return; S.day = d; S.slot = null; pickSession(); renderTime(); });
       return n;
     });
     $('[data-days]').replaceChildren(...dayBtns);
   }
-  dayBtns.forEach(n => n.classList.toggle('is-on', n._d.toDateString() === S.day.toDateString()));
-  if (!sessBtns || sessBtns.length !== b.sessions.length) {
-    sessBtns = b.sessions.map((_, si) => { const n = el('button', {}); n.addEventListener('click', () => { if (S.sess === si) return; S.sess = si; S.slot = null; renderTime(); }); return n; });
+  // each branch has its own working days, so the days are switched off in place when the branch changes
+  dayBtns.forEach(n => {
+    const off = !worksOn(b, n._d);
+    n.classList.toggle('is-off', off); n.disabled = off; n.setAttribute('aria-label', n._d.toDateString() + (off ? ', closed' : ''));
+    const on = n._d.toDateString() === S.day.toDateString();
+    n.classList.toggle('is-on', on); n.setAttribute('aria-pressed', String(on));
+  });
+  // the day's own sessions (a branch can open different hours on different days)
+  const ss = sessionsOn(b, S.day);
+  if (S.sess >= ss.length) S.sess = 0;
+  if (!sessBtns || sessBtns.length !== ss.length) {
+    sessBtns = ss.map((_, si) => { const n = el('button', {}); n.addEventListener('click', () => { if (S.sess === si) return; S.sess = si; S.slot = null; renderTime(); }); return n; });
     $('[data-sessions]').replaceChildren(...sessBtns);
   }
   sessBtns.forEach((n, si) => {
-    const [s, e] = b.sessions[si];
-    n.textContent = `${si === 0 ? 'Morning' : 'Evening'} · ${fmtHour(s)}–${fmtHour(e)}`;
-    n.className = si === S.sess ? 'on' : '';
+    const [s, e] = ss[si];
+    n.textContent = `${sessName(ss[si])} · ${fmtHour(s)}–${fmtHour(e)}`;
+    n.className = si === S.sess ? 'on' : ''; n.setAttribute('aria-pressed', String(si === S.sess));
     n.disabled = !slotsFor(b, S.day, si).some(x => !x.taken);
   });
-  const grid = $('[data-slots]'), key = `${S.b}|${S.day.toDateString()}|${S.sess}`;
+  // The grid is rebuilt only when its times change (a new branch, day or session). Fresh news from the diary, or a
+  // different physiotherapist, only changes which times are taken, so the buttons update in place.
+  const list = slotsFor(b, S.day, S.sess), grid = $('[data-slots]'), key = `${S.b}|${S.day.toDateString()}|${S.sess}|${list.map(x => x.t).join(',')}`;
+  if (key === timesKey) grid.querySelectorAll('.slot').forEach((n, i) => {
+    const x = list[i]; if (!x) return;
+    n.disabled = x.taken; n.classList.toggle('is-taken', x.taken); n.setAttribute('aria-label', `${x.label} ${x.suffix}${x.taken ? ', taken' : ''}`);
+  });
   if (key !== timesKey) {
     timesKey = key;
-    const rows = Math.ceil(Math.max(...b.sessions.map(([s, e]) => (e - s) * 2)) / 3);
+    // held at the week's longest session, so changing day never moves the page
+    const rows = Math.ceil(Math.max(1, ...[0, 1, 2, 3, 4, 5, 6].flatMap(n => sessionsOn(b, n)).map(([s, e]) => (e - s) * 60 / (b.slot || 30))) / 3);
     grid.style.minHeight = `${rows * 48 + (rows - 1) * 8}px`;
-    const list = slotsFor(b, S.day, S.sess);
     grid.replaceChildren(...(list.length ? list.map(x => {
       const n = el('button', { class: 'slot' + (x.taken ? ' is-taken' : ''), 'aria-label': `${x.label} ${x.suffix}${x.taken ? ', taken' : ''}` }, `${x.label} ${x.suffix}`);
       if (x.taken) n.disabled = true;
       n._t = x.t;
-      n.addEventListener('click', () => { S.slot = x; grid.querySelectorAll('.slot').forEach(s => s.classList.toggle('is-on', s === n)); setBar(); });
+      n.addEventListener('click', () => { S.slot = x; grid.querySelectorAll('.slot').forEach(s => { s.classList.toggle('is-on', s === n); s.setAttribute('aria-pressed', String(s === n)); }); setBar(); });
       return n;
     }) : [el('p', { class: 'empty' }, 'No times left in this session. Try another day.')]));
     // one short line for screen readers, instead of reading out every time
     const open = list.filter(x => !x.taken).length;
     $('[data-slot-say]').textContent = open ? `${open} times free, ${S.day.toDateString() === nowIST().toDateString() ? 'today' : DOW[S.day.getDay()] + ' ' + S.day.getDate()}` : 'No times left in this session';
   }
-  grid.querySelectorAll('.slot').forEach(n => n.classList.toggle('is-on', !!S.slot && S.slot.t === n._t));
+  grid.querySelectorAll('.slot').forEach(n => { const on = !!S.slot && S.slot.t === n._t; n.classList.toggle('is-on', on); n.setAttribute('aria-pressed', String(on)); });
+  // The branch, day and session switch the moment they're tapped; until that day's real times have arrived the grid
+  // shows them loading (not tappable), and the other days of the branch are asked for ahead so they open at once.
+  if (DIARY) {
+    const loading = !DIARY.ready(b.id, S.day);
+    grid.classList.toggle('is-loading', loading); grid.setAttribute('aria-busy', String(loading));
+    if (loading) $('[data-slot-say]').textContent = 'Checking free times';
+    else { const open = list.filter(x => !x.taken).length; $('[data-slot-say]').textContent = open ? `${open} times free, ${S.day.toDateString() === nowIST().toDateString() ? 'today' : DOW[S.day.getDay()] + ' ' + S.day.getDate()}` : 'No times left in this session'; }
+    DIARY.ahead(b.id, days().filter(d => worksOn(b, d)));
+  }
   // each branch lists its own doctors (those published for it), plus "Any available"
   const here = DOCS.filter(d => d.any || !d.branches || d.branches.includes(b.id));
   if (S.ther !== 'Any available' && !here.some(d => d.name === S.ther)) S.ther = 'Any available';
@@ -513,7 +555,8 @@ function renderTime() {
     docBtns = here.map(d => {
       const pic = d.any
         ? el('span', { class: 'ph any', 'aria-hidden': 'true' }, el('i', { class: 'photo' }), el('i', { class: 'photo' }), el('i', { class: 'photo' }))
-        : el('span', { class: 'ph photo' + (d.photo ? ' is-real' : ''), 'aria-hidden': 'true', ...(d.photo ? { style: `background:center/cover url("${d.photo}")` } : {}) });
+        : el('span', { class: 'ph photo', 'aria-hidden': 'true' });
+      if (!d.any && d.photo) paintPhoto(pic, d.photo); // pulses until the portrait has arrived
       const n = el('button', { class: 'doc tilt', role: 'radio' },
         pic, el('span', { class: 'tick', 'aria-hidden': 'true' }, icon('check')),
         el('b', {}, d.name), el('small', {}, d.role),
@@ -563,7 +606,12 @@ function go(n, back, fromHistory) {
   const p = pos(n);
   $$('.step').forEach(s => { s.classList.remove('on', 'back'); s.removeAttribute('id'); });
   const cur = $(`[data-step="${n}"]`); cur.classList.add('on'); cur.id = 'main-step'; if (back) cur.classList.add('back');
+  // the first step is simply there when the page opens; later steps slide in
+  cur.style.animation = first ? 'none' : '';
+  // the progress bar is simply filled to the first step when the page opens; it grows as the visitor moves on
+  const prog = $('.prog'); if (first) prog.classList.add('no-motion');
   $$('.prog span').forEach((s, i) => { s.classList.toggle('done', i < p); s.classList.toggle('on', i === p); });
+  if (first) requestAnimationFrame(() => requestAnimationFrame(() => prog.classList.remove('no-motion')));
   $$('.prog-labels span').forEach((s, i) => s.classList.toggle('on', i === p));
   const noteItem = () => S.story ? [doneItem('Note', S.story.length > 34 ? S.story.slice(0, 32) + '…' : S.story, 1)] : [];
   const when = () => doneItem('When', `${whenText()} · ${BRANCHES[S.b].short}`, 2);
@@ -606,13 +654,18 @@ function confirmBooking() {
   DIARY.book({ branch: b.id, date: DIARY.isoOf(S.day), time: Math.round(S.slot.t * 60), doctor: doc ? doc.id : null,
     name: S.name, phone: S.phone, email: S.email, problem: whatText(), note: S.story, whatsapp_consent: $('#wa-consent').checked }).then(r => {
     next.classList.remove('is-busy'); next.disabled = false;
-    if (r.ok) { S.bookingNo = `JP-${CODES[b.id]}-${String(r.data.id).padStart(5, '0')}`; const got = DOCS.find(d => d.id === r.data.doctor); if (got) S.ther = got.name; return go(4); }
+    if (r.ok) { S.bookingNo = `JP-${b.code}-${String(r.data.id).padStart(5, '0')}`; const got = DOCS.find(d => d.id === r.data.doctor); if (got) S.ther = got.name; return go(4); }
     toast((r.data && r.data.message) || 'That didn’t go through. Please try again, or call the clinic.');
     if (r.status === 409) { DIARY.refresh(b.id, S.day); S.slot = null; go(2, true); }
     setBar();
   });
 }
-if (DIARY) document.addEventListener('jpn:slots', () => { timesKey = ''; if (S.step === 2) renderTime(); });
+// a picked time can stop being free: someone else booked it, or the visitor picked a doctor who is busy then
+function slotGone(why) {
+  if (!S.slot || !slotsFor(BRANCHES[S.b], S.day, S.sess).some(x => x.t === S.slot.t && x.taken)) return false;
+  toast(`${S.slot.label} ${S.slot.suffix} ${why}. Please pick another time.`); S.slot = null; return true;
+}
+if (DIARY) document.addEventListener('jpn:slots', () => { slotGone('was just booked by someone else'); if (S.step === 2) renderTime(); else setBar(); });
 
 /* ---------- details ---------- */
 function validate() {
@@ -634,20 +687,8 @@ $('#ph').addEventListener('input', e => { const d = e.target.value.replace(/\D/g
 
 /* ---------- confirmation ---------- */
 /* ---------- the ticket ---------- */
-const CODES = { arekere: 'ARK', bannerghatta: 'BGR', jpnagar: 'JPN' };
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 // Code 128 (set B) bar patterns, so the stub carries a real barcode of the booking ID
-const C128 = ['212222','222122','222221','121223','121322','131222','122213','122312','132212','221213','221312','231212','112232','122132','122231','113222','123122','123221','223211','221132','221231','213212','223112','312131','311222','321122','321221','312212','322112','322211','212123','212321','232121','111323','131123','131321','112313','132113','132311','211313','231113','231311','112133','112331','132131','113123','113321','133121','313121','211331','231131','213113','213311','213131','311123','311321','331121','312113','312311','332111','314111','221411','431111','111224','111422','121124','121421','141122','141221','112214','112412','122114','122411','142112','142211','241211','221114','413111','241112','134111','111242','121142','121241','114212','124112','124211','411212','421112','421211','212141','214121','412121','111143','111341','131141','114113','114311','411113','411311','113141','114131','311141','411131','211412','211214','211232','2331112'];
-function drawBarcode(svg, text) {
-  const vals = [104, ...[...text].map(c => c.charCodeAt(0) - 32)];
-  const check = vals.reduce((sum, v, i) => sum + v * (i || 1), 0) % 103;
-  const widths = [...vals, check, 106].map(v => C128[v]).join('');
-  const NS = 'http://www.w3.org/2000/svg', quiet = 10;
-  let x = quiet; const bars = [];
-  [...widths].forEach((w, i) => { const n = +w; if (i % 2 === 0) { const r = document.createElementNS(NS, 'rect'); r.setAttribute('x', x); r.setAttribute('y', 0); r.setAttribute('width', n); r.setAttribute('height', 46); bars.push(r); } x += n; });
-  svg.setAttribute('viewBox', `0 0 ${x + quiet} 46`); svg.setAttribute('preserveAspectRatio', 'none');
-  svg.replaceChildren(...bars);
-}
 // mini front and back figures with a dot on each chosen spot
 function miniFigure(face) {
   const NS = 'http://www.w3.org/2000/svg', P = POS[S.gender];
@@ -672,8 +713,8 @@ function miniFigure(face) {
 }
 function confirmScreen() {
   const b = BRANCHES[S.b], d = S.day, t = S.slot;
-  const hh = Math.floor(t.t), mm = t.t % 1 ? 30 : 0, pad = n => String(n).padStart(2, '0');
-  const id = S.bookingNo || `JP-${CODES[b.id]}-${pad(d.getDate())}${pad(d.getMonth() + 1)}-${pad(hh)}${pad(mm)}`;
+  const hh = Math.floor(t.t), mm = Math.round((t.t % 1) * 60), pad = n => String(n).padStart(2, '0');
+  const id = S.bookingNo || `JP-${b.code}-${pad(d.getDate())}${pad(d.getMonth() + 1)}-${pad(hh)}${pad(mm)}`;
   const today = d.toDateString() === nowIST().toDateString();
   $('[data-see]').textContent = `See you ${whenText().replace(/^Today/, 'today')} at ${b.short}.`;
   $('[data-sent]').textContent = `Your booking is saved and already with the ${b.short} team. WhatsApp is optional, for anything you'd like to add.`;
@@ -710,14 +751,8 @@ $('[data-share]').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(S.shareText); toast('Booking details copied'); } catch (_) { toast(S.shareText); }
 });
 $('[data-ics]').addEventListener('click', () => {
-  const b = BRANCHES[S.b], d = new Date(S.day); const h = Math.floor(S.slot.t), m = (S.slot.t % 1) * 60;
-  const pad = n => String(n).padStart(2, '0');
-  const stamp = (H, M) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(H)}${pad(M)}00`;
-  const end = S.slot.t + .75;
-  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//JPN Physio//Booking//EN', 'BEGIN:VEVENT',
-    `DTSTART;TZID=Asia/Kolkata:${stamp(h, m)}`, `DTEND;TZID=Asia/Kolkata:${stamp(Math.floor(end), (end % 1) * 60)}`,
-    `SUMMARY:Physiotherapy at ${b.short}`, `LOCATION:J.P. Nagar Medical & Physiotherapy Centre, ${b.name}, Bengaluru`,
-    'DESCRIPTION:Call +91 99161 16625 to change or cancel.', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  const b = BRANCHES[S.b], d = new Date(S.day);
+  const ics = calendarFile({ id: S.bookingNo || bookingId(b, d, S.slot.t), day: d, t: S.slot.t, branch: b, phone: '+91 99161 16625' });
   const a = el('a', { href: URL.createObjectURL(new Blob([ics], { type: 'text/calendar' })), download: 'physio-visit.ics' });
   document.body.append(a); a.click(); a.remove(); toast('Calendar file ready');
 });
@@ -728,6 +763,19 @@ if (DOCS.some(d => d.name === qp.get('ther'))) { S.ther = qp.get('ther'); toast(
 const qb = BRANCHES.findIndex(b => b.id === qp.get('branch')); S.b = qb >= 0 ? qb : nearestIndex();
 (qp.get('area') || '').split(',').filter(k => CARE[k.split(/[-~]/)[0]])
   .forEach(k => S.areas.add(k.includes('~') ? k : `${k}~back`));
+// a service's own reason (children's physio is "For my child"), and a time picked from "Next free": it is waiting in
+// step 2 already chosen, after where it hurts (the booking still starts there)
+const SVC_REASON = { paeds: 'child', geri: 'elder', homecare: 'elder', neuro: 'neuro', women: 'women', postop: 'surgery' };
+if (Object.prototype.hasOwnProperty.call(SVC_REASON, qp.get('service'))) S.reasons.add(SVC_REASON[qp.get('service')]);
+$$('[data-reason]').forEach(p => { const on = S.reasons.has(p.dataset.reason); p.classList.toggle('on', on); p.setAttribute('aria-pressed', String(on)); });
+const qd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(qp.get('day') || ''), d0 = nowIST(); d0.setHours(0, 0, 0, 0);
+// a real date only: 2026-02-31 would otherwise roll over into March
+const qDay = (d => d && d.getFullYear() === +qd[1] && d.getMonth() === +qd[2] - 1 && d.getDate() === +qd[3] ? d : null)(qd && new Date(+qd[1], +qd[2] - 1, +qd[3]));
+if (qDay && qDay >= d0 && worksOn(BRANCHES[S.b], qDay)) {
+  S.day = qDay; pickSession();
+  const want = +qp.get('slot'), b = BRANCHES[S.b];
+  sessionsOn(b, qDay).some((_, si) => { const x = slotsFor(b, qDay, si).find(y => !y.taken && Math.abs(y.t - want) < 1e-6); if (x) { S.sess = si; S.slot = x; } return !!x; });
+}
 paintMap(); updateMatch(); go(FLOW[0]);
 </script>
 

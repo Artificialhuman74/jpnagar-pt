@@ -593,12 +593,12 @@ function anySurplus(b, date) {
 // the doctor goes on leave: their bookings at this branch that day are cancelled, and the patients are listed to call
 async function applyLeave(docId, b, date) {
   if (onLeave(docId, b, date)) return;
-  let hit;
+  let hit; const warn = [];
   if (WP) {
     const r = await WP.leave(true, docId, b, date); if (!r) return;
-    if (!r.current) toast('Leave saved. The booking list couldn’t be refreshed: reload the page to see it.');
     hit = r.cancelled; redraw();
-    if (r.failed.length) toast(`${r.failed.length} booking${r.failed.length === 1 ? '' : 's'} couldn’t be cancelled. Check the Today list.`);
+    if (r.failed.length) warn.push(`${r.failed.length} booking${r.failed.length === 1 ? '' : 's'} couldn’t be cancelled. Check the Today list.`);
+    if (!r.current) warn.push('The booking list couldn’t be refreshed: reload the page to see it.');
   } else {
     hit = S.bookings.filter(x => x.doc === docId && x.branch === b && x.date === date && x.status === 'booked');
     hit.forEach(x => { x.status = 'cancelled'; x.reason = 'leave'; });
@@ -611,8 +611,9 @@ async function applyLeave(docId, b, date) {
     save(); redraw();
   }
   const doc = docById(docId), d = fromIso(date);
-  if (!hit.length) { toast(`${shortName(doc)} is on leave ${dayLabel(d).toLowerCase()}. No bookings to move.`); return; }
+  if (!hit.length) { toast([`${shortName(doc)} is on leave ${dayLabel(d).toLowerCase()}. No bookings to move.`, ...warn].join(' ')); return; }
   showAffected(`${shortName(doc)} is on leave`, `${dayLabel(d)} at ${BR(b).short}. These ${hit.length} booking${hit.length === 1 ? ' was' : 's were'} cancelled. Let them know:`, hit,
+    ...warn.map(w => notice(w)),
     btn('Undo leave', 'btn--line btn--block', async () => { const msg = await removeLeave(docId, b, date); closeSheet(); toast(msg); }));
 }
 // undoing leave or a closed day puts back the bookings it cancelled, unless the slot has gone or the day is still off
@@ -620,8 +621,8 @@ const restoredText = (n, what) => n ? `${what}. ${n} booking${n === 1 ? '' : 's'
 async function removeLeave(docId, b, date) {
   if (WP) {
     const r = await WP.leave(false, docId, b, date); redraw();
-    if (r && !r.current) toast('Leave undone. The booking list couldn’t be refreshed: reload the page to see it.');
-    return r ? restoredText(r.notRestored.length, 'Leave undone') : '';
+    if (!r) return '';
+    return restoredText(r.notRestored.length, 'Leave undone') + (r.current ? '' : ' The booking list couldn’t be refreshed: reload the page to see it.');
   }
   const l = S.leave.find(x => x.doc === docId && x.branch === b && x.date === date); if (!l) return '';
   // the doctor is back first; then each booking returns only if it still fits (an "any doctor" one needs a free doctor
@@ -733,19 +734,19 @@ function openCloseDay(b) {
   let pick = null; const rs = el('input', { placeholder: 'e.g. Diwali', maxlength: '40' });
   const dayBox = el('div', { class: 'days' }), go = btn('Close the branch', 'btn--danger btn--block', async () => {
     if (!pick) return;
-    const date = iso(pick); let hit;
+    const date = iso(pick); let hit; const warn = [];
     if (WP) {
       go.disabled = true; const r = await WP.closed(true, b, date, rs.value.trim()); go.disabled = false; if (!r) return;
-      if (!r.current) toast('Closed day saved. The booking list couldn’t be refreshed: reload the page to see it.');
       hit = r.cancelled; renderSchedule(); closeSheet();
-      if (r.failed.length) toast(`${r.failed.length} booking${r.failed.length === 1 ? '' : 's'} couldn’t be cancelled. Check the Today list.`);
+      if (r.failed.length) warn.push(`${r.failed.length} booking${r.failed.length === 1 ? '' : 's'} couldn’t be cancelled. Check the Today list.`);
+      if (!r.current) warn.push('The booking list couldn’t be refreshed: reload the page to see it.');
     } else {
       hit = S.bookings.filter(x => x.branch === b && x.date === date && x.status === 'booked');
       hit.forEach(x => { x.status = 'cancelled'; x.reason = 'closed'; });
       S.closed.push({ branch: b, date, reason: rs.value.trim(), cancelled: hit.map(x => x.id) }); save(); renderSchedule(); closeSheet();
     }
-    if (hit.length) showAffected(`${BR(b).short} closed ${dayLabel(pick).toLowerCase()}`, `These ${hit.length} booking${hit.length === 1 ? ' was' : 's were'} cancelled. Let them know:`, hit);
-    else toast(`${BR(b).short} closed on ${longDate(pick)}`);
+    if (hit.length) showAffected(`${BR(b).short} closed ${dayLabel(pick).toLowerCase()}`, `These ${hit.length} booking${hit.length === 1 ? ' was' : 's were'} cancelled. Let them know:`, hit, ...warn.map(w => notice(w)));
+    else toast([`${BR(b).short} closed on ${longDate(pick)}`, ...warn].join(' '));
   });
   go.disabled = true;
   const paint = () => dayBox.replaceChildren(...[...Array(30)].map((_, i) => {

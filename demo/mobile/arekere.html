@@ -7,11 +7,10 @@
 <link rel="stylesheet" href="../canon/base.css">
 <link rel="stylesheet" href="site.css">
 </head><body class="has-sticky">
-<header class="top"><img class="logo" src="../canon/logo.webp" alt="J.P. Nagar Medical & Physiotherapy Centre" width="408" height="301"></header>
+<header class="top"><img class="logo" src="../canon/logo.webp" alt="J.P. Nagar Medical & Physiotherapy Centre" width="408" height="301"><p class="top-live" data-live><i></i><span></span></p></header>
 <section class="hero" data-inview style="height:380px">
-  <div class="photo" data-label="Photo: Arekere clinic (to be shot)"></div>
+  <div class="photo" data-label="Photo: Arekere clinic (to be shot)" data-branch-photo="arekere"></div>
   <div class="copy">
-    <div class="live" data-live><i></i><span></span></div>
     <h1>Physiotherapy in Arekere</h1>
     <p style="margin-bottom:0">Near L&amp;T South City, Bannerghatta Main Road.</p>
   </div>
@@ -35,7 +34,7 @@
     <a href="tel:+918026489922"><i data-icon="phone"></i>Call branch</a>
   </div>
 </section>
-<div class="mapbox photo" data-label="Google Maps embed · Arekere"></div>
+<div class="mapbox" data-mapbox></div>
 
 <section class="sec">
   <h2 data-reveal>Opening hours</h2>
@@ -57,6 +56,7 @@
 
 <div class="stickybook"><a class="btn btn--act" href="book.html?branch=arekere">Book at Arekere</a></div>
 <nav class="dock" data-active="branches"></nav>
+<script src="../canon/clinic.js"></script>
 <script src="app.js"></script>
 <script src="../canon/published-data.js"></script>
 <script src="../canon/published.js"></script>
@@ -65,22 +65,35 @@ const b = BRANCHES.find(x => x.id === 'arekere'), st = branchStatus(b);
 const live = document.querySelector('[data-live]');
 live.classList.toggle('closed', !st.open); live.querySelector('span').textContent = st.text;
 document.querySelector('[data-dir]').href = mapsLink(b);
-// next three free slots, straight into booking
-const quick = document.querySelector('[data-quick]'), d0 = nowIST(), found = [];
-for (let i = 0; i < 7 && found.length < 3; i++) {
-  const day = new Date(d0); day.setDate(d0.getDate() + i); if (day.getDay() === 0) continue;
-  b.sessions.forEach((_, si) => slotsFor(b, day, si).filter(s => !s.taken).forEach(s => found.length < 3 && found.push({ day, s, i })));
+document.querySelector('[data-mapbox]').append(mapEmbed(b));
+// next three free slots, straight into booking. The row is drawn whole: while any day it needs is still on its way
+// from the live diary, all three tiles show loading, and they are drawn again when the times arrive.
+const quick = document.querySelector('[data-quick]'), d0 = nowIST(), DOWN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const isoOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function paintQuick() {
+  const found = []; let waiting = false;
+  for (let i = 0; i < 7 && found.length < 3 && !waiting; i++) {
+    const day = new Date(d0); day.setDate(d0.getDate() + i); if (!worksOn(b, day)) continue;
+    if (DIARY && !DIARY.ready(b.id, day)) { waiting = true; break; }
+    sessionsOn(b, day).forEach((_, si) => slotsFor(b, day, si).filter(s => !s.taken).forEach(s => found.length < 3 && found.push({ day, s, i })));
+  }
+  quick.setAttribute('aria-busy', String(waiting));
+  quick.replaceChildren(...(waiting ? [0, 1, 2].map(() => el('span', { class: 'skel', 'aria-hidden': 'true' }))
+    : found.map(({ day, s, i }) => el('a', { href: `book.html?branch=arekere&day=${isoOf(day)}&slot=${s.t}` },
+      el('small', {}, i === 0 ? 'Today' : `${DOWN[day.getDay()]} ${day.getDate()}`), `${s.label} ${s.suffix}`))));
 }
-const DOWN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-found.forEach(({ day, s, i }) => quick.append(el('a', { href: 'book.html?branch=arekere' },
-  el('small', {}, i === 0 ? 'Today' : `${DOWN[day.getDay()]} ${day.getDate()}`), `${s.label} ${s.suffix}`)));
-// week with today highlighted
-const week = document.querySelector('[data-week]'), names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-names.forEach((n, i) => {
-  const dow = (i + 1) % 7, isToday = dow === d0.getDay();
-  week.append(el('div', { class: (isToday ? 'today' : '') + (dow === 0 ? ' off' : '') },
-    el('span', {}, n + (isToday ? ' · today' : '')),
-    el('span', {}, dow === 0 ? 'Closed' : b.sessions.map(([s, e]) => `${fmtHour(s)}–${fmtHour(e)}`).join(', '))));
+paintQuick();
+if (DIARY) document.addEventListener('jpn:slots', paintQuick);
+// the week, with days that keep the same hours on one line (Monday to Saturday), and today's line highlighted
+const week = document.querySelector('[data-week]'), groups = [], DAY_NAME = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+[1, 2, 3, 4, 5, 6, 0].forEach(dow => {
+  const t = sessText(sessionsOn(b, dow)) || 'Closed', last = groups[groups.length - 1];
+  if (last && last.t === t) last.days.push(dow); else groups.push({ t, days: [dow] });
+});
+groups.forEach(({ t, days }) => {
+  const isToday = days.includes(d0.getDay()), n = days.length > 1 ? `${DOW_SHORT[days[0]]}–${DOW_SHORT[days[days.length - 1]]}` : DAY_NAME[days[0]];
+  week.append(el('div', { class: (isToday ? 'today' : '') + (t === 'Closed' ? ' off' : '') },
+    el('span', {}, n + (isToday ? ' · today' : '')), el('span', {}, t)));
 });
 </script>
 </body></html>

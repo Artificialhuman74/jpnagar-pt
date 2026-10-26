@@ -2,25 +2,130 @@
 publishes to. Publishing writes canon/published-data.js, a single static file every patient page loads, the same
 idea as the real site (content rebuilt into one static file on publish; visitors never touch a database).
 Demo only: there is no login on the publish endpoint, so run it on a trusted network.
+
+With JPN_WP set (bash start.sh --wp), the demo talks to a real WordPress running the clinic plugin instead: WordPress's
+own paths are passed through on this same address (so the browser sees one site and its login cookie just works), the
+pages load the plugin's published file in place of canon/published-data.js, and the demo's own publish endpoint is off.
 usage: python3 tools/serve.py [port]"""
-import http.server, json, os, sys
+import http.client, http.server, json, os, re, sys, tempfile, urllib.parse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, 'canon', 'published-data.js')
 MAX = 25 * 1024 * 1024  # photos are WebP, but leave room for a few
+WP = urllib.parse.urlsplit(os.environ['JPN_WP']) if os.environ.get('JPN_WP') else None
+WP_PATHS = ('/wp-json/', '/wp-content/', '/wp-includes/', '/wp-admin', '/wp-login.php')
+API = '/?rest_route=/jpnagar/v1'
+# WordPress over https when JPN_WP says so, so browser cookies passed through never travel unencrypted
+CONN = http.client.HTTPSConnection if WP and WP.scheme == 'https' else http.client.HTTPConnection
+HOP = {'connection', 'keep-alive', 'transfer-encoding', 'te', 'trailer', 'upgrade', 'proxy-authorization', 'proxy-authenticate'}
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
+    # a client that stops sending halfway gives up its thread after this long instead of holding it
+    timeout = 30
+
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=ROOT, **kw)
 
     def end_headers(self):
-        # the published file must be re-checked on every load so a publish shows up straight away
-        if self.path.split('?')[0].endswith('published-data.js'):
-            self.send_header('Cache-Control', 'no-cache')
+        # every file is re-checked on each load (a quick "not modified" when unchanged), so an edit or a publish shows
+        # up straight away instead of the browser running yesterday's copy; production versions its file names instead
+        self.send_header('Cache-Control', 'no-cache')
         super().end_headers()
 
+    def to_wordpress(self):
+        path, _, query = self.path.partition('?')
+        return bool(WP) and (path.startswith(WP_PATHS) or (path == '/' and 'rest_route=' in query))
+
+    def proxy(self, path=None):
+        """Passes the request to WordPress as it came (same Host, cookies, body) and its answer back as it went."""
+        n = int(self.headers.get('Content-Length') or 0)
+        if n < 0 or n > MAX:
+            return self.send_error(413)
+        body = self.rfile.read(n) if n else None
+        headers = {k: v for k, v in self.headers.items() if k.lower() not in HOP}
+        conn = CONN(WP.hostname, WP.port, timeout=60)
+        try:
+            conn.request(self.command, path or self.path, body=body, headers=headers)
+            r = conn.getresponse()
+            data = r.read()
+        except OSError as e:
+            return self.send_error(502, 'WordPress is not answering: ' + str(e))
+        finally:
+            conn.close()
+        self.send_response(r.status, r.reason)
+        for k, v in r.getheaders():
+            if k.lower() not in HOP and k.lower() != 'content-length':
+                self.send_header(k, v)
+        self.send_header('Content-Length', str(len(data)))
+        super().end_headers()
+        self.wfile.write(data)
+        return r.status, data
+
+    def published_from_wordpress(self):
+        """canon/published-data.js, but the plugin's published file, plus where the plugin's API is."""
+        conn = CONN(WP.hostname, WP.port, timeout=30)
+        try:
+            conn.request('GET', '/wp-content/uploads/jpnagar/site-data.js', headers={'Host': self.headers.get('Host', '')})
+            r = conn.getresponse()
+            snap = r.read() if r.status == 200 else b'window.PUBLISHED_DATA = null;\n'
+        except OSError:
+            snap = b'window.PUBLISHED_DATA = null;\n'
+        finally:
+            conn.close()
+        body = ('window.JPN_API = %s;\n' % json.dumps(API)).encode() + snap
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/javascript; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def versioned_page(self):
+        """A page with ?v=<last change> on each of its own scripts and stylesheets, the way WordPress adds ?ver=, so a
+        browser holding an older copy of a file can never keep using it after the file changes."""
+        path = self.translate_path(self.path.split('?')[0])
+        if os.path.isdir(path):
+            path = os.path.join(path, 'index.html')
+        if not path.endswith('.html') or not os.path.isfile(path):
+            return False
+        here = os.path.dirname(path)
+        def stamp(m):
+            ref = m.group(2)
+            if '://' in ref or ref.startswith(('//', 'data:', '#')) or '?' in ref:
+                return m.group(0)
+            f = os.path.normpath(os.path.join(here, ref))
+            return m.group(0) if not os.path.isfile(f) else f'{m.group(1)}{ref}?v={int(os.path.getmtime(f))}"'
+        body = re.sub(r'((?:src|href)=")([^"]+\.(?:js|css))"', stamp, open(path, encoding='utf-8').read()).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+        return True
+
+    def do_GET(self):
+        if self.to_wordpress():
+            return self.proxy()
+        if WP and self.path.split('?')[0].endswith('/canon/published-data.js'):
+            return self.published_from_wordpress()
+        if self.versioned_page():
+            return
+        return super().do_GET()
+
+    def do_HEAD(self):
+        return self.proxy() if self.to_wordpress() else super().do_HEAD()
+
+    def do_PUT(self):
+        return self.proxy() if self.to_wordpress() else self.send_error(405)
+
+    def do_DELETE(self):
+        return self.proxy() if self.to_wordpress() else self.send_error(405)
+
     def do_POST(self):
+        if self.to_wordpress():
+            return self.proxy()
+        if WP:
+            return self.send_error(410, 'Publishing goes to WordPress when the demo runs with --wp')
         if self.path.split('?')[0] != '/api/publish':
             return self.send_error(404)
         n = int(self.headers.get('Content-Length') or 0)
@@ -30,10 +135,22 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             data = json.loads(self.rfile.read(n))
         except ValueError:
             return self.send_error(400)
-        tmp = DATA + '.tmp'
-        with open(tmp, 'w', encoding='utf-8') as f:
-            f.write('window.PUBLISHED_DATA = ' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n')
-        os.replace(tmp, DATA)
+        # each publish writes its own temporary file, then swaps it in whole, so two at once can't mix
+        try:
+            text = ('window.PUBLISHED_DATA = ' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n').encode('utf-8')
+        except UnicodeEncodeError:  # a lone surrogate, which no file can hold as UTF-8
+            return self.send_error(400)
+        fd, tmp = tempfile.mkstemp(prefix='published-data.', suffix='.tmp', dir=os.path.dirname(DATA))
+        try:
+            with os.fdopen(fd, 'wb') as f:
+                f.write(text)
+            os.chmod(tmp, 0o644)
+            os.replace(tmp, DATA)
+        except OSError:
+            return self.send_error(500)
+        finally:
+            if os.path.exists(tmp):
+                os.unlink(tmp)
         body = b'{"ok":true}'
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
@@ -42,7 +159,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def log_message(self, fmt, *args):
-        if self.command == 'POST':
+        if self.command == 'POST' and not WP:
             sys.stderr.write('published at %s\n' % self.log_date_time_string())
 
 

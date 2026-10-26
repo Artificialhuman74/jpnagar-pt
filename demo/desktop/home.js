@@ -11,25 +11,28 @@ function goHref() {
   return `book.html?branch=${b.id}&day=${dayISO(H.day)}${H.slot ? `&slot=${H.slot.t}` : ''}`;
 }
 function renderBar() {
-  const b = BRANCHES[H.b], free = freeSlots(b, H.day);
+  const b = BRANCHES[H.b], loading = !diaryReady(b, H.day), free = loading ? [] : freeSlots(b, H.day);
+  // a time picked before the day's real times arrived, and since taken, gives way to the first free one
+  if (!loading && H.slot && !free.some(s => s.t === H.slot.t)) H.slot = free[0] || null;
   $('[data-qb-blabel]').textContent = savedKm() && H.b === nearestIndex() ? 'Nearest branch' : 'Branch';
   $('[data-qb-branch]').textContent = b.short;
   $('[data-qb-day]').textContent = dayShort(H.day);
   const status = $('[data-qb-status]');
   if (isToday(H.day)) paintLive(status, b);
-  else { status.classList.remove('closed'); status.replaceChildren(el('i'), el('span', {}, `${DAYS[H.day.getDay()]} · ${hoursText(b)}`)); }
+  else { status.classList.remove('closed'); status.replaceChildren(el('i'), el('span', {}, `${DAYS[H.day.getDay()]} · ${hoursText(b, H.day)}`)); }
   const chips = free.slice(0, 5).map(s => {
     const on = H.slot && H.slot.t === s.t;
     const c = el('button', { class: 'tchip', type: 'button', role: 'radio', 'aria-checked': String(!!on) }, `${s.label} ${s.suffix}`);
     c.addEventListener('click', () => { H.slot = s; renderBar(); });
     return c;
   });
-  $('[data-qb-chips]').replaceChildren(...(chips.length ? chips : [el('p', { class: 'qb-none' }, 'No free times left this day. ', (() => {
+  $('[data-qb-chips]').setAttribute('aria-busy', String(loading));
+  $('[data-qb-chips]').replaceChildren(...(loading ? skelChips(5) : chips.length ? chips : [el('p', { class: 'qb-none' }, 'No free times left this day. ', (() => {
     const n = el('button', { type: 'button' }, 'See the next open day'); n.addEventListener('click', () => { H.day = nextOpenAfter(b, H.day); H.slot = freeSlots(b, H.day)[0] || null; renderBar(); }); return n;
   })())]));
   const go = $('[data-qb-go]');
   go.href = goHref();
-  go.firstElementChild.textContent = H.slot ? `Book ${H.slot.label} ${H.slot.suffix}` : 'Book a visit';
+  go.firstElementChild.textContent = H.slot && !loading ? `Book ${H.slot.label} ${H.slot.suffix}` : 'Book a visit';
   $('[data-qb-all]').href = `book.html?branch=${b.id}&day=${dayISO(H.day)}`;
 }
 function nextOpenAfter(b, d) { for (let i = 1; i < 21; i++) { const x = addDays(d, i); if (freeSlots(b, x).length) return x; } return addDays(d, 1); }
@@ -51,7 +54,7 @@ function fillBranches() {
     return o;
   }));
 }
-function fillDays() { calendar(pops.day, { selected: H.day, isOpen: d => freeSlots(BRANCHES[H.b], d).length > 0, onPick: pickDay }); }
+function fillDays() { calendar(pops.day, { selected: H.day, works: d => worksOn(BRANCHES[H.b], d), worksText: worksDays(BRANCHES[H.b]), isOpen: d => looksOpen(BRANCHES[H.b], d), onPick: pickDay }); }
 function openPopover(which) {
   if (activePop === which) { closePopover(); return; }
   closePopover();
@@ -81,11 +84,12 @@ addEventListener('keydown', e => {
 
 H.day = firstOpenDay(BRANCHES[H.b]);
 H.slot = freeSlots(BRANCHES[H.b], H.day)[0] || null;
+document.addEventListener('jpn:slots', () => renderBar());
 renderBar();
 
 /* ---------- gallery: photos on a gentle convex arc (carousel.js); the glow takes the colour of the photo in front ---------- */
-const LABELS = ['Arekere · treatment room', 'JP Nagar · reception', 'Bannerghatta · exercise area', 'Equipment · traction', 'Team at work', 'Arekere · waiting area'];
-gradientCarousel($('[data-gcar]'), { labels: LABELS, onOpen: i => openViewer(i) });
+const LABELS = galleryLabels(['JP Nagar · reception', 'JP Nagar · treatment room', 'Bannerghatta · exercise area', 'Bannerghatta · traction', 'Arekere · treatment room', 'Arekere · waiting area']);
+gradientCarousel($('[data-gcar]'), { labels: LABELS, groups: galleryGroups(LABELS), onOpen: i => openViewer(i) });
 const frame = el('div', { class: 'frame photo' }), count = el('p', { class: 'count' });
 const mk = (cls, label, ic) => el('button', { class: cls, type: 'button', 'aria-label': label }, icon(ic));
 const bClose = mk('close', 'Close', 'close'), bPrev = mk('prev', 'Previous photo', 'chevron'), bNext = mk('next', 'Next photo', 'chevron');
@@ -93,8 +97,9 @@ const viewer = el('div', { class: 'viewer', role: 'dialog', 'aria-modal': 'true'
 document.body.append(viewer);
 let cur = 0, lastFocus;
 function show(i) { cur = (i + LABELS.length) % LABELS.length; frame.dataset.label = LABELS[cur]; count.textContent = `${cur + 1} / ${LABELS.length}`; paintPhoto(frame, clinicPhoto(cur)); }
-function openViewer(i) { lastFocus = document.activeElement; show(i); viewer.classList.add('is-open'); document.documentElement.classList.add('locked'); bClose.focus(); }
-function closeViewer() { viewer.classList.remove('is-open'); document.documentElement.classList.remove('locked'); if (lastFocus) lastFocus.focus(); }
+function openViewer(i) { lastFocus = document.activeElement; show(i); viewer.classList.add('is-open'); setModal(viewer, true); document.documentElement.classList.add('locked'); bClose.focus(); }
+function closeViewer() { viewer.classList.remove('is-open'); setModal(viewer, false); document.documentElement.classList.remove('locked'); if (lastFocus) lastFocus.focus(); }
+setModal(viewer, false);
 bClose.addEventListener('click', closeViewer); bPrev.addEventListener('click', () => show(cur - 1)); bNext.addEventListener('click', () => show(cur + 1));
 viewer.addEventListener('click', e => { if (e.target === viewer) closeViewer(); });
 addEventListener('keydown', e => {
@@ -108,5 +113,5 @@ addEventListener('keydown', e => {
 $('[data-ready]').replaceChildren(...BRANCHES.map(b => {
   const st = branchStatus(b);
   return el('li', {}, el('b', {}, b.short), el('span', { class: 'live' + (st.open ? '' : ' closed') }, el('i'), el('span', {}, st.text)),
-    el('span', {}, 'Mon–Sat · ', ...hoursNodes(b)), el('a', { class: 'link', href: `book.html?branch=${b.id}` }, 'Book here', icon('chevron')));
+    el('span', {}, ...hoursNodes(b)), el('a', { class: 'link', href: `book.html?branch=${b.id}` }, 'Book here', icon('chevron')));
 }));

@@ -1,11 +1,13 @@
 // Gradient carousel: photos on a gentle convex arc. The front photo is full size; up to two on each side step back,
 // turn outward and fade. Arrows (in front of the cards), swipe, drag and arrow keys move it; each move slides the
-// arc round and fades the next photo into the centre. A soft glow behind takes the front photo's colour, blending
-// smoothly from one to the next. Shared by the desktop and mobile home pages; markup is .gcar (see the CSS).
+// arc round and fades the next photo into the centre. A soft periwinkle glow sits still behind it (o.tints can give
+// each photo its own colour instead, blending from one to the next). Shared by the desktop and mobile home pages; markup is .gcar (see the CSS).
+// With o.groups ([{ label, start, count }], e.g. one per branch) a row of tabs sits under it: a tab rolls the arc round
+// to that group's first photo, and the tab follows whichever group's photo is in front.
 function gradientCarousel(root, o) {
   const LABELS = o.labels, N = LABELS.length, [S1, S2] = o.step || [360, 300], DRAG = o.dragPx || 340;
-  // each photo's glow is one colour from the logo's own blues: cyan, deep sky, periwinkle, navy and light sky
-  const TINTS = o.tints || ['#00A8EC', '#5B63C9', '#0079B8', '#7C83D6', '#2B3192', '#4FC3F2'];
+  // one still colour from the logo's blues; a changing colour per photo read as busy
+  const TINTS = o.tints || ['#7C83D6'];
   const q = s => root.querySelector(s), stage = q('[data-gcar-stage]'), glows = [...root.querySelectorAll('.gcar-glow i')];
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let at = 0, drag = 0, moved = false, shown = reduced || !('IntersectionObserver' in window), auto = !reduced, timer;
@@ -20,11 +22,18 @@ function gradientCarousel(root, o) {
   });
   // where a card sits for its offset from the front: further round the arc it steps back, turns outward and fades;
   // at most two show on each side, the next one waits just out of sight
+  // Each card brings its own perspective() rather than leaning on the box's: Safari draws a parent's perspective flat.
+  // The card's corner sits on the focal point (transform-origin 0 0); the perspective is centred where the box's was,
+  // dy below it (the middle of the box), so the picture is the same as before in every browser.
+  const PERSP = parseFloat(getComputedStyle(root).getPropertyValue('--gcar-persp')) || 1200;
+  let dy = null;
   function pose(d) {
     const a = Math.abs(d), s = Math.sign(d);
     const x = s * (Math.min(a, 1) * S1 + Math.max(0, a - 1) * S2), z = -(a * 120 + a * a * 34), ry = -s * Math.min(a, 2.6) * 17;
     const op = a <= 2 ? 1 - a * .3 : Math.max(0, .4 - (a - 2) * .4);
-    return { t: `translate(-50%, -50%) translate3d(${x.toFixed(1)}px, ${shown ? 0 : 46}px, ${z.toFixed(1)}px) rotateY(${ry.toFixed(2)}deg)`, op: shown ? op : 0, };
+    if (dy === null) dy = root.clientHeight / 2 - (cards[0] ? cards[0].offsetTop : root.clientHeight / 2);
+    const y = (shown ? 0 : 46) - dy;
+    return { t: `translate(0px, ${dy.toFixed(1)}px) perspective(${PERSP}px) translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, ${z.toFixed(1)}px) rotateY(${ry.toFixed(2)}deg) translate(-50%, -50%)`, op: shown ? op : 0, };
   }
   const offset = i => { let d = ((i - at) % N + N) % N; if (d > N / 2) d -= N; return d; };
   function place(stagger) {
@@ -44,16 +53,57 @@ function gradientCarousel(root, o) {
       lastD[i] = d;
     });
   }
+  const groups = o.groups && o.groups.length > 1 ? o.groups : null, groupOf = i => groups ? groups.findIndex(g => i >= g.start && i < g.start + g.count) : -1;
   function caption() {
-    const cap = q('.gcar-cap');
-    q('[data-gcar-label]').textContent = LABELS[at]; q('[data-gcar-count]').textContent = `${at + 1} / ${N}`;
+    const cap = q('.gcar-cap'), g = groups && groups[groupOf(at)];
+    q('[data-gcar-label]').textContent = LABELS[at]; q('[data-gcar-count]').textContent = g ? `${at - g.start + 1} / ${g.count}` : `${at + 1} / ${N}`;
     cap.classList.remove('swap'); void cap.offsetWidth; cap.classList.add('swap');
   }
   // two glow layers trade places: the new colour fades in over the old one, then the old one lets go. Only opacity
   // changes, which the browser can do without repainting, so the cards keep moving smoothly
   let layer = 0;
-  const glow = first => { if (!first) { glows[layer].classList.remove('on'); layer ^= 1; } glows[layer].style.setProperty('--a', TINTS[at % TINTS.length]); glows[layer].classList.add('on'); };
-  function go(i) { at = ((i % N) + N) % N; place(); caption(); glow(); }
+  const glow = first => {
+    if (!first && TINTS.length === 1) return;
+    if (!first) { glows[layer].classList.remove('on'); layer ^= 1; }
+    const g = glows[layer]; g.style.setProperty('--a', TINTS[at % TINTS.length]);
+    // already lit when the page opens (no fade-in after arriving); later changes crossfade
+    if (first) { g.style.transition = 'none'; g.classList.add('on'); requestAnimationFrame(() => requestAnimationFrame(() => { g.style.transition = ''; })); } else g.classList.add('on');
+  };
+  function go(i) { at = ((i % N) + N) % N; place(); caption(); glow(); paintTabs(); }
+  // the tabs: built once; only the selected state and the sliding marker (a transform) change
+  let tabs = null, mark = null, rolling = 0;
+  if (groups) {
+    mark = document.createElement('span'); mark.className = 'gt-ind'; mark.setAttribute('aria-hidden', 'true');
+    tabs = document.createElement('div'); tabs.className = 'gcar-tabs'; tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', o.groupsLabel || 'Branch');
+    tabs.style.setProperty('--n', groups.length); tabs.append(mark);
+    groups.forEach((g, k) => {
+      const t = document.createElement('button'); t.type = 'button'; t.setAttribute('role', 'tab'); t.textContent = g.label;
+      t.addEventListener('click', () => rollTo(g.start));
+      t.addEventListener('keydown', e => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        e.preventDefault(); const n = (k + (e.key === 'ArrowRight' ? 1 : -1) + groups.length) % groups.length;
+        tabs.querySelectorAll('[role="tab"]')[n].focus(); rollTo(groups[n].start);
+      });
+      tabs.append(t);
+    });
+    root.after(tabs);
+  }
+  function paintTabs() {
+    if (!tabs) return;
+    const k = groupOf(at);
+    tabs.querySelectorAll('[role="tab"]').forEach((t, j) => { t.setAttribute('aria-selected', String(j === k)); t.tabIndex = j === k ? 0 : -1; });
+    if (k >= 0) mark.style.transform = `translateX(${k * 100}%)`;
+  }
+  // rolls round one photo at a time, the short way, to photo i (straight there when motion is reduced); the
+  // automatic turning carries on from there
+  function rollTo(i) {
+    clearInterval(rolling); clearInterval(timer);
+    let d = ((i - at) % N + N) % N; if (d > N / 2) d -= N;
+    if (!d) { startAuto(); return; }
+    if (reduced) { go(i); startAuto(); return; }
+    const step = Math.sign(d);
+    rolling = setInterval(() => { go(at + step); d -= step; if (!d) { clearInterval(rolling); startAuto(); } }, 190);
+  }
   function stopAuto() { auto = false; clearInterval(timer); }
   function startAuto() { clearInterval(timer); if (auto && shown) timer = setInterval(() => go(at + 1), 5200); }
   q('[data-gcar-prev]').addEventListener('click', () => { stopAuto(); go(at - 1); });
@@ -77,7 +127,7 @@ function gradientCarousel(root, o) {
   };
   stage.addEventListener('pointerup', release); stage.addEventListener('pointercancel', release);
   glow(true);
-  place(); caption();
+  place(); caption(); paintTabs();
   // the photos rise and fade in from the centre outward the first time the carousel comes into view
   if (!shown) new IntersectionObserver(([e], io) => { if (!e.isIntersecting) return; io.disconnect(); shown = true; place(true); setTimeout(() => cards.forEach(b => { b.style.transitionDelay = ''; }), 1200); startAuto(); }, { threshold: .35 }).observe(root);
   else startAuto();

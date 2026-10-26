@@ -12,9 +12,10 @@ if (mapStage.dataset.mode === 'scene') {
   mapStage.append(host);
   setStageFor = b => showScene(host, b.dataset.scene);
 } else {
-  // a spot is "knee-a" (a body-map area and side) or "120:40" (a point on the 240×480 figure)
+  // a spot is "knee-a" (a body-map area and side) or "120:40" (a point on the 240×480 figure). Its place is an outer
+  // group, so the pop-in (a CSS transform on the inner one) can't override the translate and flash it at the corner
   const xy = s => s.includes(':') ? s.split(':').map(Number) : spotXY('male', ...s.split('-'));
-  const spots = (b, face) => (b.dataset.face === face ? b.dataset.spots.split(',') : []).map(s => { const [x, y] = xy(s.trim()); return `<g class="bm-spot" transform="translate(${x} ${y})"><circle r="30" fill="url(#glowS)"/><circle class="where-ring" r="10" fill="none" stroke="#00A8EC" stroke-width="2.2"/><circle r="5" fill="#00A8EC" stroke="#fff" stroke-width="2.2"/></g>`; }).join('');
+  const spots = (b, face) => (b.dataset.face === face ? b.dataset.spots.split(',') : []).map(s => { const [x, y] = xy(s.trim()); return `<g transform="translate(${x} ${y})"><g class="bm-spot"><circle r="30" fill="url(#glowS)"/><circle class="where-ring" r="10" fill="none" stroke="#00A8EC" stroke-width="2.2"/><circle r="5" fill="#00A8EC" stroke="#fff" stroke-width="2.2"/></g></g>`; }).join('');
   // the shaded body (front and back) and the pulsing spots are separate drawings, so the pulse never makes the
   // browser redraw the body, and turning the body round is a plain crossfade
   const vb = '34 6 172 452';
@@ -29,10 +30,14 @@ if (mapStage.dataset.mode === 'scene') {
   };
 }
 let cond = null, condTimer;
+// runs fn once the browser has drawn the current change (two frames), so a tap shows before heavy work starts
+const afterPaint = fn => requestAnimationFrame(() => requestAnimationFrame(fn));
 function setCond(b, fromUser) {
   if (cond === b) return;
-  cond = b; setStageFor(b);
+  cond = b;
   conds.forEach(c => c.setAttribute('aria-pressed', String(c === b)));
+  // the chip answers the tap first; a treatment scene (heavier drawing) follows on the next frame
+  if (mapStage.dataset.mode === 'scene') afterPaint(() => cond === b && setStageFor(b)); else setStageFor(b);
   $('[data-cond-name]').textContent = b.textContent;
   $('[data-cond-text]').textContent = b.dataset.text;
   // keep the chosen chip in view without moving the page
@@ -57,81 +62,100 @@ const mapSeen = onView(mapStage);
 if (!reduceMotion) condTimer = setInterval(() => mapSeen() && setCond(conds[(conds.indexOf(cond) + 1) % conds.length]), mapStage.dataset.mode === 'scene' ? 7000 : 3400);
 
 /* ---------- how we treat it: three stages, one stage at a time ---------- */
-const host = $('[data-story-host]'), storySeen = onView(host), chapters = $$('.chapter'), tabs = $$('[data-goto]'), seg = $('.seg'), ind = $('.seg-ind'), slot = $('[data-sub-slot]');
-// a stage's treatments sit as small numbered buttons right under the animation, in the order they're shown
-const SUBS = chapters.map(c => $('.subtabs', c));
-SUBS.forEach(c => c && c.prepend(el('span', { class: 'sub-ind', 'aria-hidden': 'true' })));
-// the highlight slides to the chosen treatment, and the track scrolls it into view if they don't all fit
-function placeSubInd(animate) {
-  const c = SUBS[step]; if (!c) return;
-  const on = $$('.subtab', c)[sub[step]], ind = $('.sub-ind', c);
-  ind.style.transition = animate && !reduceMotion ? '' : 'none';
-  ind.style.width = on.offsetWidth + 'px'; ind.style.transform = `translateX(${on.offsetLeft}px)`;
-  if (c.scrollWidth > c.clientWidth) c.scrollTo({ left: on.offsetLeft - (c.clientWidth - on.offsetWidth) / 2, behavior: animate && !reduceMotion ? 'smooth' : 'auto' });
-}
-// each stage shows one scene, or one per treatment in it
-const STEPS = chapters.map(c => { const s = $$('.subtab', c); return s.length ? s.map(b => [b.dataset.scene, b.dataset.cap]) : [[c.dataset.scene, c.dataset.cap]]; });
-let step = -1, cycle;
-const sub = STEPS.map(() => 0), picked = STEPS.map(() => false);
-function showSub() {
-  const [name, cap] = STEPS[step][sub[step]];
-  showScene(host, name);
-  $('[data-story-cap]').textContent = cap;
-  $$(`[data-subs="${step}"] .subtab`).forEach((b, j) => {
-    b.setAttribute('aria-pressed', String(j === sub[step]));
-    b.classList.remove('run'); void b.offsetWidth;
-    b.classList.toggle('run', j === sub[step] && !picked[step] && !reduceMotion);
+// (Therapies has none: its treatments are the explorer at the top)
+if ($('[data-story-host]')) {
+  const host = $('[data-story-host]'), storySeen = onView(host), chapters = $$('.chapter'), tabs = $$('[data-goto]'), seg = $('.seg'), ind = $('.seg-ind'), slot = $('[data-sub-slot]');
+  // a stage's treatments sit as small numbered buttons right under the animation, in the order they're shown
+  const SUBS = chapters.map(c => $('.subtabs', c));
+  SUBS.forEach(c => c && c.prepend(el('span', { class: 'sub-ind', 'aria-hidden': 'true' }), el('span', { class: 'sub-ind', 'aria-hidden': 'true' })));
+  // The treatments differ in width, so the highlight crossfades: the second (pre-coloured) layer is placed under the
+  // chosen one and fades in while the first fades out, opacity only. The track scrolls it into view if they don't fit.
+  function placeSubInd(animate) {
+    const c = SUBS[step]; if (!c) return;
+    const on = $$('.subtab', c)[sub[step]], [a, b] = $$('.sub-ind', c), cur = c._ind || a;
+    const next = animate && !reduceMotion && cur.classList.contains('on') ? (cur === a ? b : a) : cur;
+    next.style.width = on.offsetWidth + 'px'; next.style.transform = `translateX(${on.offsetLeft}px)`;
+    if (next !== cur) cur.classList.remove('on');
+    next.classList.add('on'); c._ind = next;
+    if (c.scrollWidth > c.clientWidth) c.scrollTo({ left: on.offsetLeft - (c.clientWidth - on.offsetWidth) / 2, behavior: animate && !reduceMotion ? 'smooth' : 'auto' });
+  }
+  // each stage shows one scene, or one per treatment in it
+  const STEPS = chapters.map(c => { const s = $$('.subtab', c); return s.length ? s.map(b => [b.dataset.scene, b.dataset.cap]) : [[c.dataset.scene, c.dataset.cap]]; });
+  let step = -1, cycle;
+  const sub = STEPS.map(() => 0), picked = STEPS.map(() => false);
+  function showSub() {
+    const [name, cap] = STEPS[step][sub[step]], at = [step, sub[step]];
+    // the buttons answer the tap first; the scene (the heavier drawing) follows once that has been drawn
+    afterPaint(() => { if (at[0] === step && at[1] === sub[step]) showScene(host, name); });
+    $('[data-story-cap]').textContent = cap;
+    $$(`[data-subs="${step}"] .subtab`).forEach((b, j) => {
+      b.setAttribute('aria-pressed', String(j === sub[step]));
+      b.classList.remove('run'); void b.offsetWidth;
+      b.classList.toggle('run', j === sub[step] && !picked[step] && !reduceMotion);
+    });
+    placeSubInd(true);
+  }
+  function placeInd() { const t = tabs[step]; ind.style.width = t.offsetWidth + 'px'; ind.style.transform = `translateX(${t.offsetLeft}px)`; }
+  function setStep(i) {
+    if (i === step) return;
+    const from = step; step = i;
+    chapters.forEach((c, j) => {
+      c.hidden = j !== i;
+      if (j === i && from >= 0 && !reduceMotion) { c.style.animation = 'none'; void c.offsetWidth; c.style.animation = `${i > from ? 'from-r' : 'from-l'} .5s var(--ease)`; }
+    });
+    tabs.forEach((b, j) => { b.setAttribute('aria-selected', String(j === i)); b.tabIndex = j === i ? 0 : -1; });
+    slot.replaceChildren(...(SUBS[i] ? [SUBS[i]] : []));
+    placeInd(); showSub(); placeSubInd(false);
+    clearInterval(cycle);
+    if (STEPS[i].length > 1 && !reduceMotion) cycle = setInterval(() => {
+      if (picked[step] || !storySeen()) return;
+      sub[step] = (sub[step] + 1) % STEPS[step].length; showSub();
+    }, 7000);
+  }
+  tabs.forEach((b, j) => b.addEventListener('click', () => setStep(j)));
+  seg.addEventListener('keydown', e => {
+    const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    if (!d) return;
+    e.preventDefault(); setStep((step + d + 3) % 3); tabs[step].focus();
   });
-  placeSubInd(true);
-}
-function placeInd() { const t = tabs[step]; ind.style.width = t.offsetWidth + 'px'; ind.style.transform = `translateX(${t.offsetLeft}px)`; }
-function setStep(i) {
-  if (i === step) return;
-  const from = step; step = i;
-  chapters.forEach((c, j) => {
-    c.hidden = j !== i;
-    if (j === i && from >= 0 && !reduceMotion) { c.style.animation = 'none'; void c.offsetWidth; c.style.animation = `${i > from ? 'from-r' : 'from-l'} .5s var(--ease)`; }
+  $$('.subtab').forEach(b => b.addEventListener('click', () => {
+    const s = +b.closest('[data-subs]').dataset.subs;
+    picked[s] = true; sub[s] = +b.dataset.sub; showSub();
+  }));
+  // swipe the stage sideways to move between stages
+  let sx = null, sy = 0;
+  const stage = $('[data-story-stage]');
+  stage.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; });
+  stage.addEventListener('pointerup', e => {
+    if (sx === null) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) setStep(Math.min(2, Math.max(0, step + (dx < 0 ? 1 : -1))));
   });
-  tabs.forEach((b, j) => { b.setAttribute('aria-selected', String(j === i)); b.tabIndex = j === i ? 0 : -1; });
-  slot.replaceChildren(...(SUBS[i] ? [SUBS[i]] : []));
-  placeInd(); showSub(); placeSubInd(false);
-  clearInterval(cycle);
-  if (STEPS[i].length > 1 && !reduceMotion) cycle = setInterval(() => {
-    if (picked[step] || !storySeen()) return;
-    sub[step] = (sub[step] + 1) % STEPS[step].length; showSub();
-  }, 7000);
+  stage.addEventListener('pointercancel', () => { sx = null; });
+  addEventListener('resize', () => { placeInd(); placeSubInd(false); });
+  setStep(0);
 }
-tabs.forEach((b, j) => b.addEventListener('click', () => setStep(j)));
-seg.addEventListener('keydown', e => {
-  const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-  if (!d) return;
-  e.preventDefault(); setStep((step + d + 3) % 3); tabs[step].focus();
-});
-$$('.subtab').forEach(b => b.addEventListener('click', () => {
-  const s = +b.closest('[data-subs]').dataset.subs;
-  picked[s] = true; sub[s] = +b.dataset.sub; showSub();
-}));
-// swipe the stage sideways to move between stages
-let sx = null, sy = 0;
-const stage = $('[data-story-stage]');
-stage.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; });
-stage.addEventListener('pointerup', e => {
-  if (sx === null) return;
-  const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
-  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) setStep(Math.min(2, Math.max(0, step + (dx < 0 ? 1 : -1))));
-});
-stage.addEventListener('pointercancel', () => { sx = null; });
-addEventListener('resize', () => { placeInd(); placeSubInd(false); });
-holdHeight($('[data-story-cap]'), STEPS.flat().map(s => s[1]), t => { $('[data-story-cap]').textContent = t; });
-setStep(0);
 
 /* ---------- the next free times at the nearest branch, straight into booking ---------- */
-const near = BRANCHES[0], nf = nextFree(near), area = document.body.dataset.area || '';
-if (nf) {
-  const day = nf.day, iso = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
-  const times = near.sessions.flatMap((_, si) => slotsFor(near, day, si)).filter(s => !s.taken).slice(0, 4);
+// Until the live diary has that day's times, the block shows them loading; it is drawn again when they arrive (and
+// moves to a later day if that one has filled up).
+const near = BRANCHES[nearestIndex()], area = document.body.dataset.area || '';
+function paintNextFree() {
+  const nf = nextFree(near), box = $('[data-nextfree]');
+  if (!nf) { box.hidden = true; return; }
+  box.hidden = false;
+  const day = nf.day, loading = !!DIARY && !DIARY.ready(near.id, day);
+  box.setAttribute('aria-busy', String(loading));
+  if (loading) {
+    $('[data-nf-title]').replaceChildren(el('span', { class: 'skel', style: 'display:inline-block;width:15em;max-width:100%;height:1.1em;vertical-align:middle' }));
+    $('[data-nf-times]').replaceChildren(el('span', { class: 'nf-skel', 'aria-hidden': 'true' }, ...[0, 1, 2, 3].map(() => el('span', { class: 'skel' }))));
+    return;
+  }
+  const iso = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+  const times = sessionsOn(near, day).flatMap((_, si) => slotsFor(near, day, si)).filter(s => !s.taken).slice(0, 4);
   const href = s => `book.html?branch=${near.id}&day=${iso}&slot=${s.t}&service=${svcId}${area ? `&area=${area}` : ''}`;
   $('[data-nf-title]').textContent = `Next free at ${near.short}, ${nf.today ? 'today' : day.toLocaleDateString('en-IN', { weekday: 'long' })}`;
   $('[data-nf-times]').replaceChildren(...times.map(s => el('a', { class: 'pill', href: href(s) }, `${s.label} ${s.suffix}`)));
-  $('[data-nextfree]').hidden = false;
 }
+paintNextFree();
+if (DIARY) document.addEventListener('jpn:slots', paintNextFree);

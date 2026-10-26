@@ -47,11 +47,7 @@ $('[data-share]').addEventListener('click', async () => {
 });
 $('[data-print]').addEventListener('click', () => print());
 $('[data-ics]').addEventListener('click', () => {
-  const stamp = t => { const h = Math.floor(t), m = Math.round((t - h) * 60); return `${day.getFullYear()}${pad(day.getMonth() + 1)}${pad(day.getDate())}T${pad(h)}${pad(m)}00`; };
-  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//JPN Physio//Booking//EN', 'BEGIN:VEVENT', `UID:${B.id}@jpnagarphysio`,
-    `DTSTART;TZID=Asia/Kolkata:${stamp(B.t)}`, `DTEND;TZID=Asia/Kolkata:${stamp(B.t + .75)}`,
-    `SUMMARY:Physiotherapy at ${br.short}`, `LOCATION:J.P. Nagar Medical & Physiotherapy Centre\\, ${br.name}\\, Bengaluru`,
-    `DESCRIPTION:Booking ${B.id}. Call ${PHONE} to change or cancel.`, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  const ics = calendarFile({ id: B.id, day, t: B.t, branch: br, phone: PHONE });
   const a = el('a', { href: URL.createObjectURL(new Blob([ics], { type: 'text/calendar' })), download: 'physio-visit.ics' });
   document.body.append(a); a.click(); a.remove(); toast('Calendar file downloaded');
 });

@@ -44,11 +44,13 @@ function nearestOn(p, poly) {
 let SID = 0;
 const uid = p => `${p}${++SID}`;
 
-/* ---------- phones ---------- */
-// Labels grow on phones, where the stage is drawn at about 70% size, so their text stays readable. Phones also play
-// the scenes calmly: once the camera arrives it holds still and the patient doesn't breathe, so between moves only
-// the small part that is moving has to be redrawn, not the whole shaded body.
-const UI = matchMedia('(max-width: 600px)').matches ? 1.25 : 1, CALM = UI !== 1;
+/* ---------- phones, and calm scenes ---------- */
+// Labels grow on phones, where the stage is drawn at about 70% size, so their text stays readable.
+// Every screen plays the scenes calmly: once the camera arrives it holds still and the patient doesn't breathe, so
+// between moves only the small part that is moving is redrawn, not the whole shaded body. A slow drift or a breath
+// moves the whole scene, and Safari then recomputes every blur and shading filter on every frame, which stutters
+// even on a fast Mac (Chrome hides it by doing the same work on the graphics card).
+const UI = matchMedia('(max-width: 600px)').matches ? 1.25 : 1, CALM = true;
 // setting an SVG attribute to the value it already has still makes the browser redraw, so skip those
 const svgSet = Element.prototype.setAttribute;
 SVGElement.prototype.setAttribute = function (k, v) { v = String(v); if (this.getAttribute(k) !== v) svgSet.call(this, k, v); };
@@ -68,8 +70,71 @@ const onScreen = 'IntersectionObserver' in window ? new IntersectionObserver(es 
   if (e.isIntersecting) wakeClock();
 }), { rootMargin: '120px' }) : null;
 function wakeClock() { if (!clockId && LIVE.size) { clockLast = performance.now(); clockId = requestAnimationFrame(clockFrame); } }
+/* ---------- still parts drawn once ----------
+   The blur and shading filters are what make scenes slow: Safari (every iPhone) recomputes every filter on every
+   frame anything in the scene moves, measured at 6 fps for manual therapy against 60 with the filters off. So each
+   filtered part that never changes (nothing in it is a named, animated part) is drawn once into a picture, which then
+   stands in its place: same position, same transform, at twice its on-screen resolution so the camera's glide stays
+   sharp. Parts that move keep their live filters. Pictures are shared between scenes (most reuse the same body), and
+   anything that can't be drawn this way simply stays live. */
+const baked = new Map();
+const INHERIT = ['fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-dasharray', 'fill-rule', 'fill-opacity', 'stroke-opacity'];
+function bakeable(f) {
+  return !f.hasAttribute('data-r') && !f.querySelector('[data-r], text, use, image, foreignObject');
+}
+function filterBox(f, b) {
+  const id = (f.getAttribute('filter').match(/#([^)]+)\)/) || [])[1], fe = id && document.getElementById(id);
+  const pc = (k, d) => { const v = fe && fe.getAttribute(k); return v && v.endsWith('%') ? parseFloat(v) / 100 : d; };
+  const x = pc('x', -.1), y = pc('y', -.1), w = pc('width', 1.2), h = pc('height', 1.2);
+  return { x: b.x + x * b.width, y: b.y + y * b.height, width: b.width * w, height: b.height * h };
+}
+function allDefs(svg) {
+  return [...document.querySelectorAll('#fig-defs defs, #anatomy-defs defs, #scene-defs defs'), ...svg.querySelectorAll('defs')].map(d => d.innerHTML).join('');
+}
+function bakeOne(f, svg, defs) {
+  const b = f.getBBox(); if (!b.width || !b.height) return;
+  const r = filterBox(f, b), m = f.getScreenCTM(); if (!m) return;
+  const px = Math.hypot(m.a, m.b) * 2 * (devicePixelRatio || 1);
+  let W = Math.ceil(r.width * px), H = Math.ceil(r.height * px);
+  const k = Math.min(1, 4096 / Math.max(W, H), Math.sqrt(12e6 / (W * H))); W = Math.max(1, Math.round(W * k)); H = Math.max(1, Math.round(H * k));
+  // what it inherits from the groups around it (a fill set on a parent, say) goes with it
+  const inherited = INHERIT.map(a => { const p = f.parentElement && f.parentElement.closest(`[${a}]`); return p && svg.contains(p) ? `${a}="${p.getAttribute(a)}"` : ''; }).join(' ');
+  const copy = f.cloneNode(true); copy.removeAttribute('transform');
+  const markup = copy.outerHTML, key = `${markup}|${W}x${H}`;
+  if (!baked.has(key)) {
+    const doc = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="${r.x} ${r.y} ${r.width} ${r.height}" preserveAspectRatio="none"><defs>${defs}</defs><g ${inherited}>${markup}</g></svg>`;
+    baked.set(key, new Promise((res, rej) => {
+      const img = new Image(), url = URL.createObjectURL(new Blob([doc], { type: 'image/svg+xml' }));
+      img.onload = () => {
+        try {
+          const c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').drawImage(img, 0, 0, W, H);
+          c.toBlob(bl => { URL.revokeObjectURL(url); bl ? res(URL.createObjectURL(bl)) : rej(); }, 'image/png');
+        } catch (e) { URL.revokeObjectURL(url); rej(e); }
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); rej(); };
+      img.src = url;
+    }));
+  }
+  return baked.get(key).then(src => {
+    if (!f.isConnected) return;
+    const pic = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+    pic.setAttribute('href', src); pic.setAttribute('x', r.x); pic.setAttribute('y', r.y); pic.setAttribute('width', r.width); pic.setAttribute('height', r.height);
+    pic.setAttribute('preserveAspectRatio', 'none');
+    if (f.hasAttribute('transform')) pic.setAttribute('transform', f.getAttribute('transform'));
+    f.replaceWith(pic);
+  }, () => {});
+}
+function bakeStill(svg, tries = 0) {
+  if (!svg.isConnected) { if (tries < 30) requestAnimationFrame(() => bakeStill(svg, tries + 1)); return; }
+  const defs = allDefs(svg), done = new Set();
+  svg.querySelectorAll('[filter]').forEach(f => {
+    if (!bakeable(f) || [...done].some(d => d.contains(f))) return;
+    done.add(f); bakeOne(f, svg, defs);
+  });
+}
 function play(svg, tick, poster) {
   svg._t = 0; svg._tick = tick; svg._born = performance.now();
+  requestAnimationFrame(() => bakeStill(svg));
   if (reduceMotion) { tick(poster); return; }
   tick(0);
   if (onScreen) onScreen.observe(svg); else svg._vis = true;

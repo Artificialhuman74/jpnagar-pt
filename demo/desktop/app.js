@@ -118,7 +118,7 @@ function freeSlots(b, day) { return sessionsOn(b, day).flatMap((_, si) => slotsF
 function looksOpen(b, day) {
   if (typeof DIARY !== 'undefined' && DIARY && DIARY.peek(b.id, day) === undefined) {
     // the same times the booking page would offer (today's past ones already dropped), without asking the server
-    return worksOn(b, day) && sessionsOn(b, day).some((_, si) => slotTimes(b, day, si).length > 0);
+    return worksOn(b, day) && sessionsOn(b, day).some((_, si) => slotTimes(b, day, si).some(s => !s.taken));
   }
   return freeSlots(b, day).length > 0;
 }

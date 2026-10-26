@@ -87,8 +87,11 @@ function branchStatus(b, d = nowIST()) {
 
 function hash(s) { let x = 0; for (const c of s) x = (x * 31 + c.charCodeAt(0)) >>> 0; return x; }
 
-// Slots every 30 minutes; some marked taken (sample data); past times today are left out.
-function slotsFor(b, day, si) {
+// A session's appointment times on a day, one per appointment length; some marked taken (sample data until a live diary
+// is laid over them); past times today are left out. slotsFor is what pages ask for: published.js replaces it with
+// the same times marked by the live diary. slotTimes never asks the server, so a calendar of many days can use it.
+function slotsFor(b, day, si) { return slotTimes(b, day, si); }
+function slotTimes(b, day, si) {
   const ss = sessionsOn(b, day); if (!ss[si]) return [];
   const [s, e] = ss[si], now = nowIST(), today = sameDay(day, now), out = [];
   // one time per appointment length (the clinic sets it; half an hour until it says otherwise)

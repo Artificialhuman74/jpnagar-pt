@@ -175,7 +175,7 @@ function freshDay() {
   todayCal.sync(true);
   if (!WP) return;
   const date = iso(addDays(today(), V.day));
-  WP.loadDay(date).then(changed => { if (changed && (location.hash || '#today') === '#today' && iso(addDays(today(), V.day)) === date) renderToday(); });
+  WP.loadDay(date).then(r => { if (r.changed && (location.hash || '#today') === '#today' && iso(addDays(today(), V.day)) === date) renderToday(); });
 }
 
 /* ---------- the calendar on Today: every day of the month, the days with bookings in the accent with how many ---------- */
@@ -596,6 +596,7 @@ async function applyLeave(docId, b, date) {
   let hit;
   if (WP) {
     const r = await WP.leave(true, docId, b, date); if (!r) return;
+    if (!r.current) toast('Leave saved. The booking list couldn’t be refreshed: reload the page to see it.');
     hit = r.cancelled; redraw();
     if (r.failed.length) toast(`${r.failed.length} booking${r.failed.length === 1 ? '' : 's'} couldn’t be cancelled. Check the Today list.`);
   } else {
@@ -731,6 +732,7 @@ function openCloseDay(b) {
     const date = iso(pick); let hit;
     if (WP) {
       go.disabled = true; const r = await WP.closed(true, b, date, rs.value.trim()); go.disabled = false; if (!r) return;
+      if (!r.current) toast('Closed day saved. The booking list couldn’t be refreshed: reload the page to see it.');
       hit = r.cancelled; renderSchedule(); closeSheet();
       if (r.failed.length) toast(`${r.failed.length} booking${r.failed.length === 1 ? '' : 's'} couldn’t be cancelled. Check the Today list.`);
     } else {

@@ -110,18 +110,21 @@ const WP = window.JPN_API ? (() => {
     pushed = JSON.stringify(contentOut(S.content));
     return true;
   }
-  // a day's bookings from the server; asking again while one request is on its way shares it. Resolves true when the
-  // day's list changed (or arrived for the first time).
-  const loading = new Map();
-  function loadDay(date) {
-    if (loading.has(date)) return loading.get(date);
+  // A day's bookings from the server. Asking again while one request is on its way shares it, unless fresh is set
+  // (after a change on the server): then a new request goes out and an older one still on its way can no longer write
+  // its answer. Resolves to { ok, changed }: changed when the day's list differs (or arrived for the first time).
+  const loading = new Map(), asked = new Map();
+  function loadDay(date, fresh) {
+    if (!fresh && loading.has(date)) return loading.get(date);
+    const n = (asked.get(date) || 0) + 1; asked.set(date, n);
     const sig = () => JSON.stringify(S.bookings.filter(x => x.date === date)), was = days.has(date) ? sig() : null;
     const p = call('GET', '/admin/bookings', undefined, { date }).then(r => {
-      if (!r.ok) { fail(r); return false; }
+      if (asked.get(date) !== n) return { ok: true, changed: false, stale: true }; // a newer request answers for this day
+      if (!r.ok) { fail(r); return { ok: false, changed: false }; }
       S.bookings = S.bookings.filter(x => x.date !== date).concat(r.data.map(bookingIn));
       days.add(date);
-      return sig() !== was;
-    }).finally(() => loading.delete(date));
+      return { ok: true, changed: sig() !== was };
+    }).finally(() => { if (loading.get(date) === p) loading.delete(date); });
     loading.set(date, p);
     return p;
   }
@@ -136,7 +139,13 @@ const WP = window.JPN_API ? (() => {
       return r.data || {};
     },
     // reloads every day already on screen, after something that can change bookings on several days
-    async reloadDays() { for (const d of [...days]) await loadDay(d); },
+    // after a change that can move bookings on several days: every day already on screen, and the day changed (if it
+    // wasn't loaded yet), read again from the server; true when all of them came back
+    async reloadDays(also) {
+      const list = [...new Set([...days, ...(also ? [also] : [])])];
+      const rs = await Promise.all(list.map(d => loadDay(d, true)));
+      return rs.every(r => r.ok);
+    },
     // The content draft is saved a moment after the last edit. Saves go one at a time, in order, each sending the
     // draft as it is when its turn comes, so an older draft can never land after a newer one; publishing waits its turn.
     saveDraft() {
@@ -182,16 +191,18 @@ const WP = window.JPN_API ? (() => {
       const r = await call(add ? 'POST' : 'DELETE', '/admin/leave', { doctor: doc, branch, date });
       if (!r.ok) { fail(r); return null; }
       if (!await reload()) stale();
-      await this.reloadDays();
-      return { cancelled: (r.data.cancelled || []).map(bookingIn), failed: r.data.failed || [], notRestored: r.data.not_restored || [] };
+      // the change itself is done; current says whether the booking lists on screen were read again after it
+      const current = await this.reloadDays(date);
+      return { cancelled: (r.data.cancelled || []).map(bookingIn), failed: r.data.failed || [], notRestored: r.data.not_restored || [], current };
     },
     async closed(add, branch, date, reason) {
       clearTimeout(pushTimer); if (!await pushDraft()) return null;
       const r = await call(add ? 'POST' : 'DELETE', '/admin/closed', { branch, date, reason });
       if (!r.ok) { fail(r); return null; }
       if (!await reload()) stale();
-      await this.reloadDays();
-      return { cancelled: (r.data.cancelled || []).map(bookingIn), failed: r.data.failed || [], notRestored: r.data.not_restored || [] };
+      // the change itself is done; current says whether the booking lists on screen were read again after it
+      const current = await this.reloadDays(date);
+      return { cancelled: (r.data.cancelled || []).map(bookingIn), failed: r.data.failed || [], notRestored: r.data.not_restored || [], current };
     },
     // the cropped photo goes up small enough for the server (shrunk here first if it has to be); the plugin checks it,
     // resizes it and keeps only its own WebP copy. Resolves to { id, url } or { error } with the reason to show.

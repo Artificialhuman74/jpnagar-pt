@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Book a visit · J.P. Nagar Physio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="desktop.css">
+</head>
+<body data-page="book" class="tint">
+<a class="skiplink" href="#main">Skip to content</a>
+<header class="hd">
+  <div class="wrap hd-in">
+    <a class="hd-logo" href="home.html"><img src="../canon/logo.webp" alt="J.P. Nagar Medical &amp; Physiotherapy Centre, home" width="408" height="301"></a>
+    <div class="hd-right">
+      <span class="live" data-live></span>
+      <span class="hd-sep" aria-hidden="true"></span>
+      <a class="hd-call" href="tel:+919916116625"><i data-icon="phone"></i>+91 99161 16625</a>
+      <a class="btn btn--ghost btn--sm" href="https://wa.me/919916116625" target="_blank" rel="noopener"><i data-icon="whatsapp"></i>WhatsApp</a>
+    </div>
+  </div>
+</header>
+
+<main id="main" tabindex="-1" class="wrap">
+  <div class="btop">
+    <div>
+      <h1 class="h1">Book a visit</h1>
+      <p class="lead">About a minute. No sign-up. Your ticket fills in on the right as you go.</p>
+    </div>
+    <div class="btop-help"><span>Rather talk to someone?</span><a href="tel:+919916116625">+91 99161 16625</a></div>
+  </div>
+
+  <div class="book">
+    <div>
+      <section class="bstep" id="step-where" aria-labelledby="h-where">
+        <div class="bstep-h">
+          <span class="n" aria-hidden="true">1</span>
+          <div><h2 id="h-where">Where does it hurt? <small class="opt-tag">Optional</small></h2><p>Tap the front or the back, so your physiotherapist can prepare. Each side is its own choice.</p></div>
+          <div class="end seg" role="radiogroup" aria-label="Body shown"><button type="button" role="radio" aria-checked="true" data-gender="male">Male</button><button type="button" role="radio" aria-checked="false" data-gender="female">Female</button></div>
+        </div>
+        <div class="where">
+          <div class="figs">
+            <figure class="fig"><div class="fig-stage" data-fig="front"><span class="fig-side l" aria-hidden="true">Right</span><span class="fig-side r" aria-hidden="true">Left</span></div><figcaption>Front<small>Facing you</small></figcaption></figure>
+            <figure class="fig"><div class="fig-stage" data-fig="back"><span class="fig-side l" aria-hidden="true">Left</span><span class="fig-side r" aria-hidden="true">Right</span></div><figcaption>Back<small>Seen from behind</small></figcaption></figure>
+          </div>
+          <div class="where-side">
+            <div>
+              <h3 class="sub-h">You’ve picked</h3>
+              <div class="picked" data-picked aria-live="polite"></div>
+              <p class="care" data-care hidden></p>
+            </div>
+            <div class="field">
+              <label for="story">What happened? <small>(optional)</small></label>
+              <div class="input"><textarea id="story" rows="3" placeholder="For example: lower back pain for two weeks after lifting a heavy box."></textarea></div>
+              <div class="pills starters" data-starters><button class="pill" type="button" aria-pressed="false">Started after a fall</button><button class="pill" type="button" aria-pressed="false">Hurts at night</button><button class="pill" type="button" aria-pressed="false">Worse in the morning</button></div>
+            </div>
+            <div>
+              <h3 class="sub-h">Or tell us what’s going on</h3>
+              <div class="pills">
+                <button class="pill" type="button" aria-pressed="false" data-reason="surgery">After surgery</button>
+                <button class="pill" type="button" aria-pressed="false" data-reason="neuro">Stroke or nerve problem</button>
+                <button class="pill" type="button" aria-pressed="false" data-reason="child">For my child</button>
+                <button class="pill" type="button" aria-pressed="false" data-reason="elder">For an elderly parent</button>
+                <button class="pill" type="button" aria-pressed="false" data-reason="women">Pregnancy or after delivery</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="bstep" id="step-when" aria-labelledby="h-when">
+        <div class="bstep-h">
+          <span class="n" aria-hidden="true">2</span>
+          <div><h2 id="h-when" tabindex="-1">When suits you?</h2><p>Pick a branch, a day and a time. Taken times are crossed out.</p></div>
+        </div>
+        <div class="bropts" role="radiogroup" aria-label="Branch" data-branches></div>
+        <div class="when">
+          <div data-cal></div>
+          <div>
+            <div class="slot-head"><b data-slot-title>Times</b><div class="seg" role="radiogroup" aria-label="Session" data-sessions></div></div>
+            <div class="slots" role="radiogroup" aria-label="Time" data-slots></div>
+            <div class="legend" aria-hidden="true"><span><i></i>Free</span><span><i class="lg-taken"></i>Taken</span><span><i class="lg-pick"></i>Your pick</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="bstep" id="step-who" aria-labelledby="h-who">
+        <div class="bstep-h">
+          <span class="n" aria-hidden="true">3</span>
+          <div><h2 id="h-who">Who would you like to see?</h2><p>Any available gets you the earliest slot.</p></div>
+          <button class="end link" type="button" data-meet>Meet the team<i data-icon="chevron"></i></button>
+        </div>
+        <div class="docs" role="radiogroup" aria-label="Physiotherapist" data-docs></div>
+      </section>
+
+      <section class="bstep" id="step-you" aria-labelledby="h-you">
+        <div class="bstep-h">
+          <span class="n" aria-hidden="true">4</span>
+          <div><h2 id="h-you">Your details</h2><p>No sign-up. The branch only uses these to reach you about your visit.</p></div>
+        </div>
+        <div class="form">
+          <div class="field" data-f="name"><label for="nm">Full name</label><div class="input"><input id="nm" autocomplete="name" placeholder="e.g. Priya Raman"></div><p class="msg">Add your name so the clinic knows who’s coming.</p></div>
+          <div class="field" data-f="phone"><label for="ph">Mobile number</label><div class="input"><span class="pre">+91</span><input id="ph" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="e.g. 98765 43210"></div><p class="msg">Enter a 10-digit mobile number, like 98765 43210.</p></div>
+          <div class="field full" data-f="email"><label for="em">Email <small>(optional)</small></label><div class="input"><input id="em" type="email" autocomplete="email" placeholder="you@example.com"></div><p class="msg">That email doesn’t look right. Check it, or leave it empty.</p></div>
+        </div>
+        <p class="assure"><i data-icon="shield"></i>Only the clinic sees these.</p>
+      </section>
+    </div>
+
+    <aside class="bk-aside" aria-label="Your visit so far">
+      <div class="bk-aside-h"><h2>Your visit</h2><small data-progress>Fills in as you choose</small></div>
+      <div class="tk-wrap">
+        <article class="tk" data-tk>
+          <header class="tk-head">
+            <div class="tk-top"><span class="tk-logo"><img src="../canon/logo.webp" alt="" width="408" height="301"></span><span class="tk-id"><small>Booking ID</small><b class="ph-text">After you confirm</b></span></div>
+            <p class="tk-day" data-tk-day></p>
+            <p class="tk-time" data-tk-time></p>
+            <div class="tk-where"><i data-icon="pin"></i><span><b data-tk-branch></b><small data-tk-landmark></small></span></div>
+          </header>
+          <div class="tk-perf" aria-hidden="true"></div>
+          <div class="tk-body">
+            <dl class="tk-grid">
+              <div><dt>Physiotherapist</dt><dd data-tk-ther></dd></div>
+              <div><dt>Arrive by</dt><dd data-tk-arrive></dd></div>
+              <div><dt>Patient</dt><dd data-tk-name></dd></div>
+              <div><dt>Mobile</dt><dd data-tk-phone></dd></div>
+            </dl>
+            <div class="tk-hurt" data-tk-hurt>
+              <p class="tk-label">Where it hurts</p>
+              <div class="tk-figs" data-tk-figs></div>
+              <div class="tk-chips" data-tk-chips></div>
+            </div>
+            <blockquote class="tk-note" data-tk-note hidden></blockquote>
+          </div>
+          <div class="tk-perf" aria-hidden="true"></div>
+          <div class="tk-confirm">
+            <button class="btn btn--act btn--lg btn--block" type="button" data-confirm><span>Confirm booking</span></button>
+            <p class="tk-todo" data-todo aria-live="polite"></p>
+          </div>
+        </article>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer class="ft" data-footer="slim"></footer>
+<nav class="dock" data-active="book"></nav>
+<script src="../canon/clinic.js"></script>
+<script src="../canon/figure.js"></script>
+<script src="app.js"></script>
+<script src="../canon/published-data.js"></script>
+<script src="../canon/published.js"></script>
+<script src="book.js"></script>
+</body>
+</html>

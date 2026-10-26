@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Home · J.P. Nagar Physio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="../canon/base.css">
+<link rel="stylesheet" href="site.css">
+</head><body>
+<header class="top"><img class="logo" src="../canon/logo.webp" alt="J.P. Nagar Medical & Physiotherapy Centre" width="408" height="301"><p class="top-live" data-live><i></i><span>Checking hours…</span></p></header>
+
+<section class="hero hero--band" data-inview>
+  <div class="hero-pic">
+    <div class="photo" data-label="Photo: Arekere clinic (to be shot)" data-branch-photo="start"></div>
+    <div class="copy">
+      <p data-home-intro>Expert physiotherapy at 3 branches in South Bangalore.</p>
+      <a class="btn btn--act btn--block" href="book.html">Book a visit <i data-icon="arrow"></i></a>
+    </div>
+  </div>
+  <h1 class="hero-line" data-home-headline>Feel better, sooner.</h1>
+</section>
+
+<section class="sec">
+  <h2 data-reveal>Why patients choose us</h2>
+  <ul class="ticks why" data-inview>
+    <li><i class="draw" data-icon="tick"></i><div><b>Assessed on your first visit</b><span class="small muted">We find the cause, not just the pain.</span></div></li>
+    <li><i class="draw" data-icon="tick"></i><div><b>A plan made for you</b><span class="small muted">Exercises and therapy for your goals.</span></div></li>
+    <li><i class="draw" data-icon="tick"></i><div><b>Senior physiotherapists</b><span class="small muted">Led by Dr. P. Senthil, MPT, 27+ years.</span></div></li>
+  </ul>
+  <div class="rating" data-inview>
+    <span class="stars"><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i><i data-icon="star" data-fill></i></span>
+    <span class="small muted"><b style="color:var(--ink)">[4.x]</b> on Google</span>
+  </div>
+  <div class="reviews" data-reviews>
+    <article class="review"><p>“Sample review: real Google reviews appear here.”</p><footer><i>A</i>Arekere · sample</footer></article>
+    <article class="review"><p>“Sample review: what hurt, and how they feel now.”</p><footer><i>J</i>JP Nagar · sample</footer></article>
+    <article class="review"><p>“Sample review: a short, real quote.”</p><footer><i>B</i>Bannerghatta · sample</footer></article>
+  </div>
+  <div class="dots" aria-hidden="true"><span class="on"></span><span></span><span></span></div>
+</section>
+
+<section class="sec">
+  <h2 data-reveal>Inside our clinics</h2>
+  <div class="gcar" data-gcar role="region" aria-roledescription="carousel" aria-label="Photos of our clinics">
+    <div class="gcar-glow" aria-hidden="true"><i></i><i></i></div>
+    <div class="gcar-stage" data-gcar-stage></div>
+    <button class="gcar-btn prev" type="button" aria-label="Previous photo" data-gcar-prev><i data-icon="chevron"></i></button>
+    <button class="gcar-btn next" type="button" aria-label="Next photo" data-gcar-next><i data-icon="chevron"></i></button>
+    <p class="gcar-cap" aria-live="polite"><b data-gcar-label></b><span data-gcar-count></span></p>
+  </div>
+</section>
+
+<section class="close-cta" data-reveal>
+  <h2>Ready when you are.</h2>
+  <ul data-hours></ul>
+  <a class="allhours" href="branches.html">All branches and hours <i data-icon="chevron"></i></a>
+  <a class="btn btn--act btn--block" href="book.html">Book a visit</a>
+</section>
+
+<div class="viewer" role="dialog" aria-modal="true" aria-label="Clinic photos" data-viewer>
+  <p class="count"></p>
+  <div class="frame photo" data-label="Gallery photo"></div>
+  <button class="close" aria-label="Close" data-icon="close"></button>
+  <button class="prev" aria-label="Previous photo" data-icon="chevron"></button>
+  <button class="next" aria-label="Next photo" data-icon="chevron"></button>
+</div>
+
+<div class="fab"></div>
+<nav class="dock" data-active="home"></nav>
+<script src="../canon/clinic.js"></script>
+<script src="app.js"></script>
+<script src="../canon/published-data.js"></script>
+<script src="../canon/published.js"></script>
+<script src="../desktop/carousel.js"></script>
+<script>
+// live status for the closest branch (JP Nagar until the visitor has shared where they are), beside the logo
+const near = BRANCHES[nearestIndex()], st = branchStatus(near);
+const live = document.querySelector('[data-live]');
+live.classList.toggle('closed', !st.open);
+// the grey dot already says closed, so a closed branch shows only when it opens: one line beside the logo
+live.querySelector('span').textContent = `${near.short} · ${st.text.replace(/^Closed · /, '').toLowerCase()}`;
+
+// each branch's status right now (the week's hours are on Branches)
+const ul = document.querySelector('[data-hours]');
+BRANCHES.forEach(b => { const s = branchStatus(b); ul.append(el('li', {}, el('span', {}, b.short), el('span', { class: 'live' + (s.open ? '' : ' closed') }, el('i'), el('span', {}, s.text)))); });
+
+// reviews: dots follow the swipe
+const rv = document.querySelector('[data-reviews]'), dots = [...document.querySelectorAll('.dots span')];
+rv.addEventListener('scroll', () => {
+  const i = Math.round(rv.scrollLeft / (rv.firstElementChild.offsetWidth + 12));
+  dots.forEach((d, k) => d.classList.toggle('on', k === i));
+}, { passive: true });
+
+// gallery: photos on a convex arc with a glow in the front photo's colour (../desktop/carousel.js); tap to open full screen
+const LABELS = galleryLabels(['JP Nagar · reception', 'JP Nagar · treatment room', 'Bannerghatta · exercise area', 'Bannerghatta · traction', 'Arekere · treatment room', 'Arekere · waiting area']);
+const vw = document.querySelector('[data-viewer]'), frame = vw.querySelector('.frame'), count = vw.querySelector('.count');
+let cur = 0, lastFocus;
+function show(i) { cur = (i + LABELS.length) % LABELS.length; frame.dataset.label = LABELS[cur]; count.textContent = `${cur + 1} / ${LABELS.length}`; paintPhoto(frame, clinicPhoto(cur)); }
+function openViewer(i) { lastFocus = document.activeElement; show(i); vw.classList.add('is-open'); setModal(vw, true); vw.querySelector('.close').focus(); }
+function closeViewer() { vw.classList.remove('is-open'); setModal(vw, false); lastFocus && lastFocus.focus(); }
+setModal(vw, false);
+vw.querySelector('.close').onclick = closeViewer;
+vw.querySelector('.prev').onclick = () => show(cur - 1);
+vw.querySelector('.next').onclick = () => show(cur + 1);
+vw.addEventListener('click', e => { if (e.target === vw) closeViewer(); });
+gradientCarousel(document.querySelector('[data-gcar]'), { labels: LABELS, groups: galleryGroups(LABELS), step: [178, 128], dragPx: 200, onOpen: i => openViewer(i) });
+addEventListener('keydown', e => { if (!vw.classList.contains('is-open')) return; if (e.key === 'Escape') closeViewer(); if (e.key === 'ArrowRight') show(cur + 1); if (e.key === 'ArrowLeft') show(cur - 1); });
+let sx = null;
+frame.addEventListener('pointerdown', e => { sx = e.clientX; });
+frame.addEventListener('pointerup', e => { if (sx === null) return; const dx = e.clientX - sx; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); sx = null; });
+</script>
+</body></html>

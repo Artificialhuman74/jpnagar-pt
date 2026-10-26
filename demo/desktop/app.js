@@ -120,10 +120,9 @@ function looksOpen(b, day) {
     if (!worksOn(b, day)) return false;
     if (!isToday(day)) return true;
     const now = nowIST(), h = now.getHours() + now.getMinutes() / 60;
-    // the last start slotsFor would offer in each session (from its start, in steps of the appointment length, ending
-    // by the session's end) must still be after the same cut-off it uses
+    // the starts slotsFor would offer, stepped and rounded exactly as it does, against the same cut-off it uses
     const step = (b.slot || 30) / 60;
-    return sessionsOn(b, day).some(([s, e]) => { const n = Math.floor((e - s) / step + 1e-6); return n > 0 && s + (n - 1) * step > h + .25; });
+    return sessionsOn(b, day).some(([s, e]) => { for (let t = s; t + step <= e + 1e-6; t = +(t + step).toFixed(4)) if (t > h + .25) return true; return false; });
   }
   return freeSlots(b, day).length > 0;
 }

@@ -1,0 +1,3 @@
+/* Booking controls shared by the desktop and phone pages. */
+.jpn-wa-consent{display:flex;align-items:center;gap:12px;min-height:44px;padding:10px 0;font-size:15px;line-height:1.45;color:var(--ink-2);cursor:pointer}
+.jpn-wa-consent input{flex:0 0 20px;width:20px;height:20px;accent-color:var(--act)}

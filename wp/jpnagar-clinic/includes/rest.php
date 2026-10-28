@@ -230,6 +230,7 @@ function jpn_booking_from_request( WP_REST_Request $req ) {
 		'email'   => is_email( $email ) ? $email : '',
 		'problem' => jpn_substr( sanitize_text_field( (string) $req->get_param( 'problem' ) ), 0, 255 ),
 		'note'    => jpn_substr( sanitize_textarea_field( (string) $req->get_param( 'note' ) ), 0, 600 ),
+		'whatsapp_consent' => true === $req->get_param( 'whatsapp_consent' ),
 	);
 }
 

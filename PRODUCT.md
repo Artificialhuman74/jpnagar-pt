@@ -46,6 +46,7 @@ The clinic's website. It must turn a local search into a booked appointment, a c
 - It is a website that feels like an app, not an installable app.
 - English only.
 - Free plugins only; no new recurring costs.
+- **Approved add-on (Oct 2026):** direct Meta Cloud API confirmation to an opted-in patient and a new-booking alert to opted-in clinic owner/reception numbers. Meta usage charges are accepted; no intermediary messaging subscription. Disabled until production credentials, templates, billing, webhook and scheduler are configured. Reminders and cancellation notifications remain outside this add-on. See `wp/jpnagar-clinic/WHATSAPP.md`.
 - Text must stay editable by clinic staff after launch.
 - **Decided (Oct 2026):** a slot can hold several patients as long as each is with a different physiotherapist (one patient per therapist per slot), so a branch's capacity per slot is the number of therapists working there. Patients pick a therapist by name from that branch's own list, or "Any available".
 - **Undecided (confirm with clinic):** booking slot length, holidays, which therapists work at which branch and on which days (only Dr. Jeya Chitra Devi is confirmed at Arekere), first-visit length (demo shows "45 min [Confirm duration]"), typical number of sessions (demo keeps "[Confirm typical count]" until confirmed).

@@ -27,6 +27,7 @@ require_once JPN_DIR . 'includes/images.php';
 require_once JPN_DIR . 'includes/rest.php';
 require_once JPN_DIR . 'includes/install.php';
 require_once JPN_DIR . 'includes/admin-host.php';
+require_once JPN_DIR . 'includes/whatsapp.php';
 
 register_activation_hook( __FILE__, 'jpn_activate' );
 add_action( 'plugins_loaded', 'jpn_admin_host_setup', 1 );
